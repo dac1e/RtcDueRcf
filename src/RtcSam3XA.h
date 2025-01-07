@@ -10,6 +10,7 @@
 
 #include <ctime>
 #include <include/rtc.h>
+#include "Sam3XA_RtcTime.h"
 
 class RtcSam3XA {
   // Global interrupt handler forwards to RtcSam3XA_Handler()
@@ -36,13 +37,14 @@ public:
   };
 
   class AlarmTime {
-    int second;
-    int minute;
-    int hour;
-    int day;
-    int month; // Jan = 0
+    friend class RtcSam3XA;
+    uint8_t second;
+    uint8_t minute;
+    uint8_t hour;
+    uint8_t day;
+    uint8_t month; // Jan = 0
   public:
-    AlarmTime() : second(-1), minute(-1), hour(-1), day(-1), month(-1) {}
+    AlarmTime() : second(UINT8_MAX), minute(UINT8_MAX), hour(UINT8_MAX), day(UINT8_MAX), month(UINT8_MAX) {}
     void setSecond(int _second) {second = _second;}
     void setMinute(int _minute) {minute = _minute;}
     void setHour(int _hour) {hour = _hour;}

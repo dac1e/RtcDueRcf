@@ -10,51 +10,11 @@
 
 RtcSam3XA RtcSam3XA::rtClock;
 
-// Time structure to read from and write to the Sam3X RTC.
-class Sam3XA_RtcTime {
-  uint8_t mHour;
-  uint8_t mMinute;
-  uint8_t mSecond;
-
-  uint16_t mYear;
-  uint8_t mMonth;
-  uint8_t mDay;
-  uint8_t mWeek;
-
-public:
-  inline uint8_t hour() const {return mHour;}
-  inline uint8_t minute() const {return mMinute;}
-  inline uint8_t second() const {return mSecond;}
-  inline uint16_t year() const {return mYear;}
-  inline uint8_t month() const {return mMonth;}
-  inline uint8_t day() const {return mDay;}
-  inline uint8_t week() const {return mWeek;}
-
-  inline int tmHour()const {return mHour;}
-  inline int tmMinute()const {return mMinute;}
-  inline int tmSecond()const {return mSecond;}
-  inline int tmYear()const {return mYear;}
-  inline int tmMonth()const {return mMonth - 1;}
-  inline int tmDay()const {return mDay;}
-  inline int tmWeek()const {return mWeek - 1;}
-
-  static uint8_t rtcMonth(const std::tm& t) {return t.tm_mon + 1;}
-  static uint8_t rtcDayOfWeek(const std::tm& t) {return t.tm_wday + 1;}
-
-  void set(const std::tm &t) {
-    mHour = t.tm_hour; mMinute = t.tm_min; mSecond = t.tm_sec;
-    mYear = t.tm_year; mMonth = rtcMonth(t); mDay = t.tm_mday;
-    mWeek = rtcDayOfWeek(t);
-  }
-
-  void readFromRtc();
-};
-
 void RTC_Handler (void) {
   RtcSam3XA::rtClock.RtcSam3XA_Handler();
 }
 
-RtcSam3XA::tm::tm() : tm(1, 0, 2000, 0, 0 , 0, false) {
+RtcSam3XA::tm::tm() : tm(1, 0, 2000, 0, 0 , 0, -1) {
 }
 
 RtcSam3XA::tm::tm(int _day, int _m, int _year, int _hours, int _minutes, int _seconds, bool _sl) {
@@ -90,7 +50,7 @@ int RtcSam3XA::tm::tmDayofWeek (uint16_t _year, int _month, int _day)
 void RtcSam3XA::tm::set(Sam3XA_RtcTime& td) {
   tm_hour = td.tmHour(); tm_min = td.tmMinute(); tm_sec = td.tmSecond();
   tm_year = td.tmYear(); tm_mon = td.tmMonth(); tm_mday = td.tmDay();
-  tm_wday = td.tmWeek(); tm_yday = 0; tm_isdst = 0;
+  tm_wday = td.tmWeek(); tm_yday = 0; tm_isdst = -1;
 }
 
 void Sam3XA_RtcTime::readFromRtc() {
@@ -184,13 +144,14 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
 
 void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
   RTC_DisableIt(RTC, RTC_IER_ALREN);
-  uint8_t* _hour = alarmTime.hour < 0 ? nullptr : &alarmTime.hour;
-  uint8_t* _minute = alarmTime.minute < 0 ? nullptr : alarmTime.minute;
-  uint8_t* _second = alarmTime.second < 0 ? nullptr : alarmTime.second;
-  uint8_t* _day = alarmTime.day < 0 ? nullptr : alarmTime.day;
-  uint8_t* _month = alarmTime.month < 0 ? nullptr : alarmTime.month;
-  RTC_SetTimeAlarm(RTC, _hour, _minute, _second);
-  RTC_SetDateAlarm(RTC, _month, _day);
+  const uint8_t* _hour = alarmTime.hour == UINT8_MAX ? nullptr : &alarmTime.hour;
+  const uint8_t* _minute = alarmTime.minute == UINT8_MAX ? nullptr : &alarmTime.minute;
+  const uint8_t* _second = alarmTime.second == UINT8_MAX ? nullptr : &alarmTime.second;
+  const uint8_t* _day = alarmTime.day == UINT8_MAX ? nullptr : &alarmTime.day;
+  const uint8_t* _month = alarmTime.month == UINT8_MAX ? nullptr : &alarmTime.month;
+  // Need to do a const_cast here, because the sam API ignores const correctness.
+  RTC_SetTimeAlarm(RTC, const_cast<uint8_t*>(_hour),  const_cast<uint8_t*>(_minute),  const_cast<uint8_t*>(_second));
+  RTC_SetDateAlarm(RTC, const_cast<uint8_t*>(_month), const_cast<uint8_t*>(_day));
   RTC_EnableIt(RTC, RTC_IER_ALREN);
 }
 
