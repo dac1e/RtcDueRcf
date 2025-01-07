@@ -16,6 +16,10 @@ class RtcSam3XA {
   friend void ::RTC_Handler();
   volatile bool mSetTimeRequest;
   Sam3XA_RtcTime mSetTimeCache;
+  void(*mSecondCallback)(void*);
+  void* mSecondCallbackPararm;
+  void(*mAlarmCallback)(void*);
+  void* mAlarmCallbackPararm;
 
   // Interrupt handler
   void RtcSam3XA_Handler();
@@ -31,13 +35,33 @@ public:
     void set(Sam3XA_RtcTime& td);
   };
 
+  class AlarmTime {
+    int second;
+    int minute;
+    int hour;
+    int day;
+    int month; // Jan = 0
+  public:
+    AlarmTime() : second(-1), minute(-1), hour(-1), day(-1), month(-1) {}
+    void setSecond(int _second) {second = _second;}
+    void setMinute(int _minute) {minute = _minute;}
+    void setHour(int _hour) {hour = _hour;}
+    void setDay(int _day) {second = _day;}
+    void setMonth(int _month) {second = _month;}
+  };
+
   enum RTC_OSCILLATOR {RC = 0, XTAL = 1};
 
   void begin(RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
   void set_time(const std::tm &t);
   void get_time(tm &td);
 
+  void setAlarmCallback(void (*alarmCallback)(void*), void *alarmCallbackParam = nullptr);
+  void setAlarm(const AlarmTime& alarmTime);
+  void clearAlarm(){setAlarm(AlarmTime());}
+
+  void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
+
   static RtcSam3XA rtClock;
 };
-
 #endif /* RTCSAM3XA_SRC_RTCSAM3XA_H_ */

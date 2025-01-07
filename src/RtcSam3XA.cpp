@@ -98,15 +98,20 @@ void Sam3XA_RtcTime::readFromRtc() {
       &mDay, &mWeek);
 }
 
-RtcSam3XA::RtcSam3XA() :
-    mSetTimeRequest(false) {
+RtcSam3XA::RtcSam3XA()
+  : mSetTimeRequest(false)
+  , mSecondCallback(nullptr)
+  , mSecondCallbackPararm(nullptr)
+  , mAlarmCallback(nullptr)
+  , mAlarmCallbackPararm(nullptr)
+{
 }
 
 void RtcSam3XA::RtcSam3XA_Handler() {
   const uint32_t status = RTC->RTC_SR;
-  /* Second increment interrupt */
+
+  /* Acknowledge for Update interrupt */
   if ((status & RTC_SR_ACKUPD) == RTC_SR_ACKUPD) {
-    //    /* Disable RTC interrupt */
     //    RTC_DisableIt(RTC, RTC_IDR_SECDIS);
 
     if (mSetTimeRequest) {
@@ -120,22 +125,21 @@ void RtcSam3XA::RtcSam3XA_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
     //    RTC_EnableIt(RTC, RTC_IER_SECEN);
   }
+
   /* Second increment interrupt */
   if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-    //    /* Disable RTC interrupt */
-    //    RTC_DisableIt(RTC, RTC_IDR_SECDIS);
-
+    if(mSecondCallback) {
+      (*mSecondCallback)(mSecondCallbackPararm);
+    }
     RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
-
-    //    RTC_EnableIt(RTC, RTC_IER_SECEN);
   }
+
   /* Time or date alarm */
   if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-    //      /* Disable RTC interrupt */
-    //      RTC_DisableIt(RTC, RTC_IDR_ALRDIS);
-
+    if(mAlarmCallback) {
+      (*mAlarmCallback)(mAlarmCallbackPararm);
+    }
     RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
-    //      RTC_EnableIt(RTC, RTC_IER_ALREN);
   }
 }
 
@@ -170,4 +174,28 @@ void RtcSam3XA::get_time(tm &td) {
     dueTimeAndDate.readFromRtc();
     td.set(dueTimeAndDate);
   }
+}
+
+void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
+    void *alarmCallbackParam) {
+  mAlarmCallback = alarmCallback;
+  mAlarmCallbackPararm = alarmCallbackParam;
+}
+
+void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
+  RTC_DisableIt(RTC, RTC_IER_ALREN);
+  uint8_t* _hour = alarmTime.hour < 0 ? nullptr : &alarmTime.hour;
+  uint8_t* _minute = alarmTime.minute < 0 ? nullptr : alarmTime.minute;
+  uint8_t* _second = alarmTime.second < 0 ? nullptr : alarmTime.second;
+  uint8_t* _day = alarmTime.day < 0 ? nullptr : alarmTime.day;
+  uint8_t* _month = alarmTime.month < 0 ? nullptr : alarmTime.month;
+  RTC_SetTimeAlarm(RTC, _hour, _minute, _second);
+  RTC_SetDateAlarm(RTC, _month, _day);
+  RTC_EnableIt(RTC, RTC_IER_ALREN);
+}
+
+void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),
+    void *secondCallbackParam) {
+  mSecondCallback = secondCallback;
+  mSecondCallbackPararm = secondCallbackParam;
 }
