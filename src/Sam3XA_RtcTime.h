@@ -9,6 +9,7 @@
 #define RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_
 
 #include <stdint.h>
+#include <ctime>
 
 // Time structure to read from and write to the Sam3X RTC.
 class Sam3XA_RtcTime {
@@ -19,8 +20,12 @@ class Sam3XA_RtcTime {
   uint16_t mYear;
   uint8_t mMonth;
   uint8_t mDay;
-  uint8_t mWeek;
+  uint8_t mWeekDay;
 
+  static uint8_t tmDayOfWeek(const std::tm &time) {
+    // Calling mktime will fix tm_wday.
+    std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
+  }
 public:
   inline uint8_t hour() const {return mHour;}
   inline uint8_t minute() const {return mMinute;}
@@ -28,7 +33,7 @@ public:
   inline uint16_t year() const {return mYear;}
   inline uint8_t month() const {return mMonth;}
   inline uint8_t day() const {return mDay;}
-  inline uint8_t week() const {return mWeek;}
+  inline uint8_t week() const {return mWeekDay;}
 
   inline int tmHour()const {return mHour;}
   inline int tmMinute()const {return mMinute;}
@@ -36,15 +41,15 @@ public:
   inline int tmYear()const {return mYear;}
   inline int tmMonth()const {return mMonth - 1;}
   inline int tmDay()const {return mDay;}
-  inline int tmWeek()const {return mWeek - 1;}
+  inline int tmWeek()const {return mWeekDay - 1;}
 
-  static uint8_t rtcMonth(const std::tm& t) {return t.tm_mon + 1;}
-  static uint8_t rtcDayOfWeek(const std::tm& t) {return t.tm_wday + 1;}
+  static uint8_t rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
+  static uint8_t rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
-  void set(const std::tm &t) {
-    mHour = t.tm_hour; mMinute = t.tm_min; mSecond = t.tm_sec;
-    mYear = t.tm_year; mMonth = rtcMonth(t); mDay = t.tm_mday;
-    mWeek = rtcDayOfWeek(t);
+  void set(const std::tm &time) {
+    mHour = time.tm_hour; mMinute = time.tm_min; mSecond = time.tm_sec;
+    mYear = time.tm_year; mMonth = rtcMonth(time); mDay = time.tm_mday;
+    mWeekDay = rtcDayOfWeek(time);
   }
 
   void readFromRtc();
