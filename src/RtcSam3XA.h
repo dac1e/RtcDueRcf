@@ -21,12 +21,12 @@ public:
    * Usage examples:
    *
    * tm time;
-   * RtcSam3XA::RtClock.getLocalTime(time);
+   * RtcSam3XA::clock.getLocalTime(time);
    *
    * const tm time { 24, 59, 11, 12, 1, tm::make_tm_year(2016), false };
-   * RtcSam3XA::RtClock.setByLocalTime(time);
+   * RtcSam3XA::clock.setByLocalTime(time);
    */
-  static RtcSam3XA RtClock;
+  static RtcSam3XA clock;
 
   class AlarmTime {
   public:
@@ -69,7 +69,7 @@ public:
   /**
    * Start RTC and set time zone optionally.
    */
-  void begin(RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL, const char* timezone = nullptr);
+  void begin(const char* timezone = nullptr, const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
 
   /**
    * Set the RTC by the local time.
@@ -100,39 +100,21 @@ public:
 
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
-  // Class that extends struct std::tm with constructors and convenient functions.
-  class tm : public std::tm {
-  public:
-    // make a tm::tm_year format from a year.
-    static int make_tm_year(int ad_year /* anno domini year */) { return ad_year - 1900; }
-
-    tm();
-    tm(int _sec, int _min, int _hour, int _mday /* 1..31 */, int _mon /* 0..11 */, int _year /* year since 1900 */, bool _isdst);
-
-//    /** Set this tm struct by Sam3XA RTC formatted struct. */
-//    void set(const Sam3XA_RtcTime& sam2xatime) {set(*this, sam2xatime);}
-  private:
-    friend class RtcSam3XA;
-
-    /** Set tm struct by Sam3XA RTC formatted struct. */
-    static std::time_t set(std::tm& time, const Sam3XA_RtcTime& sam2xatime);
-  };
-
 private:
   // Interrupt handler
   void RtcSam3XA_Handler();
   RtcSam3XA();
+  void onSecTransitionInterrupt();
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
-  friend void ::RTC_Handler();
   volatile bool mSetTimeRequest;
   Sam3XA_RtcTime mSetTimeCache;
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;
   void(*mAlarmCallback)(void*);
-  void onSecTransitionInterrupt();
-
   void* mAlarmCallbackPararm;
+
+  friend void ::RTC_Handler();
 };
 
 namespace TZ {

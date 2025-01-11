@@ -5,12 +5,21 @@
  *      Author: Wolfgang
  */
 
+#include <assert.h>
+#include "TM.h"
 #include "RtcSam3XA.h"
 #include "core-sam-GapClose.h"
-#include <assert.h>
 
 namespace {
 
+/**
+ * Calculate whether a given year is a leap year.
+ * @param tm_year The offset to 1900 of the year to be used for
+ *  the calculation. This is the same format as the tm_year
+ *  part of the std::tm;
+ * @return the number of leap years since the given year.
+ *  This number includes the given tm_year if it is a leap year.
+ */
 int isLeapYear(int tm_year) {
   const int year = tm_year + 1900;
   const int result = ( !(year % 4) && ( (year % 100) || !(year % 400) ) );;
@@ -18,7 +27,11 @@ int isLeapYear(int tm_year) {
 }
 
 /**
- * The return value includes this year if it is a leap year.
+ * Calculate the number of leap years since 1970 for a given year.
+ * @param tm_year The offset to 1900 of the year to be used for
+ *  the calculation. This is the same format as the tm_year part
+ *  of the std::tm;
+ * @return 1 if the given year is a leap year. Otherwise 0.
  */
 int leapYearsSince1970 (int tm_year) {
   const int year = tm_year + 1900;
@@ -28,6 +41,14 @@ int leapYearsSince1970 (int tm_year) {
   return yearsDiv4count - yearsDiv100count + yearsDiv400count;
 }
 
+/**
+ * Calculate the time difference between local daylight saving
+ * time and local standard time.
+ * @param time The tm structure that holds the tm_isdst flag to
+ *  be evaluated for the return value.
+ * @return The time difference in seconds if the tm_isdst flag
+ *  in time is is > 0. Otherwise 0.
+ */
 std::time_t dstdiff(std::tm& time) {
   if(time.tm_isdst > 0) {
     const __tzinfo_type * tzinfo =  __gettzinfo();
@@ -40,8 +61,12 @@ std::time_t dstdiff(std::tm& time) {
 }
 
 /**
- * Convert UTC time to time stamp.
+ * Convert time to a unix time stamp. Neither a time zone nor
+ * a daylight saving shift is considered in this calculation.
  * Prerequisite: tm_yday and tm_isdst are set correctly.
+ * @param time The time for which to calculate the time stamp.
+ *
+ * @return The unix time stamp for the given time.
  */
 std::time_t mkgmtime(std::tm& time) {
   using time_t = std::time_t;
@@ -53,44 +78,33 @@ std::time_t mkgmtime(std::tm& time) {
   return result;
 }
 
+///** Set tm struct by Sam3XA RTC formatted struct. */
+//std::time_t set(std::tm& time, const Sam3XA_RtcTime& sam2xatime) {
+//  time.tm_hour = sam2xatime.tmHour(); time.tm_min = sam2xatime.tmMinute(); time.tm_sec = sam2xatime.tmSecond();
+//  time.tm_year = sam2xatime.tmYear(); time.tm_mon = sam2xatime.tmMonth(); time.tm_mday = sam2xatime.tmDay();
+//  time.tm_wday = sam2xatime.tmWeek(); time.tm_yday = 0; time.tm_isdst = 0 /* We get standard time from Rtc. */;
+//
+//  // mktime will fix the tm_yday as well as tm_ist and the
+//  // hour, if time is within daylight savings period.
+//  return mktime(&time);
+//}
+
 } // anonymous namespace
+
+RtcSam3XA RtcSam3XA::clock;
 
 void Sam3XA_RtcTime::readFromRtc() {
   ::RTCgapclose_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
       &mDay, &mWeekDay);
 }
 
+void RTC_Handler (void) {
+  RtcSam3XA::clock.RtcSam3XA_Handler();
+}
+
 RtcSam3XA::AlarmTime::AlarmTime() :
     second(UINT8_MAX), minute(UINT8_MAX), hour(UINT8_MAX), day(UINT8_MAX), month(
         UINT8_MAX) {
-}
-
-RtcSam3XA::tm::tm() : tm(0, 0, 0, 1, 1, make_tm_year(1970), false) {
-}
-
-
-RtcSam3XA::tm::tm(int _sec, int _min, int _hour, int _mday, int _mon, int _year, bool _isdst) {
-  tm_mday = _mday; tm_mon = _mon; tm_year = _year;
-  tm_hour = _hour; tm_min = _min; tm_sec = _sec;
-  tm_isdst = _isdst;
-  tm_wday = -1; // unknown
-  tm_yday = -1; // unknown
-}
-
-RtcSam3XA RtcSam3XA::RtClock;
-
-void RTC_Handler (void) {
-  RtcSam3XA::RtClock.RtcSam3XA_Handler();
-}
-
-std::time_t RtcSam3XA::tm::set(std::tm& time, const Sam3XA_RtcTime& sam2xatime) {
-  time.tm_hour = sam2xatime.tmHour(); time.tm_min = sam2xatime.tmMinute(); time.tm_sec = sam2xatime.tmSecond();
-  time.tm_year = sam2xatime.tmYear(); time.tm_mon = sam2xatime.tmMonth(); time.tm_mday = sam2xatime.tmDay();
-  time.tm_wday = sam2xatime.tmWeek(); time.tm_yday = 0; time.tm_isdst = 0 /* We get standard time from Rtc. */;
-
-  // mktime will fix the tm_yday as well as tm_ist and the
-  // hour, if time is within daylight savings period.
-  return mktime(&time);
 }
 
 RtcSam3XA::RtcSam3XA()
@@ -142,7 +156,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
   }
 }
 
-void RtcSam3XA::begin(RTC_OSCILLATOR source, const char* timezone) {
+void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
   if(timezone != nullptr) {
     tzset(timezone);
   }
@@ -194,12 +208,12 @@ void RtcSam3XA::setByUnixTime(std::time_t timestamp) {
 
 std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
   if (mSetTimeRequest) {
-    return tm::set(time, mSetTimeCache);
+    return mSetTimeCache.get(time);
   }
 
   Sam3XA_RtcTime dueTimeAndDate;
   dueTimeAndDate.readFromRtc();
-  return tm::set(time, dueTimeAndDate);
+  return dueTimeAndDate.get(time);
 }
 
 time_t RtcSam3XA::getUnixTime() const {

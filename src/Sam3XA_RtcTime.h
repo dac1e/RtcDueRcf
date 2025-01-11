@@ -52,6 +52,17 @@ public:
     mWeekDay = rtcDayOfWeek(time);
   }
 
+  /** Get a tm struct from this Sam3XA RTC struct. */
+  std::time_t get(std::tm& time) const {
+    time.tm_hour = tmHour(); time.tm_min = tmMinute(); time.tm_sec = tmSecond();
+    time.tm_year = tmYear(); time.tm_mon = tmMonth(); time.tm_mday = tmDay();
+    time.tm_wday = tmWeek(); time.tm_yday = 0; time.tm_isdst = 0 /* We get standard time from Rtc. */;
+
+    // mktime will fix the tm_yday as well as tm_ist and the
+    // hour, if time is within daylight savings period.
+    return mktime(&time);
+  }
+
   void readFromRtc();
 };
 
