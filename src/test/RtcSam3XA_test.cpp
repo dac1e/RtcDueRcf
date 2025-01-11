@@ -27,37 +27,39 @@ namespace {
 
 namespace RtcSam3XA_test {
 
-  void run(Stream& log) {
-    log.print("RtcSam3XA_test::");
-    log.println(__FUNCTION__);
-    delay(100);
-
-    RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
-
-    TM stime;
-    std::mktime(&stime);
+void basicSetGet(Stream &log) {
+  TM stime;
+  std::mktime(&stime);
 
 #if RTC_MEASURE_ACKUPD
-    uint32_t timestamp_setClock = millis();
+  uint32_t timestamp_setClock = millis();
 #endif
+  RtcSam3XA::clock.setByLocalTime(stime);
+  log.println(stime);
 
-    RtcSam3XA::clock.setByLocalTime(stime);
-    log.println(stime);
-
-    TM rtime1;
-    RtcSam3XA::clock.getLocalTime(rtime1);
-    log.println(rtime1);
-    delay(1000);
+  TM rtime;
+  RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(1000);
 
 #if RTC_MEASURE_ACKUPD
-    uint32_t setClockLatency = RtcSam3XA::clock.getTimestampACKUPD() - timestamp_setClock;
-    log.print("--- set clock latency: ");
-    log.print(setClockLatency);
-    log.println("ms");
+  uint32_t setClockLatency = RtcSam3XA::clock.getTimestampACKUPD() - timestamp_setClock;
+  log.print("--- set clock latency: ");
+  log.print(setClockLatency);
+  log.println("ms");
 #endif
 
-    TM rtime2;
-    RtcSam3XA::clock.getLocalTime(rtime2);
-    log.println(rtime2);
+  RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+}
+
+void run(Stream& log) {
+  log.print("RtcSam3XA_test::");
+  log.println(__FUNCTION__);
+  delay(100);
+
+  RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
+
+basicSetGet(log);
   }
 }

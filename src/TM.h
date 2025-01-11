@@ -50,14 +50,27 @@ public:
       int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, bool tm_isdst);
 
   void set(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon, int ad_year, bool tm_isdst);
+
   void set(int _sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, bool tm_isdst);
 
-  size_t printTo(Print& p) const override;
-
-private:
   static void set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, bool tm_isdst);
+
+  std::time_t mkgmtime() const { return mkgmtime(*this); }
+  /**
+   * Convert time to a unix time stamp. Neither a time zone nor a daylight saving shift is
+   * considered in this calculation. Prerequisite: tm_yday and tm_isdst are set correctly.
+   * @param time The time for which to calculate the time stamp.
+   *
+   * @return The unix time stamp for the given time.
+   */
+  static std::time_t mkgmtime(const std::tm& time);
+
+  /**
+   * Implementation of interface printable.
+   */
+  size_t printTo(Print& p) const override;
 };
 
 inline TM::TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
