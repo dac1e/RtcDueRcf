@@ -16,14 +16,16 @@
 class RtcSam3XA {
 public:
   /**
-   * The one and only clock object.
+   * RtcSam3XA clock is the one and only clock object.
    *
    * Usage examples:
    *
-   * tm time;
+   * include "TM.H
+   *
+   * TM time;
    * RtcSam3XA::clock.getLocalTime(time);
    *
-   * const tm time { 24, 59, 11, 12, 1, tm::make_tm_year(2016), false };
+   * const TM time { 24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY), TM::make_tm_year(2016), false };
    * RtcSam3XA::clock.setByLocalTime(time);
    */
   static RtcSam3XA clock;
@@ -101,9 +103,11 @@ public:
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
 private:
+  // Constructor is private, there is only one instance: RtcSam3XA::clock.
+  RtcSam3XA();
+
   // Interrupt handler
   void RtcSam3XA_Handler();
-  RtcSam3XA();
   void onSecTransitionInterrupt();
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()

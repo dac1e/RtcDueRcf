@@ -37,6 +37,12 @@ public:
   DAY_OF_WEEK wday() {return wday(*this);}
   MONTH month() {return month(*this);}
 
+  // Note: The following constructors and setters will not set the tm_yday and tm_wday component.
+  // You must call std::mktime() passing the TM class or std::tm struct for which you want to
+  // have those fields set. The return value of this function is unimportant in that case.
+  // std::mktime() will also change tm_isdst according to the daylight savings setting of the
+  // actual time zone. Hence the time zone information needs to be set up front. Refer to
+  // RtcSam3XA::begin() and RtcSam3XA::tz_set().
   TM();
 
   TM(int tm_sec, int tm_min, int tm_hour, int tm_mday /* 1..31 */, MONTH mon, int ad_year /* anno domini year */, bool tm_isdst)
