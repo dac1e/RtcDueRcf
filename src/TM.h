@@ -44,31 +44,38 @@ public:
   // actual time zone. Hence the time zone information needs to be set up front. Refer to
   // RtcSam3XA::begin() and RtcSam3XA::tz_set().
   TM();
+  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon, int ad_year, bool tm_isdst);
+  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday,
+      int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, bool tm_isdst);
 
-  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday /* 1..31 */, MONTH mon, int ad_year /* anno domini year */, bool tm_isdst)
-  {
-    set(*this, tm_sec, tm_min, tm_hour, tm_mday, make_tm_month(mon), make_tm_year(ad_year), tm_isdst);
-  }
-
-  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday /* 1..31 */, int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, bool tm_isdst)
-  {
-    set(*this, tm_sec, tm_min, tm_hour, tm_mday , tm_mon , tm_year, tm_isdst);
-  }
-
-  void set(int tm_sec, int tm_min, int tm_hour, int tm_mday /* 1..31 */, MONTH mon, int ad_year /* anno domini year */, bool tm_isdst)
-  {
-    set(*this, tm_sec, tm_min, tm_hour, tm_mday, make_tm_month(mon), make_tm_year(ad_year), tm_isdst);
-  };
-
-  void set(int _sec, int tm_min, int tm_hour, int tm_mday /* 1..31 */, int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, bool tm_isdst)
-  {
-    set(*this, _sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_isdst);
-  };
+  void set(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon, int ad_year, bool tm_isdst);
+  void set(int _sec, int tm_min, int tm_hour, int tm_mday,
+      int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, bool tm_isdst);
 private:
-  static void set(std::tm& time, int tm_sec, int tm_min, int tm_hour,
-      int tm_mday /* 1..31 */, int tm_mon /* 0..11 */,
-      int tm_year /* year since 1900 */, bool tm_isdst);
+  static void set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday,
+      int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, bool tm_isdst);
 };
 
+inline TM::TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
+    int tm_year, bool tm_isdst) {
+  set(*this, tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_isdst);
+}
+
+inline TM::TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon,
+    int ad_year, bool tm_isdst) {
+  set(*this, tm_sec, tm_min, tm_hour, tm_mday, make_tm_month(mon),
+      make_tm_year(ad_year), tm_isdst);
+}
+
+inline void TM::set(int _sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
+    int tm_year, bool tm_isdst) {
+  set(*this, _sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_isdst);
+}
+
+inline void TM::set(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon,
+    int ad_year, bool tm_isdst) {
+  set(*this, tm_sec, tm_min, tm_hour, tm_mday, make_tm_month(mon),
+      make_tm_year(ad_year), tm_isdst);
+}
 
 #endif /* RTCSAM3XA_SRC_TM_H_ */
