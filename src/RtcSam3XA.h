@@ -65,6 +65,10 @@ public:
   }
 
   enum RTC_OSCILLATOR {RC = 0, XTAL = 1};
+
+  /**
+   * Start RTC and set time zone optionally.
+   */
   void begin(RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL, const char* timezone = nullptr);
 
   /**
@@ -92,6 +96,7 @@ public:
   void setAlarmCallback(void (*alarmCallback)(void*), void *alarmCallbackParam = nullptr);
   void setAlarm(const AlarmTime& alarmTime);
   void clearAlarm(){setAlarm(AlarmTime());}
+  void getAlarm(AlarmTime& alarmTime);
 
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
@@ -125,6 +130,8 @@ private:
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;
   void(*mAlarmCallback)(void*);
+  void onSecTransitionInterrupt();
+
   void* mAlarmCallbackPararm;
 };
 

@@ -102,6 +102,12 @@ RtcSam3XA::RtcSam3XA()
 {
 }
 
+void RtcSam3XA::onSecTransitionInterrupt() {
+  if (mSecondCallback) {
+    (*mSecondCallback)(mSecondCallbackPararm);
+  }
+}
+
 void RtcSam3XA::RtcSam3XA_Handler() {
   const uint32_t status = RTC->RTC_SR;
 
@@ -123,9 +129,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
 
   /* Second increment interrupt */
   if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-    if(mSecondCallback) {
-      (*mSecondCallback)(mSecondCallbackPararm);
-    }
+    onSecTransitionInterrupt();
     RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
   }
 
@@ -150,8 +154,7 @@ void RtcSam3XA::begin(RTC_OSCILLATOR source, const char* timezone) {
   NVIC_DisableIRQ(RTC_IRQn);
   NVIC_ClearPendingIRQ(RTC_IRQn);
   NVIC_SetPriority(RTC_IRQn, 0);
-  RTC_EnableIt(RTC, RTC_IER_ACKEN);
-  //    RTC_EnableIt(RTC, RTC_IER_SECEN | RTC_IER_ALREN);
+  RTC_EnableIt(RTC, RTC_IER_SECEN | RTC_IER_ACKEN);
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
@@ -211,19 +214,53 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
   mAlarmCallbackPararm = alarmCallbackParam;
 }
 
-void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
+static inline void fillAlarmFraction(uint8_t& v) {
+  if(v == UINT8_MAX) { v = 0; }
+}
 
-  const uint8_t* _hour = alarmTime.hour == UINT8_MAX ? nullptr : &alarmTime.hour;
-  const uint8_t* _minute = alarmTime.minute == UINT8_MAX ? nullptr : &alarmTime.minute;
-  const uint8_t* _second = alarmTime.second == UINT8_MAX ? nullptr : &alarmTime.second;
-  const uint8_t* _day = alarmTime.day == UINT8_MAX ? nullptr : &alarmTime.day;
-  const uint8_t* _month = alarmTime.month == UINT8_MAX ? nullptr : &alarmTime.month;
+void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
+  AlarmTime a = alarmTime;
+
+  // Fill all less significant values below the highest
+  // significant valid value with 0, if not set. This
+  // allows to adjust the alarm setting upon daylight
+  // saving transition.
+  if(alarmTime.month != UINT8_MAX) {
+    // Fill all lower significant values with 0 if not set
+    fillAlarmFraction(a.day);
+    fillAlarmFraction(a.hour);
+    fillAlarmFraction(a.minute);
+    fillAlarmFraction(a.second);
+  } else if(alarmTime.day != UINT8_MAX) {
+    // Fill all lower significant values with 0 if not set
+    fillAlarmFraction(a.hour);
+    fillAlarmFraction(a.minute);
+    fillAlarmFraction(a.second);
+  } else if(alarmTime.day != UINT8_MAX) {
+    // Fill all lower significant values with 0 if not set
+    fillAlarmFraction(a.minute);
+    fillAlarmFraction(a.second);
+  } else if(alarmTime.day != UINT8_MAX) {
+    // Fill all lower significant values with 0 if not set
+    fillAlarmFraction(a.second);
+  }
+
+  const uint8_t* _hour = a.hour == UINT8_MAX ? nullptr : &a.hour;
+  const uint8_t* _minute = a.minute == UINT8_MAX ? nullptr : &a.minute;
+  const uint8_t* _second = a.second == UINT8_MAX ? nullptr : &a.second;
+  const uint8_t* _day = a.day == UINT8_MAX ? nullptr : &a.day;
+  const uint8_t* _month = a.month == UINT8_MAX ? nullptr : &a.month;
 
   RTC_DisableIt(RTC, RTC_IER_ALREN);
   // Need to do a const_cast here, because the sam API ignores const correctness.
   RTC_SetTimeAlarm(RTC, const_cast<uint8_t*>(_hour),  const_cast<uint8_t*>(_minute),  const_cast<uint8_t*>(_second));
   RTC_SetDateAlarm(RTC, const_cast<uint8_t*>(_month), const_cast<uint8_t*>(_day));
   RTC_EnableIt(RTC, RTC_IER_ALREN);
+}
+
+void RtcSam3XA::getAlarm(AlarmTime& alarmTime) {
+  RTCgapclose_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
+  RTCgapclose_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
 }
 
 void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),

@@ -267,5 +267,81 @@ extern int RTCgapclose_SetTimeAndDate( Rtc* pRtc,
   return (int)(pRtc->RTC_VER & RTC_VER_NVCAL) ;
 }
 
+extern int RTCgapclose_GetTimeAlarm( Rtc* pRtc, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond )
+{
+  const uint32_t dwAlarm = pRtc->RTC_TIMALR ;
 
+  /* Hour */
+  if ( pucHour )
+  {
+      if( dwAlarm & RTC_TIMALR_HOUREN )
+      {
+        *pucHour = ((dwAlarm & 0x00030000) >> 20) * 10 + ((dwAlarm & 0x000F0000) >> 16);
+      }
+      else
+      {
+        *pucHour = UINT8_MAX;
+      }
+  }
+
+  /* Minute */
+  if ( pucMinute )
+  {
+      if( dwAlarm & RTC_TIMALR_MINEN )
+      {
+          *pucMinute = ((dwAlarm & 0x00007000) >> 12) * 10 + ((dwAlarm & 0x00000F00) >> 8);
+      }
+      else
+      {
+        *pucMinute = UINT8_MAX;
+      }
+  }
+
+  /* Second */
+  if ( pucSecond )
+  {
+      if ( dwAlarm & RTC_TIMALR_SECEN )
+      {
+          *pucSecond = ((dwAlarm & 0x00000070) >> 4) * 10 + (dwAlarm & 0x0000000F);
+      }
+      else
+      {
+        *pucSecond = UINT8_MAX;
+      }
+  }
+
+  return (int)(pRtc->RTC_VER & RTC_VER_NVTIMALR) ;
+}
+
+extern int RTCgapclose_GetDateAlarm( Rtc* pRtc, uint8_t *pucMonth, uint8_t *pucDay )
+{
+  const uint32_t dwAlarm = pRtc->RTC_CALALR;
+
+  /* Compute alarm field value */
+  if ( pucMonth )
+  {
+      if(dwAlarm & RTC_CALALR_MTHEN)
+      {
+        *pucMonth = ((dwAlarm & 0x00100000) >> 20) * 10 + ((dwAlarm & 0x000F0000) >> 16);
+      }
+      else
+      {
+        *pucMonth = UINT8_MAX;
+      }
+  }
+
+  if ( pucDay )
+  {
+      if( dwAlarm & RTC_CALALR_DATEEN )
+      {
+        *pucDay = ((dwAlarm & 0x30000000) >> 28) * 10 + ((dwAlarm & 0x0F000000) >> 24);
+      }
+      else
+      {
+        *pucDay = UINT8_MAX;
+      }
+  }
+
+  return (int)(pRtc->RTC_VER & RTC_VER_NVCALALR) ;
+}
 
