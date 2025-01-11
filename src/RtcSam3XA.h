@@ -5,13 +5,17 @@
  *      Author: Wolfgang
  */
 
+#pragma once
+
 #ifndef RTCSAM3XA_SRC_RTCSAM3XA_H_
 #define RTCSAM3XA_SRC_RTCSAM3XA_H_
 
-#include "Sam3XA_RtcTime.h"
 #include <cstdlib>
 #include <ctime>
 #include <include/rtc.h>
+#include "Sam3XA_RtcTime.h"
+
+#define RTC_MEASURE_ACKUPD true
 
 class RtcSam3XA {
 public:
@@ -119,6 +123,20 @@ private:
   void* mAlarmCallbackPararm;
 
   friend void ::RTC_Handler();
+
+#if RTC_MEASURE_ACKUPD
+private:
+  uint32_t mTimestampACKUPD;
+public:
+  uint32_t getTimestampACKUPD() const {
+    return mTimestampACKUPD;
+  }
+#else
+public:
+  uint32_t getTimestampACKUPD() const {
+    return 0;
+  }
+#endif
 };
 
 namespace TZ {

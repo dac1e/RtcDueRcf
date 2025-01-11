@@ -11,9 +11,10 @@
 #define RTCSAM3XA_SRC_TM_H_
 
 #include <ctime>
+#include <printable.h>
 
 // Class that extends struct std::tm with constructors and convenient functions and enums.
-class TM : public std::tm {
+class TM : public std::tm, public Printable {
 public:
   // Enumeration that matches the tm_month representation of the tm struct.
   enum MONTH : int {
@@ -51,6 +52,9 @@ public:
   void set(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon, int ad_year, bool tm_isdst);
   void set(int _sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, bool tm_isdst);
+
+  size_t printTo(Print& p) const override;
+
 private:
   static void set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, bool tm_isdst);

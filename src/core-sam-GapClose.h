@@ -5,8 +5,12 @@
  *      Author: Wolfgang
  */
 
+#pragma once
+
 #ifndef RTCSAM3XA_SRC_CORE_SAM_GAPCLOSE_H_
 #define RTCSAM3XA_SRC_CORE_SAM_GAPCLOSE_H_
+
+#include <include/rtc.h>
 
 #ifdef __cplusplus
 extern "C" {

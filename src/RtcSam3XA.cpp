@@ -10,6 +10,10 @@
 #include "RtcSam3XA.h"
 #include "core-sam-GapClose.h"
 
+#if RTC_MEASURE_ACKUPD
+#include <Arduino.h>
+#endif
+
 namespace {
 
 /**
@@ -93,11 +97,6 @@ std::time_t mkgmtime(std::tm& time) {
 
 RtcSam3XA RtcSam3XA::clock;
 
-void Sam3XA_RtcTime::readFromRtc() {
-  ::RTCgapclose_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
-      &mDay, &mWeekDay);
-}
-
 void RTC_Handler (void) {
   RtcSam3XA::clock.RtcSam3XA_Handler();
 }
@@ -113,6 +112,9 @@ RtcSam3XA::RtcSam3XA()
   , mSecondCallbackPararm(nullptr)
   , mAlarmCallback(nullptr)
   , mAlarmCallbackPararm(nullptr)
+#if RTC_MEASURE_ACKUPD
+  , mTimestampACKUPD(0)
+#endif
 {
 }
 
@@ -127,8 +129,9 @@ void RtcSam3XA::RtcSam3XA_Handler() {
 
   /* Acknowledge for Update interrupt */
   if ((status & RTC_SR_ACKUPD) == RTC_SR_ACKUPD) {
-    //    RTC_DisableIt(RTC, RTC_IDR_SECDIS);
-
+#if RTC_MEASURE_ACKUPD
+    mTimestampACKUPD = millis();
+#endif
     if (mSetTimeRequest) {
       ::RTCgapclose_SetTimeAndDate(RTC, mSetTimeCache.hour(),
           mSetTimeCache.minute(), mSetTimeCache.second(),
@@ -186,11 +189,6 @@ void RtcSam3XA::setByLocalTime(const std::tm &time) {
   // without daylight savings shift.)
   std::time_t localStandardTime = mkgmtime(buffer);
   gmtime_r(&localStandardTime, &buffer);
-
-  // There might be set time request pending.
-  // Disallow the RTC handler to pick it, while
-  // updating the cache.
-  RTC_DisableIt(RTC, RTC_IER_ACKEN);
 
   // Fill cache with standard time.
   mSetTimeCache.set(buffer);

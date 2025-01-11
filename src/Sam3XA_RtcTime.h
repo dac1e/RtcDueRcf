@@ -5,6 +5,8 @@
  *      Author: Wolfgang
  */
 
+#pragma once
+
 #ifndef RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_
 #define RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_
 
@@ -38,35 +40,20 @@ public:
   inline int tmHour()const {return mHour;}
   inline int tmMinute()const {return mMinute;}
   inline int tmSecond()const {return mSecond;}
-  inline int tmYear()const {return mYear;}
+  inline int tmYear()const {return mYear - 1900;}
   inline int tmMonth()const {return mMonth - 1;}
   inline int tmDay()const {return mDay;}
   inline int tmWeek()const {return mWeekDay - 1;}
 
+  static uint16_t rtcYear(const std::tm& time) {return time.tm_year + 1900;}
   static uint8_t rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
   static uint8_t rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
-  void set(const std::tm &time) {
-    mHour = time.tm_hour; mMinute = time.tm_min; mSecond = time.tm_sec;
-    mYear = time.tm_year; mMonth = rtcMonth(time); mDay = time.tm_mday;
-    mWeekDay = rtcDayOfWeek(time);
-  }
+  void set(const std::tm &time);
 
   /** Get a tm struct from this Sam3XA RTC struct. */
-  std::time_t get(std::tm& time) const {
-    time.tm_hour = tmHour(); time.tm_min = tmMinute(); time.tm_sec = tmSecond();
-    time.tm_year = tmYear(); time.tm_mon = tmMonth(); time.tm_mday = tmDay();
-    time.tm_wday = tmWeek(); time.tm_yday = 0; time.tm_isdst = 0 /* We get standard time from Rtc. */;
-
-    // mktime will fix the tm_yday as well as tm_ist and the
-    // hour, if time is within daylight savings period.
-    return mktime(&time);
-  }
+  std::time_t get(std::tm &time) const;
 
   void readFromRtc();
 };
-
-
-
-
 #endif /* RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_ */
