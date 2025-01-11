@@ -9,6 +9,7 @@
 #include "../TM.h"
 #include "RtcSam3XA_test.h"
 #include "Arduino.h"
+#include <assert.h>
 
 namespace {
 
@@ -40,17 +41,25 @@ void basicSetGet(Stream &log) {
   TM rtime;
   RtcSam3XA::clock.getLocalTime(rtime);
   log.println(rtime);
-  delay(1000);
+
+  // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
+  // The latency is about 350msec.
+  assert(stime == rtime);
+
+  // After 1500 the time should be set and should be increased by one second.
+  delay(1500);
+  RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  assert(stime + 1 == rtime);
 
 #if RTC_MEASURE_ACKUPD
+  // Measure the set clock - latency an print.
   uint32_t setClockLatency = RtcSam3XA::clock.getTimestampACKUPD() - timestamp_setClock;
   log.print("--- set clock latency: ");
   log.print(setClockLatency);
   log.println("ms");
 #endif
 
-  RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
 }
 
 void run(Stream& log) {

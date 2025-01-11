@@ -68,6 +68,26 @@ public:
   static std::time_t mkgmtime(const std::tm& time);
 
   /**
+   * Add seconds to the value of this time structure. Seconds may be
+   * positive or negative.
+   * @param seconds The seconds to be added to this time structure.
+   *
+   * @return A time structure containing the value of this time
+   *  increased by the given amount of seconds.
+   */
+  const TM operator+(const std::time_t seconds) const;
+
+  /**
+   * Test whether the value of this time structure is equal to another
+   * one. Note That the tm_isdst flag must also match for equality.
+   *
+   * @param other The time structure to compare with.
+   *
+   * @return true, if both structures are equal. Otherwise false.
+   */
+  bool operator ==(const std::tm &other) const;
+
+  /**
    * Implementation of interface printable.
    */
   size_t printTo(Print& p) const override;
