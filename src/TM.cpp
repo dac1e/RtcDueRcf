@@ -10,11 +10,10 @@
 TM::TM() : TM(0, 0, 0, 1, make_tm_month(TM::January), make_tm_year(1970), false) {
 }
 
-void TM::set(std::tm& time, int _sec, int _min, int _hour, int _mday, int _mon, int _year, bool _isdst) {
-  time.tm_mday = _mday; time.tm_mon = _mon; time.tm_year = _year;
-  time.tm_hour = _hour; time.tm_min = _min; time.tm_sec = _sec;
-  time.tm_isdst = _isdst;
+void TM::set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon, int tm_year, bool tm_isdst) {
+  time.tm_mday = tm_mday; time.tm_mon = tm_mon; time.tm_year = tm_year;
+  time.tm_hour = tm_hour; time.tm_min = tm_min; time.tm_sec = tm_sec;
+  time.tm_isdst = tm_isdst;
   time.tm_wday = -1; // unknown
   time.tm_yday = -1; // unknown
 }
-
