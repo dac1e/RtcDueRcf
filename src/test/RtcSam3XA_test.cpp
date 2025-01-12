@@ -24,6 +24,12 @@ namespace {
     // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
     time.set(second, minute, hour, 30, TM::make_tm_month(TM::October), TM::make_tm_year(2016), -1);
   }
+
+  void logtime(Stream& stream, const TM& time, std::time_t localtime) {
+    stream.print(time);
+    stream.print(", "); stream.print(localtime);
+    stream.print(", "); stream.println(time.tm_isdst);
+  }
 } // anonymous namespace
 
 namespace RtcSam3XA_test {
@@ -39,19 +45,19 @@ void basicSetGet(Stream &log) {
   log.println(stime);
 
   TM rtime;
-  std::time_t localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(localTime == localTimeStart);
+  assert(localtime == localTimeStart);
 
   // After 1500 (100 + 1400) the time should be set and should be increased by one second.
   delay(1400);// @1500ms
-  localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100); // @1600ms
-  assert(localTime == localTimeStart + 1);
+  assert(localtime == localTimeStart + 1);
 
 #if RTC_MEASURE_ACKUPD
   // Measure the set clock - latency an print.
@@ -72,28 +78,28 @@ void dstEntry(Stream& log) {
   log.println(stime);
 
   TM rtime;
-  std::time_t localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(localTime == localTimeStart);
+  assert(localtime == localTimeStart);
 
   // After 1500 (100 + 1400) the time should be set and should be increased by one second.
   delay(1400); // @1500ms
-  localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100);  // @1600ms
-  assert(localTime == localTimeStart + 1);
+  assert(localtime == localTimeStart + 1);
 
   delay(1900);  // @3500ms
-  localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100); // @3600ms
 
   delay(900);  // @4500ms
-  localTime = RtcSam3XA::clock.getLocalTime(rtime);
-  log.println(rtime);
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
   delay(100); // @4600ms
 }
 
