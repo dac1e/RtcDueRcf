@@ -47,15 +47,12 @@ int leapYearsSince1970 (int tm_year) {
  * @return The time difference in seconds if the tm_isdst flag
  *  in time is is > 0. Otherwise 0.
  */
-std::time_t dstdiff(const std::tm& time, int isdst) {
-  if(isdst > 0) {
-    const __tzinfo_type * tzinfo =  __gettzinfo();
-    const int tz_offset = tzinfo->__tzrule[0].offset;
-    const int tz_dstoffset = tzinfo->__tzrule[1].offset;
-    const int dst_diff = tz_dstoffset - tz_offset;
-    return dst_diff;
-  }
-  return 0;
+std::time_t dstdiff(const std::tm& time) {
+  const __tzinfo_type * tzinfo =  __gettzinfo();
+  const int tz_offset = tzinfo->__tzrule[0].offset;
+  const int tz_dstoffset = tzinfo->__tzrule[1].offset;
+  const int dst_diff = tz_dstoffset - tz_offset;
+  return dst_diff;
 }
 
 std::time_t mkgmtime(const std::tm& time, int isdst) {
@@ -63,13 +60,16 @@ std::time_t mkgmtime(const std::tm& time, int isdst) {
   const bool leapYear = isLeapYear(time.tm_year);
   const time_t leapYearsBeforeThisYear = leapYearsSince1970(time.tm_year) - leapYear;
   const time_t yearOffset = time.tm_year - 70;
-  const time_t result = time.tm_sec + (time.tm_min + (time.tm_hour + (time.tm_yday +
-      leapYearsBeforeThisYear + yearOffset * 365) * 24) * 60) * 60 + dstdiff(time, isdst);
+
+  time_t result = time.tm_sec + (time.tm_min + (time.tm_hour + (time.tm_yday +
+      leapYearsBeforeThisYear + yearOffset * 365) * 24) * 60) * 60;
+  if(isdst > 0) {
+    result += dstdiff(time);
+  }
   return result;
 }
 
 } // anonymous namespace
-
 
 std::time_t TM::mkgmtime(const std::tm& time) {
   return ::mkgmtime(time, time.tm_isdst);
@@ -79,27 +79,12 @@ TM::TM() : TM(0, 0, 0, 1, make_tm_month(TM::January), make_tm_year(2000), false)
 }
 
 void TM::set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday
-    , int tm_mon, int tm_year, bool tm_isdst) {
+    , int tm_mon, int tm_year, int tm_isdst) {
   time.tm_mday = tm_mday; time.tm_mon = tm_mon; time.tm_year = tm_year;
   time.tm_hour = tm_hour; time.tm_min = tm_min; time.tm_sec = tm_sec;
   time.tm_isdst = tm_isdst;
   time.tm_wday = -1; // unknown
   time.tm_yday = -1; // unknown
-}
-
-const TM TM::operator+(const std::time_t seconds) const {
-  std::time_t timestamp = ::mkgmtime(*this, 0) + seconds;
-  TM result;
-  gmtime_r(&timestamp, &result);
-  result.tm_isdst = this->tm_isdst;
-  return result;
-}
-
-bool TM::operator ==(const std::tm &other) const {
-  return tm_sec == other.tm_sec && tm_min == other.tm_min && tm_hour == other.tm_hour
-      && tm_mday == other.tm_mday && tm_mon == other.tm_mon && tm_year == other.tm_year
-      && tm_isdst == other.tm_isdst;
-  // tm_yday and tm_wday are not needed for comparison.
 }
 
 size_t TM::printTo(Print& p) const {

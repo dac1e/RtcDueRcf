@@ -14,15 +14,15 @@
 namespace {
 
   // Provide an example instance.
-  void makeCETdstBeginTime( TM& time) {
+  void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
     // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
-    time.set(0, 0, 2, 27, TM::make_tm_month(TM::March), TM::make_tm_year(2016), -1);
+    time.set(second, minute, hour, 27, TM::make_tm_month(TM::March), TM::make_tm_year(2016), -1);
   }
 
   // Provide an example instance.
-  void makeCETdstEndTime( TM& time) {
+  void makeCETdstEndTime(TM& time, int second, int minute, int hour) {
     // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
-    time.set(0, 0, 2, 30, TM::make_tm_month(TM::October), TM::make_tm_year(2016), -1);
+    time.set(second, minute, hour, 30, TM::make_tm_month(TM::October), TM::make_tm_year(2016), -1);
   }
 } // anonymous namespace
 
@@ -35,22 +35,23 @@ void basicSetGet(Stream &log) {
 #if RTC_MEASURE_ACKUPD
   uint32_t timestamp_setClock = millis();
 #endif
-  RtcSam3XA::clock.setByLocalTime(stime);
+  std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
   log.println(stime);
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  std::time_t localTime = RtcSam3XA::clock.getLocalTime(rtime);
   log.println(rtime);
-
+  delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(stime == rtime);
+  assert(localTime == localTimeStart);
 
-  // After 1500 the time should be set and should be increased by one second.
-  delay(1500);
-  RtcSam3XA::clock.getLocalTime(rtime);
+  // After 1500 (100 + 1400) the time should be set and should be increased by one second.
+  delay(1400);// @1500ms
+  localTime = RtcSam3XA::clock.getLocalTime(rtime);
   log.println(rtime);
-  assert(stime + 1 == rtime);
+  delay(100); // @1600ms
+  assert(localTime == localTimeStart + 1);
 
 #if RTC_MEASURE_ACKUPD
   // Measure the set clock - latency an print.
@@ -62,6 +63,39 @@ void basicSetGet(Stream &log) {
 
 }
 
+void dstEntry(Stream& log) {
+  // Set RTC to 3 seconds before daylight savings starts
+  TM stime;
+  makeCETdstBeginTime(stime, 57, 59, 1);
+
+  std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+  log.println(stime);
+
+  TM rtime;
+  std::time_t localTime = RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100); // @100ms
+  // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
+  // The latency is about 350msec.
+  assert(localTime == localTimeStart);
+
+  // After 1500 (100 + 1400) the time should be set and should be increased by one second.
+  delay(1400); // @1500ms
+  localTime = RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100);  // @1600ms
+  assert(localTime == localTimeStart + 1);
+
+  delay(1900);  // @3500ms
+  localTime = RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100); // @100ms
+}
+
+void dstExit(Stream& log) {
+
+}
+
 void run(Stream& log) {
   log.print("RtcSam3XA_test::");
   log.println(__FUNCTION__);
@@ -69,6 +103,9 @@ void run(Stream& log) {
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
 
-basicSetGet(log);
-  }
+  basicSetGet(log);
+  dstEntry(log);
+  dstExit(log);
 }
+
+} // namespace RtcSam3XA_test

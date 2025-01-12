@@ -79,8 +79,14 @@ public:
 
   /**
    * Set the RTC by the local time.
+   *
+   * The RTC does not support dates before 1st of January 2000. So the
+   * tm_year that contains the elapsed years since 1900 must be greater
+   * than 100.
+   *
+   * @return The local time as expired seconds since 1st of January 1970.
    */
-  void setByLocalTime(const std::tm &time);
+  std::time_t setByLocalTime(const std::tm &time);
 
   /**
    * Set the RTC by a unix time stamp.

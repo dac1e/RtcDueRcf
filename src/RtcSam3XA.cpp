@@ -95,7 +95,9 @@ void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
-void RtcSam3XA::setByLocalTime(const std::tm &time) {
+std::time_t RtcSam3XA::setByLocalTime(const std::tm &time) {
+  assert(time.tm_year >= TM::make_tm_year(2000));
+
   RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
   RTC_DisableIt(RTC, RTC_IER_ACKEN);
 
@@ -103,7 +105,7 @@ void RtcSam3XA::setByLocalTime(const std::tm &time) {
   // and the hour, depending on whether the time is
   // within daylight saving period or not.
   std::tm buffer = time;
-  (void)mktime(&buffer);
+  const time_t localTime = mktime(&buffer);
 
   // Calculate local standard time (I.e. local time
   // without daylight savings shift.)
@@ -116,6 +118,7 @@ void RtcSam3XA::setByLocalTime(const std::tm &time) {
 
   RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
   RTC_EnableIt(RTC, RTC_IER_ACKEN);
+  return localTime;
 }
 
 void RtcSam3XA::setByUnixTime(std::time_t timestamp) {
