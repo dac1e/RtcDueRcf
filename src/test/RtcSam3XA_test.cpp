@@ -16,13 +16,15 @@ namespace {
   // Provide an example instance.
   void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
     // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
-    time.set(second, minute, hour, 27, TM::make_tm_month(TM::March), TM::make_tm_year(2016), -1);
+    time.set(second, minute, hour, 27, TM::make_tm_month(TM::March),
+        TM::make_tm_year(2016), -1 /* -1: unknown */);
   }
 
   // Provide an example instance.
   void makeCETdstEndTime(TM& time, int second, int minute, int hour) {
     // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
-    time.set(second, minute, hour, 30, TM::make_tm_month(TM::October), TM::make_tm_year(2016), -1);
+    time.set(second, minute, hour, 30, TM::make_tm_month(TM::October),
+        TM::make_tm_year(2016), 1/* 1: still in dst */);
   }
 
   void logtime(Stream& stream, const TM& time, std::time_t localtime) {
@@ -35,6 +37,8 @@ namespace {
 namespace RtcSam3XA_test {
 
 void basicSetGet(Stream &log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+
   TM stime;
   std::mktime(&stime);
 
@@ -52,11 +56,11 @@ void basicSetGet(Stream &log) {
   // The latency is about 350msec.
   assert(localtime == localTimeStart);
 
-  // After 1500 (100 + 1400) the time should be set and should be increased by one second.
-  delay(1400);// @1500ms
+  // After 1600 (100 + 1600) the time should be set and should be increased by one second.
+  delay(1500);// @1600ms
   localtime = RtcSam3XA::clock.getLocalTime(rtime);
   logtime(log, rtime, localtime);
-  delay(100); // @1600ms
+  delay(100); // @1700ms
   assert(localtime == localTimeStart + 1);
 
 #if RTC_MEASURE_ACKUPD
@@ -70,11 +74,16 @@ void basicSetGet(Stream &log) {
 }
 
 void dstEntry(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+
+  constexpr int HOUR_START = 1;
+
   // Set RTC to 3 seconds before daylight savings starts
   TM stime;
-  makeCETdstBeginTime(stime, 57, 59, 1);
+  makeCETdstBeginTime(stime, 57, 59, HOUR_START);
 
-  std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+  std::mktime(&stime);
+  std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
   log.println(stime);
 
   TM rtime;
@@ -83,33 +92,59 @@ void dstEntry(Stream& log) {
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(localtime == localTimeStart);
+  assert(rtime.tm_hour == HOUR_START);
 
-  // After 1500 (100 + 1400) the time should be set and should be increased by one second.
-  delay(1400); // @1500ms
+  // After 1600 (100 + 1400) the time should be set and should be increased by one second.
+  delay(1500); // @1600ms
   localtime = RtcSam3XA::clock.getLocalTime(rtime);
   logtime(log, rtime, localtime);
-  delay(100);  // @1600ms
-  assert(localtime == localTimeStart + 1);
+  delay(100);  // @1700ms
+  assert(rtime.tm_hour == HOUR_START);
 
-  delay(1900);  // @3500ms
+  delay(1900);  // @3600ms
   localtime = RtcSam3XA::clock.getLocalTime(rtime);
   logtime(log, rtime, localtime);
-  delay(100); // @3600ms
-
-  delay(900);  // @4500ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
-  logtime(log, rtime, localtime);
-  delay(100); // @4600ms
+  delay(100); // @3700ms
+  assert(rtime.tm_hour == HOUR_START + 2);
 }
 
 void dstExit(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
+  constexpr int HOUR_START = 2;
+
+  // Set RTC to 3 seconds before daylight savings starts
+  TM stime;
+  makeCETdstEndTime(stime, 57, 59, HOUR_START);
+
+  std::mktime(&stime);
+  std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+  log.println(stime);
+
+  TM rtime;
+  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(100); // @100ms
+  // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
+  // The latency is about 350msec.
+  assert(rtime.tm_hour == HOUR_START);
+
+  // After 1600 (100 + 1600) the time should be set and should be increased by one second.
+  delay(1500); // @1500ms
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(100);  // @1700ms
+  assert(rtime.tm_hour == HOUR_START);
+
+  delay(1900);  // @3600ms
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(100); // @3700ms
+  assert(rtime.tm_hour == HOUR_START);
 }
 
 void run(Stream& log) {
-  log.print("RtcSam3XA_test::");
-  log.println(__FUNCTION__);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
