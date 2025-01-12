@@ -89,7 +89,12 @@ void dstEntry(Stream& log) {
   delay(1900);  // @3500ms
   localTime = RtcSam3XA::clock.getLocalTime(rtime);
   log.println(rtime);
-  delay(100); // @100ms
+  delay(100); // @3600ms
+
+  delay(900);  // @4500ms
+  localTime = RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100); // @4600ms
 }
 
 void dstExit(Stream& log) {
