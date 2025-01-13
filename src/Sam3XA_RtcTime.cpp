@@ -2,9 +2,14 @@
 #include "Sam3XA_RtcTime.h"
 
 #define ASSERT_Sam3XA_RtcTime_isdst true
+#define MEASURE_Sam3XA_RtcTime_isdst true
 
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
+#endif
+
+#if MEASURE_Sam3XA_RtcTime_isdst
+#include "Arduino.h"
 #endif
 
 namespace {
@@ -20,13 +25,13 @@ inline int isLeapYear(int rtc_year) {
 }
 
 int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
-  const int dayOfWeekOffset = tm_wday - rtcTime.tmDayOfWeek();
-  return (rtcTime.tmDayOfMonth() - 1 - dayOfWeekOffset) / 7 + 1;
+  const int wdayOffset = tm_wday - rtcTime.tmDayOfWeek();
+  return (rtcTime.tmDayOfMonth() - 1 - wdayOffset) / 7 + 1;
 }
 
 inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
-  const int daysUntilNextOccurranceOfDayOfWeekday = 7 - (tm_wday - rtcTime.tmDayOfWeek());
-  return rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfDayOfWeekday;
+  const int daysUntilNextOccurranceOfWday = 7 - (tm_wday - rtcTime.tmDayOfWeek());
+  return rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfWday;
 }
 
 inline bool isMdayValidWithinMonth(int tm_mday, const Sam3XA_RtcTime& rtcTime) {
@@ -62,6 +67,10 @@ int hasTransitionedDstRule(const Sam3XA_RtcTime& rtcTime, const __tzrule_struct*
 }
 
 inline int isdst(const Sam3XA_RtcTime& rtcTime) {
+#if MEASURE_Sam3XA_RtcTime_isdst
+  const uint32_t s = micros();
+#endif
+
   int result = 0;
   if(_daylight) {
     const __tzinfo_type * const tz = __gettzinfo ();
@@ -71,10 +80,18 @@ inline int isdst(const Sam3XA_RtcTime& rtcTime) {
     if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
       const int dstshift = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
       result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd,
-        /* time  shift at the end of dst should not be positive. However, limit to 0 */
+        /* time shift at the end of dst should'nt be positive. However, limit to 0 */
         dstshift < 0 ? dstshift : 0);
     }
   }
+
+#if MEASURE_Sam3XA_RtcTime_isdst
+  const uint32_t d = micros() - s;
+  Serial.print("isdst duration: ");
+  Serial.println(d);
+  Serial.print("usec");
+#endif
+
   return result;
 }
 
