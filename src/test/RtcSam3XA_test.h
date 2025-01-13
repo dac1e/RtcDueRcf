@@ -14,6 +14,7 @@ class Stream;
 
 namespace RtcSam3XA_test {
   void run(Stream& log); // Run all tests
+  void loop(Stream& log);
 }
 
 #endif /* RTCSAM3XA_SRC_TEST_RTCSAM3XA_TEST_H_ */

@@ -14,7 +14,6 @@ const int month_lengths[2][12] = {
   {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 } ;
 
-
 inline int isLeapYear(int rtc_year) {
   const int result = ( !(rtc_year % 4) && ( (rtc_year % 100) || !(rtc_year % 400) ) );;
   return result;

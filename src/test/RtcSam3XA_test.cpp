@@ -202,6 +202,19 @@ void run(Stream& log) {
   basicSetGet(log);
   dstEntry(log);
   dstExit(log);
+
+  TM stime;
+  makeCETdstBeginTime(stime, 00, 59, 1);
+  std::mktime(&stime);
+  std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+  log.println(stime);
+}
+
+void loop(Stream& log) {
+  TM rtime;
+  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(999);
 }
 
 } // namespace RtcSam3XA_test
