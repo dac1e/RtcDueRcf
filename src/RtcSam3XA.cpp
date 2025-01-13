@@ -56,7 +56,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
       ::RTCgapclose_SetTimeAndDate(RTC, mSetTimeCache.hour(),
           mSetTimeCache.minute(), mSetTimeCache.second(),
           mSetTimeCache.year(), mSetTimeCache.month(),
-          mSetTimeCache.day(), mSetTimeCache.week());
+          mSetTimeCache.day(), mSetTimeCache.day_of_week());
       mSetTimeRequest = false;
     }
 

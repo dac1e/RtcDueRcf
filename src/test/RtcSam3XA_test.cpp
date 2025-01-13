@@ -34,6 +34,22 @@ namespace {
   }
 } // anonymous namespace
 
+// extern "C" int __month_lengths[2][12];
+static int dumpTzInfo(Stream& stream) {
+  __tzinfo_type *tz = __gettzinfo ();
+  stream.print("__tznorth:"); stream.println(tz->__tznorth);
+  for(size_t i = 0; i < 2; i++) {
+    __tzrule_struct* tzrule = &tz->__tzrule[i];
+    stream.print(i);
+    stream.print(", ch:"); stream.print(tzrule->ch);
+    stream.print(", d:"); stream.print(tzrule->d);
+    stream.print(", m:"); stream.print(tzrule->m);
+    stream.print(", n:"); stream.print(tzrule->n);
+    stream.print(", s:"); stream.print(tzrule->s);
+    stream.print(", offset:"); stream.println(tzrule->offset);
+  }
+}
+
 namespace RtcSam3XA_test {
 
 void basicSetGet(Stream &log) {
@@ -143,12 +159,30 @@ void dstExit(Stream& log) {
   assert(rtime.tm_hour == HOUR_START);
 }
 
+void checkRTCisdst(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  // Set RTC to 3 seconds before daylight savings starts
+  Sam3XA_RtcTime rtc;
+  TM stime;
+
+  makeCETdstBeginTime(stime, 59, 59, 1);
+  std::time_t localtime = mktime(&stime);
+  localtime_r(&localtime, &stime);
+  rtc.set(stime);
+  bool isdst = rtc.isdst();
+}
+
 void run(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  delay(100);
+  dumpTzInfo(log);
+  delay(200);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
 
+  dumpTzInfo(log);
+  delay(200);
+
+  checkRTCisdst(log);
   basicSetGet(log);
   dstEntry(log);
   dstExit(log);
