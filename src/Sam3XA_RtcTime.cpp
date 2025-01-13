@@ -38,16 +38,21 @@ inline int expiredSecondsWithinDay(const Sam3XA_RtcTime& rtcTime) {
   return ((rtcTime.tmHour() * 60) + rtcTime.tmMinute()) * 60 + rtcTime.tmSecond();
 }
 
-int hasTransitionedDstRule(const Sam3XA_RtcTime& rtcTime, const __tzrule_struct* const tzrule) {
+int hasTransitionedDstRule(const Sam3XA_RtcTime& rtcTime, const __tzrule_struct* const tzrule,
+    int dstshift) {
   int result = 0;
   if(rtcTime.month() >= tzrule->m) {
-    const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, rtcTime);
-    const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
-      (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, rtcTime));
-    if(dayMatch) {
-      if(expiredSecondsWithinDay(rtcTime) >= tzrule->s) {
-        result = 1;
+    if(rtcTime.month() == tzrule->m) {
+      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, rtcTime);
+      const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
+        (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, rtcTime));
+      if(dayMatch) {
+        if(expiredSecondsWithinDay(rtcTime) - dstshift >= tzrule->s) {
+          result = 1;
+        }
       }
+    } else {
+      result = 1;
     }
   }
   return result;
@@ -59,8 +64,12 @@ inline int isdst(const Sam3XA_RtcTime& rtcTime) {
     const __tzinfo_type * const tz = __gettzinfo ();
     const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[not tz->__tznorth];
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
-    if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin)) {
-      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd);
+
+    if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
+      const int dstshift = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd,
+        /* time  shift at the end of dst should not be positive. However, limit to 0 */
+        dstshift < 0 ? dstshift : 0);
     }
   }
   return result;

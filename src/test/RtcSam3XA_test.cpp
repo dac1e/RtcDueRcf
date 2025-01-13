@@ -21,10 +21,10 @@ namespace {
   }
 
   // Provide an example instance.
-  void makeCETdstEndTime(TM& time, int second, int minute, int hour) {
+  void makeCETdstEndTime(TM& time, int second, int minute, int hour, int dst = 1 /* 1: still in dst */) {
     // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
     time.set(second, minute, hour, 30, TM::make_tm_month(TM::October),
-        TM::make_tm_year(2016), 1/* 1: still in dst */);
+        TM::make_tm_year(2016), dst);
   }
 
   void logtime(Stream& stream, const TM& time, std::time_t localtime) {
@@ -91,6 +91,7 @@ void basicSetGet(Stream &log) {
 
 void dstEntry(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  delay(100); // @100ms
 
   constexpr int HOUR_START = 1;
 
@@ -126,6 +127,7 @@ void dstEntry(Stream& log) {
 
 void dstExit(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  delay(100); // @100ms
 
   constexpr int HOUR_START = 2;
 
@@ -159,17 +161,32 @@ void dstExit(Stream& log) {
   assert(rtime.tm_hour == HOUR_START);
 }
 
-void checkRTCisdst(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  // Set RTC to 3 seconds before daylight savings starts
-  Sam3XA_RtcTime rtc;
-  TM stime;
-
-  makeCETdstBeginTime(stime, 59, 59, 1);
+void checkRTCisdst(TM stime, Sam3XA_RtcTime rtc) {
   std::time_t localtime = mktime(&stime);
   localtime_r(&localtime, &stime);
   rtc.set(stime);
   bool isdst = rtc.isdst();
+  assert(stime.tm_isdst == isdst);
+}
+
+void checkRTCisdst(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  delay(100); // @100ms
+
+  Sam3XA_RtcTime rtc;
+  TM stime;
+
+  makeCETdstBeginTime(stime, 59, 59, 1);
+  checkRTCisdst(stime, rtc);
+
+  makeCETdstBeginTime(stime, 00, 00, 2);
+  checkRTCisdst(stime, rtc);
+
+  makeCETdstEndTime(stime, 59, 59, 1);
+  checkRTCisdst(stime, rtc);
+
+  makeCETdstEndTime(stime, 00, 00, 2, 0);
+  checkRTCisdst(stime, rtc);
 }
 
 void run(Stream& log) {
