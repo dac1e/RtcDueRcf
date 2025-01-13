@@ -22,8 +22,7 @@ void RTC_Handler (void) {
 }
 
 RtcSam3XA::AlarmTime::AlarmTime() :
-    second(UINT8_MAX), minute(UINT8_MAX), hour(UINT8_MAX), day(UINT8_MAX), month(
-        UINT8_MAX) {
+    second(UINT8_MAX), minute(UINT8_MAX), hour(UINT8_MAX), day(UINT8_MAX), month(UINT8_MAX) {
 }
 
 RtcSam3XA::RtcSam3XA()

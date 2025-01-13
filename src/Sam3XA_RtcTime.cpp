@@ -1,6 +1,12 @@
 #include "core-sam-GapClose.h"
 #include "Sam3XA_RtcTime.h"
 
+#define ASSERT_Sam3XA_RtcTime_isdst true
+
+#if ASSERT_Sam3XA_RtcTime_isdst
+#include <assert.h>
+#endif
+
 namespace {
 
 const int month_lengths[2][12] = {
@@ -16,14 +22,12 @@ inline int isLeapYear(int rtc_year) {
 
 int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
   const int dayOfWeekOffset = tm_wday - rtcTime.tmDayOfWeek();
-  const int result = (rtcTime.tmDayOfMonth() - 1 - dayOfWeekOffset) / 7 + 1;
-  return result;
+  return (rtcTime.tmDayOfMonth() - 1 - dayOfWeekOffset) / 7 + 1;
 }
 
 inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
   const int daysUntilNextOccurranceOfDayOfWeekday = 7 - (tm_wday - rtcTime.tmDayOfWeek());
-  const int result = rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfDayOfWeekday;
-  return result;
+  return rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfDayOfWeekday;
 }
 
 inline bool isMdayValidWithinMonth(int tm_mday, const Sam3XA_RtcTime& rtcTime) {
@@ -105,6 +109,11 @@ std::time_t Sam3XA_RtcTime::get(std::tm &time) const {
   // hour, if time is within daylight savings period.
   std::time_t result = mktime(&time);
   localtime_r(&result, &time);
+
+#if ASSERT_Sam3XA_RtcTime_isdst
+  assert(isdst() == time.tm_isdst);
+#endif
+
   return result;
 }
 

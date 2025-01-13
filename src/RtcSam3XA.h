@@ -112,12 +112,12 @@ public:
 
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
+
 private:
-  // Constructor is private, there is only one instance: RtcSam3XA::clock.
   RtcSam3XA();
+  void RtcSam3XA_Handler();
 
   // Interrupt handler
-  void RtcSam3XA_Handler();
   void onSecTransitionInterrupt();
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()

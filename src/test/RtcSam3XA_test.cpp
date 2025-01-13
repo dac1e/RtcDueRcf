@@ -34,8 +34,7 @@ namespace {
   }
 } // anonymous namespace
 
-// extern "C" int __month_lengths[2][12];
-static int dumpTzInfo(Stream& stream) {
+static void dumpTzInfo(Stream& stream) {
   __tzinfo_type *tz = __gettzinfo ();
   stream.print("__tznorth:"); stream.println(tz->__tznorth);
   for(size_t i = 0; i < 2; i++) {
