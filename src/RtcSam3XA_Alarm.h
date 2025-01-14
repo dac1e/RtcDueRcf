@@ -33,6 +33,8 @@ public:
         && day == other.day && month == other.month;
   }
 private:
+  RtcSam3XA_Alarm gaps2zero() const;
+  RtcSam3XA_Alarm zero2gaps() const;
   friend class RtcSam3XA;
   uint8_t second;
   uint8_t minute;
