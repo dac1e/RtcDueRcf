@@ -26,7 +26,7 @@ class RtcTime {
   uint8_t mDayOfMonth;  // 1..31
   uint8_t mDayOfWeekDay;// 1..7
 
-  static inline int tmMonth(uint8_t month) {return month - 1;}
+  static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time) {
     // Calling mktime will fix tm_wday.
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;

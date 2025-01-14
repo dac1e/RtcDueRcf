@@ -17,7 +17,7 @@ public:
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
 
   RtcSam3XA_Alarm();
-  RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon);
+  RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon /* 0..11 */);
 
   void setSecond(int tm_sec) {second = tm_sec < 60 ? tm_sec : INVALID_VALUE;}
   void setMinute(int tm_min) {minute = tm_min < 60 ? tm_min : INVALID_VALUE;}

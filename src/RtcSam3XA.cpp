@@ -220,7 +220,7 @@ static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
     int r = q % d;
     q = q / d;
     if (r > v) {
-      r -= 60;
+      r -= d;
       ++q;
     }
     v -= r;
@@ -288,11 +288,11 @@ void RtcSam3XA_Alarm::subtract(int _seconds, bool bIsLeapYear) {
     if (day > q) {
       day -= q;
     } else {
-      const int r = (month - 1 + 11) % 12;
-      day = Sam3XA::RtcTime::monthLength(month, bIsLeapYear) - q + 1;
+      const int r = (month - 1 + 11) % 12 + 1;
+      day = Sam3XA::RtcTime::monthLength(r, bIsLeapYear) - q + 1;
       if (month == INVALID_VALUE)
         return;
-      month = r + 1;
+      month = r;
     }
   }
 }

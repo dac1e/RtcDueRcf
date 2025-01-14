@@ -188,10 +188,20 @@ void checkRTCisdst(Stream& log) {
   checkRTCisdst(stime, rtc);
 }
 
+void checkAlarmSubtract (Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  delay(100); // @100ms
+
+  RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
+  alarm.subtract(1, 0); // subtract 1 second
+}
+
 void run(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   dumpTzInfo(log);
   delay(200);
+
+  checkAlarmSubtract(log);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
 
