@@ -14,7 +14,7 @@
 #include <ctime>
 #include <include/rtc.h>
 
-#include "internal/Sam3XA_RtcTime.h"
+#include "internal/RtcTime.h"
 #include "RtcSam3XA_Alarm.h"
 
 #define RTC_MEASURE_ACKUPD true
@@ -41,8 +41,8 @@ public:
    * https://man7.org/linux/man-pages/man3/tzset.3.html
    * for the explanation of the timezone string format.
    *
-   * Note: When the time zone is changed, the
-   * local time and the alarms will not change.
+   * Note: When the time zone is changed, the local time
+   * and the alarms will not change.
    *
    * E.g. The local time is 15:00h and there is an alarm
    * set at 16:00h. After the time zone has changed, the
@@ -89,13 +89,16 @@ public:
    */
   std::time_t getUnixTime() const;
 
+  /**
+   * Set the callback being called upon RTC second transition.
+   */
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
   // RTC Alarm
-  void setAlarmCallback(void (*alarmCallback)(void*), void *alarmCallbackParam = nullptr);
   void setAlarm(const RtcSam3XA_Alarm& alarmTime);
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
   void getAlarm(RtcSam3XA_Alarm& alarmTime);
+  void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam), void *alarmCallbackParam = nullptr);
 
 private:
   /** Constructor is private. There is only one object RtcSam3XA::clock. */

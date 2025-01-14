@@ -1,4 +1,4 @@
-#include "Sam3XA_RtcTime.h"
+#include "RtcTime.h"
 
 #include "core-sam-GapClose.h"
 
