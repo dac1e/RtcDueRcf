@@ -31,7 +31,7 @@ public:
    * TM time;
    * RtcSam3XA::clock.getLocalTime(time);
    *
-   * const TM time { 24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY), TM::make_tm_year(2016), false };
+   * const TM time {24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY), TM::make_tm_year(2016), false};
    * RtcSam3XA::clock.setByLocalTime(time);
    */
   static RtcSam3XA clock;

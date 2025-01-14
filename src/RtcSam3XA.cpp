@@ -208,6 +208,12 @@ RtcSam3XA_Alarm::RtcSam3XA_Alarm() :
     second(INVALID_VALUE), minute(INVALID_VALUE), hour(INVALID_VALUE), day(INVALID_VALUE), month(INVALID_VALUE) {
 }
 
+RtcSam3XA_Alarm::RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon)
+  : second(tm_sec < 60 ? tm_sec : INVALID_VALUE), minute(tm_min < 60 ? tm_min : INVALID_VALUE)
+  , hour(tm_hour < 24 ? tm_hour : INVALID_VALUE), day(tm_mday < 32 ? tm_mday : INVALID_VALUE)
+  , month(tm_mon < 12 ? tm_mon+1 : INVALID_VALUE) {
+}
+
 static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
   if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
     // q is seconds
