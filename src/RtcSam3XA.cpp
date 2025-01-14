@@ -15,13 +15,13 @@
 #endif
 
 
-RtcSam3XA::AlarmTime::AlarmTime() :
+Sam3XA::AlarmTime::AlarmTime() :
     second(INVALID_VALUE), minute(INVALID_VALUE), hour(INVALID_VALUE), day(INVALID_VALUE), month(INVALID_VALUE) {
 }
 
 
 static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
-  if (v != RtcSam3XA::AlarmTime::INVALID_VALUE) {
+  if (v != Sam3XA::AlarmTime::INVALID_VALUE) {
     // q is seconds
     int r = q % d;
     q = q / d;
@@ -35,7 +35,7 @@ static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
   return false;
 }
 
-void RtcSam3XA::AlarmTime::subtract(int _seconds, bool bIsLeapYear) {
+void Sam3XA::AlarmTime::subtract(int _seconds, bool bIsLeapYear) {
 
   // Check allowed boundaries.
   assert(_seconds < 24 * 60 * 60 * 28);
@@ -233,41 +233,41 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
 }
 
 static inline void fillAlarmFraction(uint8_t& v) {
-  if(v == RtcSam3XA::AlarmTime::INVALID_VALUE) { v = 0; }
+  if(v == Sam3XA::AlarmTime::INVALID_VALUE) { v = 0; }
 }
 
-void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
-  AlarmTime a = alarmTime;
+void RtcSam3XA::setAlarm(const Sam3XA::AlarmTime& alarmTime) {
+  Sam3XA::AlarmTime a = alarmTime;
 
   // Fill all less significant values below the highest
   // significant valid value with 0, if not set. This
   // allows to adjust the alarm setting upon daylight
   // saving transition.
-  if(alarmTime.month != AlarmTime::INVALID_VALUE) {
+  if(alarmTime.month != Sam3XA::AlarmTime::INVALID_VALUE) {
     // Fill all lower significant values with 0 if not set
     fillAlarmFraction(a.day);
     fillAlarmFraction(a.hour);
     fillAlarmFraction(a.minute);
     fillAlarmFraction(a.second);
-  } else if(alarmTime.day != AlarmTime::INVALID_VALUE) {
+  } else if(alarmTime.day != Sam3XA::AlarmTime::INVALID_VALUE) {
     // Fill all lower significant values with 0 if not set
     fillAlarmFraction(a.hour);
     fillAlarmFraction(a.minute);
     fillAlarmFraction(a.second);
-  } else if(alarmTime.day != AlarmTime::INVALID_VALUE) {
+  } else if(alarmTime.day != Sam3XA::AlarmTime::INVALID_VALUE) {
     // Fill all lower significant values with 0 if not set
     fillAlarmFraction(a.minute);
     fillAlarmFraction(a.second);
-  } else if(alarmTime.day != AlarmTime::INVALID_VALUE) {
+  } else if(alarmTime.day != Sam3XA::AlarmTime::INVALID_VALUE) {
     // Fill all lower significant values with 0 if not set
     fillAlarmFraction(a.second);
   }
 
-  const uint8_t* _hour = a.hour == AlarmTime::INVALID_VALUE ? nullptr : &a.hour;
-  const uint8_t* _minute = a.minute == AlarmTime::INVALID_VALUE ? nullptr : &a.minute;
-  const uint8_t* _second = a.second == AlarmTime::INVALID_VALUE ? nullptr : &a.second;
-  const uint8_t* _day = a.day == AlarmTime::INVALID_VALUE ? nullptr : &a.day;
-  const uint8_t* _month = a.month == AlarmTime::INVALID_VALUE ? nullptr : &a.month;
+  const uint8_t* _hour = a.hour == Sam3XA::AlarmTime::INVALID_VALUE ? nullptr : &a.hour;
+  const uint8_t* _minute = a.minute == Sam3XA::AlarmTime::INVALID_VALUE ? nullptr : &a.minute;
+  const uint8_t* _second = a.second == Sam3XA::AlarmTime::INVALID_VALUE ? nullptr : &a.second;
+  const uint8_t* _day = a.day == Sam3XA::AlarmTime::INVALID_VALUE ? nullptr : &a.day;
+  const uint8_t* _month = a.month == Sam3XA::AlarmTime::INVALID_VALUE ? nullptr : &a.month;
 
   RTC_DisableIt(RTC, RTC_IER_ALREN);
   // Need to do a const_cast here, because the sam API ignores const correctness.
@@ -276,7 +276,7 @@ void RtcSam3XA::setAlarm(const AlarmTime& alarmTime) {
   RTC_EnableIt(RTC, RTC_IER_ALREN);
 }
 
-void RtcSam3XA::getAlarm(AlarmTime& alarmTime) {
+void RtcSam3XA::getAlarm(Sam3XA::AlarmTime& alarmTime) {
   RTCgapclose_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
   RTCgapclose_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
 }
