@@ -27,6 +27,11 @@ public:
 
   void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
   void add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
+
+  bool operator==(const RtcSam3XA_Alarm& other) const {
+    return second == other.second && minute == other.minute && hour == other.hour
+        && day == other.day && month == other.month;
+  }
 private:
   friend class RtcSam3XA;
   uint8_t second;

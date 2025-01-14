@@ -188,13 +188,34 @@ void checkRTCisdst(Stream& log) {
   checkRTCisdst(stime, rtc);
 }
 
-void checkAlarmSubtract (Stream& log) {
+void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
+  RtcSam3XA_Alarm originalAlarm = alarm;
+  alarm.subtract(seconds, 0); // subtract  1 second.
+  assert(alarm == expected);
+  alarm.add(seconds, 0); // add 1 second.
+  assert(alarm == originalAlarm);
+}
+
+void checkAlarmSubtractAndAdd (Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
-  RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
-  alarm.subtract(1, 0);   // subtract  1 second.
-  alarm.add(1, 0);        // add 1 second.
+  {
+    RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
+    {
+      const RtcSam3XA_Alarm expected(59, 59, 23, 31, 11);
+      alarmSubtractAndAdd(alarm, 1, expected);
+    }
+  }
+
+  {
+    RtcSam3XA_Alarm alarm(0, 0, 0, 1, RtcSam3XA_Alarm::INVALID_VALUE); // Midnight first of any month
+    {
+      const RtcSam3XA_Alarm expected(59, 59, 23, 31, RtcSam3XA_Alarm::INVALID_VALUE);
+      alarmSubtractAndAdd(alarm, 1, expected);
+    }
+  }
+
 }
 
 void run(Stream& log) {
@@ -202,7 +223,7 @@ void run(Stream& log) {
   dumpTzInfo(log);
   delay(200);
 
-  checkAlarmSubtract(log);
+  checkAlarmSubtractAndAdd(log);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
 
