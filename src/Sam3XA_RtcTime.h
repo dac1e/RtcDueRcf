@@ -20,7 +20,7 @@ class Sam3XA_RtcTime {
   uint8_t mSecond;
 
   uint16_t mYear;
-  uint8_t mMonth;
+  uint8_t mMonth; // 1..12
   uint8_t mDayOfMonth;  // 1..31
   uint8_t mDayOfWeekDay;// 1..7
 
@@ -28,6 +28,8 @@ class Sam3XA_RtcTime {
     // Calling mktime will fix tm_wday.
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
   }
+  static inline int tmMonth(uint8_t month)const {return month - 1;}
+
 public:
   inline uint8_t hour() const {return mHour;}
   inline uint8_t minute() const {return mMinute;}
@@ -41,7 +43,7 @@ public:
   inline int tmMinute()const {return mMinute;}
   inline int tmSecond()const {return mSecond;}
   inline int tmYear()const {return mYear - 1900;}
-  inline int tmMonth()const {return mMonth - 1;}
+  inline int tmMonth()const {return tmMonth(mMonth);}
   inline int tmDayOfMonth()const {return mDayOfMonth;}
   inline int tmDayOfWeek()const {return mDayOfWeekDay - 1;}
 
@@ -49,11 +51,14 @@ public:
   static uint8_t rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
   static uint8_t rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
+  /** Set this Sam3XA RTC struct from a tm struct. */
   void set(const std::tm &time);
 
   /** Get a tm struct from this Sam3XA RTC struct. */
   std::time_t get(std::tm &time) const;
   int isdst() const;
+  static int monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear);
+  static int isLeapYear(uint16_t year);
 
   void readFromRtc();
 };

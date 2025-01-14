@@ -36,20 +36,23 @@ public:
 
   class AlarmTime {
   public:
+    static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
+
     AlarmTime();
     void setSecond(int _second) {second = _second;}
     void setMinute(int _minute) {minute = _minute;}
     void setHour(int _hour) {hour = _hour;}
     void setDay(int _day) {second = _day;}
     void setMonth(int _month) {second = _month;}
+
+    void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
   private:
     friend class RtcSam3XA;
-
     uint8_t second;
     uint8_t minute;
     uint8_t hour;
     uint8_t day;
-    uint8_t month; // Jan = 0
+    uint8_t month; // 1..12
   };
 
   /**
@@ -109,9 +112,7 @@ public:
   void setAlarm(const AlarmTime& alarmTime);
   void clearAlarm(){setAlarm(AlarmTime());}
   void getAlarm(AlarmTime& alarmTime);
-
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
-
 
 private:
   RtcSam3XA();

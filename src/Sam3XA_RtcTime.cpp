@@ -97,6 +97,14 @@ inline int isdst(const Sam3XA_RtcTime& rtcTime) {
 
 } // anonymous namespace
 
+int Sam3XA_RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
+  return ::month_lengths[bIsLeapYear][tmMonth(month)];
+}
+
+int Sam3XA_RtcTime::isLeapYear(uint16_t year) {
+  return ::isLeapYear(year);
+}
+
 int Sam3XA_RtcTime::isdst() const {
   return ::isdst(*this);
 }
