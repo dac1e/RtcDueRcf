@@ -123,7 +123,7 @@ private:
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
   volatile bool mSetTimeRequest;
-  Sam3XA_RtcTime mSetTimeCache;
+  Sam3XA::RtcTime mSetTimeCache;
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;
   void(*mAlarmCallback)(void*);

@@ -24,29 +24,29 @@ inline int isLeapYear(int rtc_year) {
   return result;
 }
 
-int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
+int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
   const int wdayOffset = tm_wday - rtcTime.tmDayOfWeek();
   return (rtcTime.tmDayOfMonth() - 1 - wdayOffset) / 7 + 1;
 }
 
-inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
+inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
   const int daysUntilNextOccurranceOfWday = 7 - (tm_wday - rtcTime.tmDayOfWeek());
   return rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfWday;
 }
 
-inline bool isMdayValidWithinMonth(int tm_mday, const Sam3XA_RtcTime& rtcTime) {
+inline bool isMdayValidWithinMonth(int tm_mday, const Sam3XA::RtcTime& rtcTime) {
   return tm_mday <= month_lengths[isLeapYear(rtcTime.year())][rtcTime.tmMonth()];
 }
 
-inline bool isLastWdayWithinMonth(int tm_wday, const Sam3XA_RtcTime& rtcTime) {
+inline bool isLastWdayWithinMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
   return not isMdayValidWithinMonth(calcMdayOfNextWdayOccurance(tm_wday, rtcTime), rtcTime);
 }
 
-inline int expiredSecondsWithinDay(const Sam3XA_RtcTime& rtcTime) {
+inline int expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
   return ((rtcTime.tmHour() * 60) + rtcTime.tmMinute()) * 60 + rtcTime.tmSecond();
 }
 
-int hasTransitionedDstRule(const Sam3XA_RtcTime& rtcTime, const __tzrule_struct* const tzrule,
+int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct* const tzrule,
     int dstshift) {
   int result = 0;
   if(rtcTime.month() >= tzrule->m) {
@@ -66,7 +66,7 @@ int hasTransitionedDstRule(const Sam3XA_RtcTime& rtcTime, const __tzrule_struct*
   return result;
 }
 
-inline int isdst(const Sam3XA_RtcTime& rtcTime) {
+inline int isdst(const Sam3XA::RtcTime& rtcTime) {
 #if MEASURE_Sam3XA_RtcTime_isdst
   const uint32_t s = micros();
 #endif
@@ -97,19 +97,21 @@ inline int isdst(const Sam3XA_RtcTime& rtcTime) {
 
 } // anonymous namespace
 
-int Sam3XA_RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
+namespace Sam3XA {
+
+int RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
   return ::month_lengths[bIsLeapYear][tmMonth(month)];
 }
 
-int Sam3XA_RtcTime::isLeapYear(uint16_t year) {
+int RtcTime::isLeapYear(uint16_t year) {
   return ::isLeapYear(year);
 }
 
-int Sam3XA_RtcTime::isdst() const {
+int RtcTime::isdst() const {
   return ::isdst(*this);
 }
 
-void Sam3XA_RtcTime::set(const std::tm &time) {
+void RtcTime::set(const std::tm &time) {
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
@@ -119,7 +121,7 @@ void Sam3XA_RtcTime::set(const std::tm &time) {
   mDayOfWeekDay = rtcDayOfWeek(time);
 }
 
-std::time_t Sam3XA_RtcTime::get(std::tm &time) const {
+std::time_t RtcTime::get(std::tm &time) const {
   time.tm_hour = tmHour();
   time.tm_min = tmMinute();
   time.tm_sec = tmSecond();
@@ -134,15 +136,16 @@ std::time_t Sam3XA_RtcTime::get(std::tm &time) const {
   std::time_t result = mktime(&time);
   localtime_r(&result, &time);
 
-#if ASSERT_Sam3XA_RtcTime_isdst
+#if ASSERT_RtcTime_isdst
   assert(isdst() == time.tm_isdst);
 #endif
 
   return result;
 }
 
-void Sam3XA_RtcTime::readFromRtc() {
+void RtcTime::readFromRtc() {
   ::RTCgapclose_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
       &mDayOfMonth, &mDayOfWeekDay);
 }
 
+} // namespace Sam3XA_Rtc

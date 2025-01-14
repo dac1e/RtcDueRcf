@@ -95,7 +95,7 @@ void RtcSam3XA::AlarmTime::subtract(int _seconds, bool bIsLeapYear) {
       day -= q;
     } else {
       const int r = (month - 1 + 11) % 12;
-      day = Sam3XA_RtcTime::monthLength(month, bIsLeapYear) - q + 1;
+      day = Sam3XA::RtcTime::monthLength(month, bIsLeapYear) - q + 1;
       if (month == INVALID_VALUE)
         return;
       month = r + 1;
@@ -215,7 +215,7 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
     return mSetTimeCache.get(time);
   }
 
-  Sam3XA_RtcTime dueTimeAndDate;
+  Sam3XA::RtcTime dueTimeAndDate;
   dueTimeAndDate.readFromRtc();
   return dueTimeAndDate.get(time);
 }

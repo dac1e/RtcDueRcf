@@ -13,8 +13,10 @@
 #include <stdint.h>
 #include <ctime>
 
+namespace Sam3XA {
+
 // Time structure to read from and write to the Sam3X RTC.
-class Sam3XA_RtcTime {
+class RtcTime {
   uint8_t mHour;
   uint8_t mMinute;
   uint8_t mSecond;
@@ -28,7 +30,7 @@ class Sam3XA_RtcTime {
     // Calling mktime will fix tm_wday.
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
   }
-  static inline int tmMonth(uint8_t month)const {return month - 1;}
+  static inline int tmMonth(uint8_t month) {return month - 1;}
 
 public:
   inline uint8_t hour() const {return mHour;}
@@ -62,4 +64,7 @@ public:
 
   void readFromRtc();
 };
+
+} // namespace Sam3XA_Rtc
+
 #endif /* RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_ */

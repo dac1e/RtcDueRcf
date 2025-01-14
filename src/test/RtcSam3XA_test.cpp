@@ -160,7 +160,7 @@ void dstExit(Stream& log) {
   assert(rtime.tm_hour == HOUR_START);
 }
 
-void checkRTCisdst(TM stime, Sam3XA_RtcTime rtc) {
+void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
   std::time_t localtime = mktime(&stime);
   localtime_r(&localtime, &stime);
   rtc.set(stime);
@@ -172,7 +172,7 @@ void checkRTCisdst(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
-  Sam3XA_RtcTime rtc;
+  Sam3XA::RtcTime rtc;
   TM stime;
 
   makeCETdstBeginTime(stime, 59, 59, 1);
