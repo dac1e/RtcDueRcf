@@ -240,10 +240,13 @@ void RtcSam3XA_Alarm::subtract(int _seconds, bool bIsLeapYear) {
   if(not subtractTimeFraction(q, minute, 60) ) {return;}
   if(not subtractTimeFraction(q, hour, 24) )   {return;}
   if (day != INVALID_VALUE) {
-    const uint8_t tm_mon = month - 1;
     uint8_t _day = day - 1;
-    const int previousMonth = (tm_mon - 1 + 12) % 12 + 1;
-    const int d = Sam3XA::RtcTime::monthLength(previousMonth, bIsLeapYear);
+    int d = 31;
+    if(month != INVALID_VALUE) {
+      const uint8_t _month = month - 1;
+      const int previousMonth = (_month - 1 + 12) % 12 + 1;
+      d = Sam3XA::RtcTime::monthLength(previousMonth, bIsLeapYear);
+    }
     subtractTimeFraction(q, _day, d);
     day = _day + 1;
     if (month != INVALID_VALUE) {
@@ -276,9 +279,12 @@ void RtcSam3XA_Alarm::add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLe
   if(not addTimeFraction(q, minute, 60) ) {return;}
   if(not addTimeFraction(q, hour, 24) )   {return;}
   if (day != INVALID_VALUE) {
-    const uint8_t tm_mon = month - 1;
     uint8_t _day = day - 1;
-    const int d = Sam3XA::RtcTime::monthLength(month, bIsLeapYear);
+    int d = 31;
+    if(month != INVALID_VALUE) {
+      const uint8_t tm_mon = month - 1;
+      d = Sam3XA::RtcTime::monthLength(month, bIsLeapYear);
+    }
     addTimeFraction(q, _day, d);
     day = _day + 1;
     if (month != INVALID_VALUE) {
