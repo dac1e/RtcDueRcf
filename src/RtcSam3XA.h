@@ -89,13 +89,16 @@ public:
    */
   std::time_t getUnixTime() const;
 
+  void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
+
+  // RTC Alarm
   void setAlarmCallback(void (*alarmCallback)(void*), void *alarmCallbackParam = nullptr);
   void setAlarm(const RtcSam3XA_Alarm& alarmTime);
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
   void getAlarm(RtcSam3XA_Alarm& alarmTime);
-  void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
 private:
+  /** Constructor is private. There is only one object RtcSam3XA::clock. */
   RtcSam3XA();
   void RtcSam3XA_Handler();
 

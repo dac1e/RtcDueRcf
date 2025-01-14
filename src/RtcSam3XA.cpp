@@ -15,11 +15,9 @@
 #include <Arduino.h>
 #endif
 
-
 RtcSam3XA_Alarm::RtcSam3XA_Alarm() :
     second(INVALID_VALUE), minute(INVALID_VALUE), hour(INVALID_VALUE), day(INVALID_VALUE), month(INVALID_VALUE) {
 }
-
 
 static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
   if (v != RtcSam3XA_Alarm::INVALID_VALUE) {

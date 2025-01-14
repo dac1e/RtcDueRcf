@@ -41,13 +41,13 @@ public:
   inline uint8_t day() const {return mDayOfMonth;}
   inline uint8_t day_of_week() const {return mDayOfWeekDay;}
 
-  inline int tmHour()const {return mHour;}
-  inline int tmMinute()const {return mMinute;}
-  inline int tmSecond()const {return mSecond;}
-  inline int tmYear()const {return mYear - 1900;}
-  inline int tmMonth()const {return tmMonth(mMonth);}
-  inline int tmDayOfMonth()const {return mDayOfMonth;}
-  inline int tmDayOfWeek()const {return mDayOfWeekDay - 1;}
+  inline int tm_hour()const {return mHour;}
+  inline int tm_min()const {return mMinute;}
+  inline int tm_sec()const {return mSecond;}
+  inline int tm_year()const {return mYear - 1900;}
+  inline int tm_mon()const {return tmMonth(mMonth);}
+  inline int tm_mday()const {return mDayOfMonth;}
+  inline int tm_wday()const {return mDayOfWeekDay-1;}
 
   static uint16_t rtcYear(const std::tm& time) {return time.tm_year + 1900;}
   static uint8_t rtcMonth(const std::tm& time) {return time.tm_mon + 1;}

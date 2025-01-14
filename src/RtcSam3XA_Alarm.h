@@ -17,11 +17,11 @@ public:
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
 
   RtcSam3XA_Alarm();
-  void setSecond(int _second) {second = _second;}
-  void setMinute(int _minute) {minute = _minute;}
-  void setHour(int _hour) {hour = _hour;}
-  void setDay(int _day) {second = _day;}
-  void setMonth(int _month) {second = _month;}
+  void setSecond(int tm_sec) {second = tm_sec < 60 ? tm_sec : INVALID_VALUE;}
+  void setMinute(int tm_min) {minute = tm_min < 60 ? tm_min : INVALID_VALUE;}
+  void setHour(int tm_hour) {hour = tm_hour < 24 ? tm_hour : INVALID_VALUE;}
+  void setDay(int tm_mday) {second = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
+  void setMonth(int tm_mon /* 0..11 */ ) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
 
   void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
 private:

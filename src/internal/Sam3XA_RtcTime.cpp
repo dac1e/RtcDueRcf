@@ -26,17 +26,17 @@ inline int isLeapYear(int rtc_year) {
 }
 
 int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
-  const int wdayOffset = tm_wday - rtcTime.tmDayOfWeek();
-  return (rtcTime.tmDayOfMonth() - 1 - wdayOffset) / 7 + 1;
+  const int wdayOffset = tm_wday - rtcTime.tm_wday();
+  return (rtcTime.tm_mday() - 1 - wdayOffset) / 7 + 1;
 }
 
 inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
-  const int daysUntilNextOccurranceOfWday = 7 - (tm_wday - rtcTime.tmDayOfWeek());
-  return rtcTime.tmDayOfMonth() + daysUntilNextOccurranceOfWday;
+  const int daysUntilNextOccurranceOfWday = 7 - (tm_wday - rtcTime.tm_wday());
+  return rtcTime.tm_mday() + daysUntilNextOccurranceOfWday;
 }
 
 inline bool isMdayValidWithinMonth(int tm_mday, const Sam3XA::RtcTime& rtcTime) {
-  return tm_mday <= month_lengths[isLeapYear(rtcTime.year())][rtcTime.tmMonth()];
+  return tm_mday <= month_lengths[isLeapYear(rtcTime.year())][rtcTime.tm_mon()];
 }
 
 inline bool isLastWdayWithinMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
@@ -44,7 +44,7 @@ inline bool isLastWdayWithinMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
 }
 
 inline int expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
-  return ((rtcTime.tmHour() * 60) + rtcTime.tmMinute()) * 60 + rtcTime.tmSecond();
+  return ((rtcTime.tm_hour() * 60) + rtcTime.tm_min()) * 60 + rtcTime.tm_sec();
 }
 
 int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct* const tzrule,
@@ -123,13 +123,13 @@ void RtcTime::set(const std::tm &time) {
 }
 
 std::time_t RtcTime::get(std::tm &time) const {
-  time.tm_hour = tmHour();
-  time.tm_min = tmMinute();
-  time.tm_sec = tmSecond();
-  time.tm_year = tmYear();
-  time.tm_mon = tmMonth();
-  time.tm_mday = tmDayOfMonth();
-  time.tm_wday = tmDayOfWeek();
+  time.tm_hour = tm_hour();
+  time.tm_min = tm_min();
+  time.tm_sec = tm_sec();
+  time.tm_year = tm_year();
+  time.tm_mon = tm_mon();
+  time.tm_mday = tm_mday();
+  time.tm_wday = tm_wday();
   time.tm_yday = -1; // invalid
   time.tm_isdst = 0;
   // mktime will fix the tm_yday as well as tm_ist and the
