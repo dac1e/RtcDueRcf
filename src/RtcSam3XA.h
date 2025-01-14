@@ -13,8 +13,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <include/rtc.h>
+
+#include "internal/Sam3XA_RtcTime.h"
 #include "RtcSam3XA_Alarm.h"
-#include "Sam3XA_RtcTime.h"
 
 #define RTC_MEASURE_ACKUPD true
 

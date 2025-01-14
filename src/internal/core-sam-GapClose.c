@@ -5,10 +5,11 @@
  *      Author: Wolfgang
  */
 
+#include "core-sam-GapClose.h"
+
 #include "chip.h"
 #include <stdint.h>
 
-#include "core-sam-GapClose.h"
 
 /*----------------------------------------------------------------------------
  *        Definitions
@@ -197,7 +198,7 @@ extern void dwDate2date( uint32_t dwDate, uint16_t *pwYear, uint8_t *pucMonth, u
  * \param pucDay     If not null, current day is stored in this variable.
  * \param pucWeek    If not null, current week is stored in this variable.
  */
-extern void RTCgapclose_GetTimeAndDate( Rtc* pRtc,
+extern void RTC_GetTimeAndDate( Rtc* pRtc,
     uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond,
     uint16_t *pwYear, uint8_t *pucMonth, uint8_t *pucDay, uint8_t *pucWeek )
 {
@@ -237,7 +238,7 @@ extern void RTCgapclose_GetTimeAndDate( Rtc* pRtc,
  *
  * \return 0 sucess, 1 fail to set
  */
-extern int RTCgapclose_SetTimeAndDate( Rtc* pRtc,
+extern int RTC_SetTimeAndDate( Rtc* pRtc,
     uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
     uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek )
 {
@@ -267,7 +268,7 @@ extern int RTCgapclose_SetTimeAndDate( Rtc* pRtc,
   return (int)(pRtc->RTC_VER & RTC_VER_NVCAL) ;
 }
 
-extern int RTCgapclose_GetTimeAlarm( Rtc* pRtc, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond )
+extern int RTC_GetTimeAlarm( Rtc* pRtc, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond )
 {
   const uint32_t dwAlarm = pRtc->RTC_TIMALR ;
 
@@ -313,7 +314,7 @@ extern int RTCgapclose_GetTimeAlarm( Rtc* pRtc, uint8_t *pucHour, uint8_t *pucMi
   return (int)(pRtc->RTC_VER & RTC_VER_NVTIMALR) ;
 }
 
-extern int RTCgapclose_GetDateAlarm( Rtc* pRtc, uint8_t *pucMonth, uint8_t *pucDay )
+extern int RTC_GetDateAlarm( Rtc* pRtc, uint8_t *pucMonth, uint8_t *pucDay )
 {
   const uint32_t dwAlarm = pRtc->RTC_CALALR;
 

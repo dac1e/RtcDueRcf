@@ -1,5 +1,6 @@
-#include "core-sam-GapClose.h"
 #include "Sam3XA_RtcTime.h"
+
+#include "core-sam-GapClose.h"
 
 #define ASSERT_Sam3XA_RtcTime_isdst true
 #define MEASURE_Sam3XA_RtcTime_isdst true
@@ -144,7 +145,7 @@ std::time_t RtcTime::get(std::tm &time) const {
 }
 
 void RtcTime::readFromRtc() {
-  ::RTCgapclose_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
+  ::RTC_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
       &mDayOfMonth, &mDayOfWeekDay);
 }
 

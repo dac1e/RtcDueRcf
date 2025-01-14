@@ -7,8 +7,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_
-#define RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_
+#ifndef RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_
+#define RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_
 
 #include <stdint.h>
 #include <ctime>
@@ -21,16 +21,16 @@ class RtcTime {
   uint8_t mMinute;
   uint8_t mSecond;
 
-  uint16_t mYear;
+  uint16_t mYear; // 4 digits ad year
   uint8_t mMonth; // 1..12
   uint8_t mDayOfMonth;  // 1..31
   uint8_t mDayOfWeekDay;// 1..7
 
+  static inline int tmMonth(uint8_t month) {return month - 1;}
   static uint8_t tmDayOfWeek(const std::tm &time) {
     // Calling mktime will fix tm_wday.
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
   }
-  static inline int tmMonth(uint8_t month) {return month - 1;}
 
 public:
   inline uint8_t hour() const {return mHour;}
@@ -58,13 +58,17 @@ public:
 
   /** Get a tm struct from this Sam3XA RTC struct. */
   std::time_t get(std::tm &time) const;
-  int isdst() const;
-  static int monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear);
-  static int isLeapYear(uint16_t year);
 
+  /** Fill with the RTC contents. */
   void readFromRtc();
+
+  /** Determine whether this time is within daylight savings period. */
+  int isdst() const;
+
+  static int isLeapYear(uint16_t year  /* 4 digits ad year. */);
+  static int monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear);
 };
 
 } // namespace Sam3XA_Rtc
 
-#endif /* RTCSAM3XA_SRC_SAM3XA_RTCTIME_H_ */
+#endif /* RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_ */

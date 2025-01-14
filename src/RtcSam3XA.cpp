@@ -8,7 +8,8 @@
 #include <assert.h>
 #include "TM.h"
 #include "RtcSam3XA.h"
-#include "core-sam-GapClose.h"
+
+#include "internal/core-sam-GapClose.h"
 
 #if RTC_MEASURE_ACKUPD
 #include <Arduino.h>
@@ -136,7 +137,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
     mTimestampACKUPD = millis();
 #endif
     if (mSetTimeRequest) {
-      ::RTCgapclose_SetTimeAndDate(RTC, mSetTimeCache.hour(),
+      ::RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(),
           mSetTimeCache.minute(), mSetTimeCache.second(),
           mSetTimeCache.year(), mSetTimeCache.month(),
           mSetTimeCache.day(), mSetTimeCache.day_of_week());
@@ -277,8 +278,8 @@ void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& alarmTime) {
 }
 
 void RtcSam3XA::getAlarm(RtcSam3XA_Alarm& alarmTime) {
-  RTCgapclose_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
-  RTCgapclose_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
+  RTC_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
+  RTC_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
 }
 
 void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),
