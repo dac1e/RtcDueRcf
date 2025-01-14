@@ -215,84 +215,74 @@ RtcSam3XA_Alarm::RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mda
 }
 
 static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
-  if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // q is seconds
-    int r = q % d;
-    q = q / d;
-    if (r > v) {
-      r -= d;
-      ++q;
+  if(q > 0) {
+    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
+      int r = q % d;
+      q = q / d;
+      if(r > v) {
+        r -= d;
+        ++q;
+      }
+      v -= r;
+      return true;
     }
-    v -= r;
-    return true;
   }
   return false;
 }
 
 void RtcSam3XA_Alarm::subtract(int _seconds, bool bIsLeapYear) {
-
   // Check allowed boundaries.
   assert(_seconds < 24 * 60 * 60 * 28);
-  assert(_seconds >= 0);
-
+  assert(_seconds > 0);
   int q = _seconds;
 
-//  if (second == INVALID_VALUE)
-//    return;
-//  {
-//    // q is seconds
-//    int r = q % 60;
-//    q = q / 60;
-//    if (r > second) {
-//      r -= 60;
-//      ++q;
-//    }
-//    second -= r;
-//  }
   if(not subtractTimeFraction(q, second, 60) ) {return;}
-
-
-//  if (minute == INVALID_VALUE)
-//    return;
-//  {
-//    // q is minutes
-//    int r = q % 60;
-//    q = q / 60;
-//    if (r > minute) {
-//      r -= 60;
-//      ++q;
-//    }
-//    minute -= r;
-//  }
   if(not subtractTimeFraction(q, minute, 60) ) {return;}
+  if(not subtractTimeFraction(q, hour, 24) )   {return;}
+  if (day != INVALID_VALUE) {
+    const uint8_t tm_mon = month - 1;
+    uint8_t _day = day - 1;
+    const int previousMonth = (tm_mon - 1 + 12) % 12 + 1;
+    const int d = Sam3XA::RtcTime::monthLength(previousMonth, bIsLeapYear);
+    subtractTimeFraction(q, _day, d);
+    day = _day + 1;
+    if (month != INVALID_VALUE) {
+      month = (month - 1 - q + 12) % 12 + 1;
+    }
+  }
+}
 
-//  if (hour == INVALID_VALUE)
-//    return;
-//  {
-//    // q is hours
-//    int r = q % 24;
-//    q = q / 24;
-//    if (r > hour) {
-//      r -= 24;
-//      ++q;
-//    }
-//    hour -= r;
-//  }
-  if(not subtractTimeFraction(q, hour, 24) ) {return;}
+static inline bool addTimeFraction(int& q, uint8_t& v, unsigned d) {
+  if(q > 0) {
+    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
+      const int r = (v + q) % d;
+      q = q / d;
+      if(r < v) {
+        ++q;
+      }
+      v = r;
+      return true;
+    }
+  }
+  return false;
+}
 
-  {
-    if (day == INVALID_VALUE)
-      return;
+void RtcSam3XA_Alarm::add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear) {
+  assert(_seconds < 24 * 60 * 60 * 28);
+  assert(_seconds > 0);
+  int q = _seconds;
 
-    // q is 0 .. 28 days
-    if (day > q) {
-      day -= q;
-    } else {
-      const int r = (month - 1 + 11) % 12 + 1;
-      day = Sam3XA::RtcTime::monthLength(r, bIsLeapYear) - q + 1;
-      if (month == INVALID_VALUE)
-        return;
-      month = r;
+  if(not addTimeFraction(q, second, 60) ) {return;}
+  if(not addTimeFraction(q, minute, 60) ) {return;}
+  if(not addTimeFraction(q, hour, 24) )   {return;}
+  if (day != INVALID_VALUE) {
+    const uint8_t tm_mon = month - 1;
+    uint8_t _day = day - 1;
+    const int d = Sam3XA::RtcTime::monthLength(month, bIsLeapYear);
+    addTimeFraction(q, _day, d);
+    day = _day + 1;
+    if (month != INVALID_VALUE) {
+      month = (month - 1 + q + 12) % 12 + 1;
     }
   }
 }

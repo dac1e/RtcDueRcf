@@ -26,6 +26,7 @@ public:
   void setMonth(int tm_mon /* 0..11 */ ) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
 
   void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
+  void add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
 private:
   friend class RtcSam3XA;
   uint8_t second;

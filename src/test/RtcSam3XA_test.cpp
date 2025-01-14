@@ -193,7 +193,8 @@ void checkAlarmSubtract (Stream& log) {
   delay(100); // @100ms
 
   RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
-  alarm.subtract(1, 0); // subtract 1 second
+  alarm.subtract(1, 0);   // subtract  1 second.
+  alarm.add(1, 0);        // add 1 second.
 }
 
 void run(Stream& log) {
