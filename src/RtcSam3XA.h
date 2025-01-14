@@ -13,36 +13,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <include/rtc.h>
+#include "RtcSam3XA_Alarm.h"
 #include "Sam3XA_RtcTime.h"
 
 #define RTC_MEASURE_ACKUPD true
-
-class RtcSam3XA;
-
-namespace Sam3XA {
-
-class AlarmTime {
-public:
-  static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
-
-  AlarmTime();
-  void setSecond(int _second) {second = _second;}
-  void setMinute(int _minute) {minute = _minute;}
-  void setHour(int _hour) {hour = _hour;}
-  void setDay(int _day) {second = _day;}
-  void setMonth(int _month) {second = _month;}
-
-  void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
-private:
-  friend class ::RtcSam3XA;
-  uint8_t second;
-  uint8_t minute;
-  uint8_t hour;
-  uint8_t day;
-  uint8_t month; // 1..12
-};
-
-} // namespace Sam3XA
 
 class RtcSam3XA {
 public:
@@ -115,9 +89,9 @@ public:
   std::time_t getUnixTime() const;
 
   void setAlarmCallback(void (*alarmCallback)(void*), void *alarmCallbackParam = nullptr);
-  void setAlarm(const Sam3XA::AlarmTime& alarmTime);
-  void clearAlarm(){setAlarm(Sam3XA::AlarmTime());}
-  void getAlarm(Sam3XA::AlarmTime& alarmTime);
+  void setAlarm(const RtcSam3XA_Alarm& alarmTime);
+  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
+  void getAlarm(RtcSam3XA_Alarm& alarmTime);
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
 private:
