@@ -48,15 +48,33 @@ inline int expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
 }
 
 int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct* const tzrule,
-    int dstshift) {
+    int normalTimeToDstDifference) {
   int result = 0;
   if(rtcTime.month() >= tzrule->m) {
     if(rtcTime.month() == tzrule->m) {
-      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, rtcTime);
+      // The RTC contains local standard time. So calculate the local standard time
+      // of the daylight transition.
+      // Note: When transition happens to daylight saving time, the there is no
+      // difference between local standard time and daylight saving time.
+      int d = tzrule->d;
+      if(normalTimeToDstDifference != 0) {
+        const int localStandardTimeDaylightTransition = tzrule->s + normalTimeToDstDifference;
+        if(localStandardTimeDaylightTransition < 0) {
+          // The standard time of the daylight transition is the predecessor day
+          // of daylight saving time dst transition. This will typically
+          // not happen when the shift is from 3:00h dst to 2:00 std
+          d = (++d % 7);
+          normalTimeToDstDifference += 24 * 60 * 60;
+        }
+      }
+
+      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(d, rtcTime);
       const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
         (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, rtcTime));
+
       if(dayMatch) {
-        if(expiredSecondsWithinDay(rtcTime) - dstshift >= tzrule->s) {
+
+        if(expiredSecondsWithinDay(rtcTime) - normalTimeToDstDifference >= tzrule->s) {
           result = 1;
         }
       }
@@ -79,10 +97,9 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
 
     if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
-      const int dstshift = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
-      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd,
-        /* time shift at the end of dst should'nt be positive. However, limit to 0 */
-        dstshift < 0 ? dstshift : 0);
+      // Note that the offsets become negative in west direction.
+      const int normalTimeToDstDifference = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, normalTimeToDstDifference);
     }
   }
 
