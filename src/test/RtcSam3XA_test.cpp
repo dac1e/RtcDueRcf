@@ -235,17 +235,41 @@ void run(Stream& log) {
   dstEntry(log);
   dstExit(log);
 
-  TM stime;
-  makeCETdstBeginTime(stime, 00, 59, 1);
-  std::mktime(&stime);
-  std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
-  log.println(stime);
 }
 
+static size_t i = 0;
+
 void loop(Stream& log) {
-  TM rtime;
-  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
-  logtime(log, rtime, localtime);
+
+  if(i == 0) {
+    constexpr int HOUR_START = 1;
+    TM stime;
+    makeCETdstBeginTime(stime, 00, 59, HOUR_START);
+    std::mktime(&stime);
+    std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+    log.print("Setting clock to dst time ");
+    log.println(stime);
+  }
+
+  if(i == 200) {
+    constexpr int HOUR_START = 2;
+    // Set RTC to 3 seconds before daylight savings starts
+    TM stime;
+    makeCETdstEndTime(stime, 00, 59, HOUR_START);
+
+    std::mktime(&stime);
+    std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+    log.print("Setting clock to std time ");
+    log.println(stime);
+  }
+
+  {
+    TM rtime;
+    std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+    logtime(log, rtime, localtime);
+  }
+
+  i = (i+1) % 400;
   delay(999);
 }
 
