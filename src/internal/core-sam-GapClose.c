@@ -31,7 +31,7 @@
 /**
  * \brief calculate the RTC_TIMR bcd format.
  *
- * \param ucHour    Current hour in 12 or 24 hour mode.
+ * \param ucHour    Current hour in 24 hour mode.
  * \param ucMinute  Current minute.
  * \param ucSecond  Current second.
  *
@@ -46,11 +46,21 @@ static uint32_t calculate_dwTime( Rtc* pRtc, uint8_t ucHour, uint8_t ucMinute, u
     /* if 12-hour mode, set AMPM bit */
     if ( (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD )
     {
-        if ( ucHour > 12 )
+      // RTC is running in 12-hour mode
+      if ( ucHour > 12 )
+      {
+        // PM Time
+        dwAmpm |= RTC_TIMR_AMPM ;
+        ucHour -= 12 ; // convert PM time to 12-hour mode
+      }
+      else
+      {
+        // AM Time
+        if(ucHour == 0) // midnight ?
         {
-            ucHour -= 12 ;
-            dwAmpm |= RTC_TIMR_AMPM ;
+          ucHour = 12; // midnight is 12:00h in 12-hour mode
         }
+      }
     }
     ucHour_bcd = (ucHour%10)   | ((ucHour/10)<<4) ;
     ucMin_bcd  = (ucMinute%10) | ((ucMinute/10)<<4) ;
@@ -109,23 +119,37 @@ static uint32_t calculate_dwDate( Rtc* pRtc, uint16_t wYear, uint8_t ucMonth, ui
 }
 
 /**
- * \brief Convert the RTC_TIMR bcd format to hour, minute and second.
+ * \brief Convert the RTC_TIMR bcd format to hour, minute and second in 24-hour mode
  *
  * \param pucHour    If not null, current hour is stored in this variable.
  * \param pucMinute  If not null, current minute is stored in this variable.
  * \param pucSecond  If not null, current second is stored in this variable.
  */
-static void dwTime2time( uint32_t dwTime, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond )
+static void dwTime2time(Rtc* pRtc,  uint32_t dwTime, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond )
 {
     /* Hour */
     if ( pucHour )
     {
-        *pucHour = ((dwTime & 0x00300000) >> 20) * 10
-                 + ((dwTime & 0x000F0000) >> 16);
+        *pucHour = ((dwTime & 0x00300000) >> 20) * 10 + ((dwTime & 0x000F0000) >> 16);
 
-        if ( (dwTime & RTC_TIMR_AMPM) == RTC_TIMR_AMPM )
-        {
-            *pucHour += 12 ;
+        if( (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD ) {
+          // RTC is running in 12 hour mode
+          if ( (dwTime & RTC_TIMR_AMPM) == RTC_TIMR_AMPM )
+          {
+            // PM Time
+            if(*pucHour < 12)
+            {
+              *pucHour += 12; // convert PM time to 24 hour mode.
+            }
+          }
+          else
+          {
+            // AM Time
+            if(*pucHour == 12) // midnight ?
+            {
+              *pucHour = 0; // midnight is 0:00h in 24 hour mode.
+            }
+          }
         }
     }
 
@@ -190,6 +214,9 @@ extern void dwDate2date( uint32_t dwDate, uint16_t *pwYear, uint8_t *pucMonth, u
  * \brief Retrieves the current time and current date as stored in the RTC in several variables.
  * Month, day and week values are numbered starting at 1.
  *
+ * The returned time is always in 24 hrs mode independent of whether the RTC is running
+ * in 12 hrs or 24 hrs mode.
+ *
  * \param pucHour    If not null, current hour is stored in this variable.
  * \param pucMinute  If not null, current minute is stored in this variable.
  * \param pucSecond  If not null, current second is stored in this variable.
@@ -216,7 +243,7 @@ extern void RTC_GetTimeAndDate( Rtc* pRtc,
     }
     while( dwTime != pRtc->RTC_TIMR );
 
-    dwTime2time( dwTime, pucHour, pucMinute, pucSecond ) ;
+    dwTime2time( pRtc, dwTime, pucHour, pucMinute, pucSecond ) ;
     dwDate2date( dwDate, pwYear, pucMonth, pucDay, pucWeek ) ;
 }
 
