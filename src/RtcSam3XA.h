@@ -97,26 +97,26 @@ public:
   // RTC Alarm
   void setAlarm(const RtcSam3XA_Alarm& alarmTime);
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
-  void getAlarm(RtcSam3XA_Alarm& alarmTime);
   void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam), void *alarmCallbackParam = nullptr);
+  void getAlarm(RtcSam3XA_Alarm &alarmTime);
+  void dstFixAlarm();
 
 private:
   /** Constructor is private. There is only one object RtcSam3XA::clock. */
   RtcSam3XA();
-  void RtcSam3XA_Handler();
-
-  // Interrupt handler
-  void onSecTransitionInterrupt();
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
+  friend void ::RTC_Handler();
+  void RtcSam3XA_Handler();
+  void onSecTransitionInterrupt();
+  void getAlarmRaw(RtcSam3XA_Alarm& alarmTime);
+
   volatile bool mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;
   void(*mAlarmCallback)(void*);
   void* mAlarmCallbackPararm;
-
-  friend void ::RTC_Handler();
 
 #if RTC_MEASURE_ACKUPD
 private:

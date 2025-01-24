@@ -162,7 +162,7 @@ std::time_t RtcTime::get(std::tm &time) const {
 }
 
 void RtcTime::readFromRtc() {
-  ::RTC_GetTimeAndDate(RTC, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
+  ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth,
       &mDayOfMonth, &mDayOfWeekDay);
 }
 

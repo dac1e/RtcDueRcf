@@ -21,6 +21,25 @@ void RTC_Handler (void) {
   RtcSam3XA::clock.RtcSam3XA_Handler();
 }
 
+void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarmTime) {
+  getAlarmRaw(alarmTime);
+  // Always return 24 hour mode
+  alarmTime.hour += 12 * RTC_GetHourMode(RTC);
+}
+
+void RtcSam3XA::dstFixAlarm() {
+  Sam3XA::RtcTime dueTimeAndDate;
+  // Use the hour mode bit to store the information whether
+  // the alarm is already dst adjusted. It is a save location
+  // to store this info, because the information isn't lost
+  // when the RTC power is backed up with a battery.
+  const bool is12hrMode = RTC_GetHourMode(RTC);
+  dueTimeAndDate.readFromRtc();
+  if (dueTimeAndDate.isdst()) {
+    // Let the RTC
+  }
+}
+
 RtcSam3XA::RtcSam3XA()
   : mSetTimeRequest(false)
   , mSecondCallback(nullptr)
@@ -159,7 +178,7 @@ void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& a) {
   RTC_EnableIt(RTC, RTC_IER_ALREN);
 }
 
-void RtcSam3XA::getAlarm(RtcSam3XA_Alarm& alarmTime) {
+void RtcSam3XA::getAlarmRaw(RtcSam3XA_Alarm& alarmTime) {
   RTC_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
   RTC_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
 }

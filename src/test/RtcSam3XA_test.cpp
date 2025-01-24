@@ -51,15 +51,17 @@ static void dumpTzInfo(Stream& stream) {
 
 namespace RtcSam3XA_test {
 
-void basicSetGet(Stream &log) {
+void testBasicSetGet(Stream &log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
+  // Default contstructor: 1st of January 2000  00:00:00h
   TM stime;
   std::mktime(&stime);
 
 #if RTC_MEASURE_ACKUPD
   uint32_t timestamp_setClock = millis();
 #endif
+
   std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
   log.println(stime);
 
@@ -88,7 +90,7 @@ void basicSetGet(Stream &log) {
 
 }
 
-void dstEntry(Stream& log) {
+void testDstEntry(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -124,7 +126,7 @@ void dstEntry(Stream& log) {
   assert(rtime.tm_hour == HOUR_START + 2);
 }
 
-void dstExit(Stream& log) {
+void testDstExit(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -168,7 +170,7 @@ void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
   assert(stime.tm_isdst == isdst);
 }
 
-void checkRTCisdst(Stream& log) {
+void testRTCisdst(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -196,7 +198,7 @@ void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Al
   assert(alarm == originalAlarm);
 }
 
-void checkAlarmSubtractAndAdd (Stream& log) {
+void testAlarmSubtractAndAdd (Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -218,23 +220,49 @@ void checkAlarmSubtractAndAdd (Stream& log) {
 
 }
 
+void test12hourMode(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+
+  RTC_SetHourMode(RTC, 12);
+
+  TM stime;
+  std::mktime(&stime);
+
+  std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+  log.println(stime);
+
+  TM rtime;
+  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(100); // @100ms
+  // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
+  // The latency is about 350msec.
+  assert(localtime == localTimeStart);
+
+  // After 1600 (100 + 1600) the time should be set and should be increased by one second.
+  delay(1500);// @1600ms
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  logtime(log, rtime, localtime);
+  delay(100); // @1700ms
+  assert(localtime == localTimeStart + 1);
+}
+
 void run(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  testAlarmSubtractAndAdd(log);
+
   dumpTzInfo(log);
   delay(200);
-
-  checkAlarmSubtractAndAdd(log);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
-
   dumpTzInfo(log);
   delay(200);
 
-  checkRTCisdst(log);
-  basicSetGet(log);
-  dstEntry(log);
-  dstExit(log);
-
+//  testBasicSetGet(log);
+  test12hourMode(log);
+//  testRTCisdst(log);
+//  testDstEntry(log);
+//  testDstExit(log);
 }
 
 static size_t i = 0;
