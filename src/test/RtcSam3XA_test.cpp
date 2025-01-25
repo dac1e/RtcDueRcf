@@ -14,52 +14,51 @@
 
 namespace {
 
-  // Provide an example instance.
-  void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
-    // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
-    time.set(second, minute, hour, 27, TM::make_tm_month(TM::March),
-        TM::make_tm_year(2016), -1 /* -1: unknown */);
-  }
+const char* const sHrsMode[] = {"24hrs mode.", "12hrs mode."};
 
-  // Provide an example instance.
-  void makeCETdstEndTime(TM& time, int second, int minute, int hour, int dst = 1 /* 1: still in dst */) {
-    // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
-    time.set(second, minute, hour, 30, TM::make_tm_month(TM::October),
-        TM::make_tm_year(2016), dst);
-  }
+// Provide an example instance.
+void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
+  // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
+  time.set(second, minute, hour, 27, TM::make_tm_month(TM::March),
+      TM::make_tm_year(2016), -1 /* -1: unknown */);
+}
 
-  void logtime(Stream& stream, const TM& time, std::time_t localtime) {
-    stream.print(time);
-    stream.print(", "); stream.print(localtime);
-    stream.print(", "); stream.println(time.tm_isdst);
-  }
+// Provide an example instance.
+void makeCETdstEndTime(TM& time, int second, int minute, int hour, int dst = 1 /* 1: still in dst */) {
+  // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
+  time.set(second, minute, hour, 30, TM::make_tm_month(TM::October),
+      TM::make_tm_year(2016), dst);
+}
 
-  void dumpTzInfo(Stream& stream) {
-    __tzinfo_type *tz = __gettzinfo ();
-    stream.print("__tznorth:"); stream.println(tz->__tznorth);
-    for(size_t i = 0; i < 2; i++) {
-      __tzrule_struct* tzrule = &tz->__tzrule[i];
-      stream.print(i);
-      stream.print(", ch:"); stream.print(tzrule->ch);
-      stream.print(", d:"); stream.print(tzrule->d);
-      stream.print(", m:"); stream.print(tzrule->m);
-      stream.print(", n:"); stream.print(tzrule->n);
-      stream.print(", s:"); stream.print(tzrule->s);
-      stream.print(", offset:"); stream.println(tzrule->offset);
-    }
-  }
+void logtime(Stream& stream, const TM& time, std::time_t localtime) {
+  stream.print(time);
+  stream.print(", "); stream.print(localtime);
+  stream.print(", "); stream.println(time.tm_isdst);
+}
 
-  static const char* sHrsMode[] = {"24hrs mode.", "12hrs mode."};
-
-  uint32_t getHourMode( Rtc* pRtc )
-  {
-      return pRtc->RTC_MR & 0x00000001;
+void dumpTzInfo(Stream& stream) {
+  __tzinfo_type *tz = __gettzinfo ();
+  stream.print("__tznorth:"); stream.println(tz->__tznorth);
+  for(size_t i = 0; i < 2; i++) {
+    __tzrule_struct* tzrule = &tz->__tzrule[i];
+    stream.print(i);
+    stream.print(", ch:"); stream.print(tzrule->ch);
+    stream.print(", d:"); stream.print(tzrule->d);
+    stream.print(", m:"); stream.print(tzrule->m);
+    stream.print(", n:"); stream.print(tzrule->n);
+    stream.print(", s:"); stream.print(tzrule->s);
+    stream.print(", offset:"); stream.println(tzrule->offset);
   }
+}
+
+uint32_t getHourMode( Rtc* pRtc )
+{
+    return pRtc->RTC_MR & 0x00000001;
+}
 
 } // anonymous namespace
 
 namespace RtcSam3XA_test {
-
 
 static void testBasicSetGet(Stream &log) {
   const uint32_t hrsMode = getHourMode(RTC);
@@ -98,7 +97,6 @@ static void testBasicSetGet(Stream &log) {
   log.print(setClockLatency);
   log.println("ms");
 #endif
-
 }
 
 static void testDstEntry(Stream& log) {
@@ -450,39 +448,45 @@ void run(Stream& log) {
 }
 
 static size_t i = 0;
+static size_t j = 0;
 
 void loop(Stream& log) {
+  if(j < 800) {
+    if(i  ==  0) {
+      constexpr int HOUR_START = 1;
+      TM stime;
+      makeCETdstBeginTime(stime, 00, 59, HOUR_START);
+      std::mktime(&stime);
+      std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+      log.print("Setting clock to dst time ");
+      log.println(stime);
+    }
 
-  if(i  ==  0) {
-    constexpr int HOUR_START = 1;
-    TM stime;
-    makeCETdstBeginTime(stime, 00, 59, HOUR_START);
-    std::mktime(&stime);
-    std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
-    log.print("Setting clock to dst time ");
-    log.println(stime);
+    if(i == 200) {
+      constexpr int HOUR_START = 2;
+      // Set RTC to 3 seconds before daylight savings starts
+      TM stime;
+      makeCETdstEndTime(stime, 00, 59, HOUR_START);
+
+      std::mktime(&stime);
+      std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
+      log.print("Setting clock to std time ");
+      log.println(stime);
+    }
+
+    {
+      TM rtime;
+      std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+      logtime(log, rtime, localtime);
+    }
+
+    i = (i+1) % 400;
+    delay(999);
+
+    if(++j == 800) {
+      log.println("--- End of Test ---");
+    }
   }
-
-  if(i == 200) {
-    constexpr int HOUR_START = 2;
-    // Set RTC to 3 seconds before daylight savings starts
-    TM stime;
-    makeCETdstEndTime(stime, 00, 59, HOUR_START);
-
-    std::mktime(&stime);
-    std::time_t localtimeStart = RtcSam3XA::clock.setByLocalTime(stime);
-    log.print("Setting clock to std time ");
-    log.println(stime);
-  }
-
-  {
-    TM rtime;
-    std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
-    logtime(log, rtime, localtime);
-  }
-
-  i = (i+1) % 400;
-  delay(999);
 }
 
 } // namespace RtcSam3XA_test
