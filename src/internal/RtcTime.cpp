@@ -106,8 +106,8 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
 #if MEASURE_Sam3XA_RtcTime_isdst
   const uint32_t d = micros() - s;
   Serial.print("isdst duration: ");
-  Serial.println(d);
-  Serial.print("usec");
+  Serial.print(d);
+  Serial.println("usec");
 #endif
 
   return result;

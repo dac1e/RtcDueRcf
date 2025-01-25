@@ -5,11 +5,12 @@
  *      Author: Wolfgang
  */
 
+#include <assert.h>
+#include "Arduino.h"
 #include "../RtcSam3XA.h"
 #include "../TM.h"
+#include "../internal/core-sam-GapClose.h"
 #include "RtcSam3XA_test.h"
-#include "Arduino.h"
-#include <assert.h>
 
 namespace {
 
@@ -51,7 +52,7 @@ static void dumpTzInfo(Stream& stream) {
 
 namespace RtcSam3XA_test {
 
-void testBasicSetGet(Stream &log) {
+static void testBasicSetGet(Stream &log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   // Default contstructor: 1st of January 2000  00:00:00h
@@ -90,7 +91,7 @@ void testBasicSetGet(Stream &log) {
 
 }
 
-void testDstEntry(Stream& log) {
+static void testDstEntry(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -126,7 +127,7 @@ void testDstEntry(Stream& log) {
   assert(rtime.tm_hour == HOUR_START + 2);
 }
 
-void testDstExit(Stream& log) {
+static void testDstExit(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -148,7 +149,7 @@ void testDstExit(Stream& log) {
   // The latency is about 350msec.
   assert(rtime.tm_hour == HOUR_START);
 
-  // After 1600 (100 + 1600) the time should be set and should be increased by one second.
+  // After 1600 (100 + 1500) the time should be set and should be increased by one second.
   delay(1500); // @1500ms
   localtime = RtcSam3XA::clock.getLocalTime(rtime);
   logtime(log, rtime, localtime);
@@ -162,7 +163,7 @@ void testDstExit(Stream& log) {
   assert(rtime.tm_hour == HOUR_START);
 }
 
-void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
+static void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
   std::time_t localtime = mktime(&stime);
   localtime_r(&localtime, &stime);
   rtc.set(stime);
@@ -170,7 +171,7 @@ void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
   assert(stime.tm_isdst == isdst);
 }
 
-void testRTCisdst(Stream& log) {
+static void testRTCisdst(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -179,18 +180,22 @@ void testRTCisdst(Stream& log) {
 
   makeCETdstBeginTime(stime, 59, 59, 1);
   checkRTCisdst(stime, rtc);
+  delay(100);
 
   makeCETdstBeginTime(stime, 00, 00, 2);
   checkRTCisdst(stime, rtc);
+  delay(100);
 
   makeCETdstEndTime(stime, 59, 59, 1);
   checkRTCisdst(stime, rtc);
+  delay(100);
 
   makeCETdstEndTime(stime, 00, 00, 2, 0);
   checkRTCisdst(stime, rtc);
+  delay(100);
 }
 
-void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
+static void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
   RtcSam3XA_Alarm originalAlarm = alarm;
   alarm.subtract(seconds, 0); // subtract  1 second.
   assert(alarm == expected);
@@ -198,7 +203,7 @@ void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Al
   assert(alarm == originalAlarm);
 }
 
-void testAlarmSubtractAndAdd (Stream& log) {
+static void testAlarmSubtractAndAdd (Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
@@ -220,12 +225,7 @@ void testAlarmSubtractAndAdd (Stream& log) {
 
 }
 
-void test12hourMode(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-
-  RTC_SetHourMode(RTC, 12);
-
-  TM stime;
+static void checkHourIn12hourMode(Stream& log, TM& stime, uint8_t expectedPm, uint8_t expectedHour) {
   std::mktime(&stime);
 
   std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
@@ -239,30 +239,71 @@ void test12hourMode(Stream& log) {
   // The latency is about 350msec.
   assert(localtime == localTimeStart);
 
-  // After 1600 (100 + 1600) the time should be set and should be increased by one second.
-  delay(1500);// @1600ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
-  logtime(log, rtime, localtime);
-  delay(100); // @1700ms
-  assert(localtime == localTimeStart + 1);
+  // After 1000 (100 + 900) the time should be set.
+  delay(900);// @1000ms
+
+
+  uint8_t hour; uint8_t pm;
+  RTC_GetTimeAndDate(RTC, &pm, &hour,
+      nullptr, nullptr, nullptr,
+      nullptr, nullptr, nullptr);
+
+  log.print("Hour: "); log.print(hour);
+  log.println( (pm ? "PM" : "AM") );
+  assert(hour == expectedHour);
+  assert(pm == expectedPm);
+
+  delay(100); // @700ms
+}
+
+static void test12hourMode(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+
+  // Default constructor initializes with midnight
+  TM tm;
+
+  // Check midnight
+  checkHourIn12hourMode(log, tm, 0, 12);
+
+  // Check hours from 1:00AM..11:00 AM
+  for(int hour = 1; hour < 12; hour++) {
+    tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
+    checkHourIn12hourMode(log, tm, 0, hour);
+  }
+
+  // Check Noon
+  tm.set(0, 0, 12, 1, 0, TM::make_tm_year(2000), -1);
+  checkHourIn12hourMode(log, tm, 1, 12);
+
+  // Check hours from 1:00PM..11:00 PM
+  for(int hour = 13; hour < 24; hour++) {
+    tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
+    checkHourIn12hourMode(log, tm, 1, hour-12);
+  }
 }
 
 void run(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  testAlarmSubtractAndAdd(log);
 
   dumpTzInfo(log);
   delay(200);
 
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
+  RTC_SetHourMode(RTC, 0);
   dumpTzInfo(log);
   delay(200);
 
-//  testBasicSetGet(log);
+  testAlarmSubtractAndAdd(log);
+  testRTCisdst(log);
+
+  testBasicSetGet(log);
+  testDstEntry(log);
+  testDstExit(log);
+
+  RTC_SetHourMode(RTC, 1);
   test12hourMode(log);
-//  testRTCisdst(log);
-//  testDstEntry(log);
-//  testDstExit(log);
+
+  RTC_SetHourMode(RTC, 0);
 }
 
 static size_t i = 0;

@@ -47,11 +47,14 @@ static uint32_t calculate_dwTime( Rtc* pRtc, uint8_t ucHour, uint8_t ucMinute, u
     if ( (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD )
     {
       // RTC is running in 12-hour mode
-      if ( ucHour > 12 )
+      if ( ucHour >= 12 )
       {
         // PM Time
         dwAmpm |= RTC_TIMR_AMPM ;
-        ucHour -= 12 ; // convert PM time to 12-hour mode
+        if ( ucHour > 12 )
+        {
+          ucHour -= 12 ; // convert PM time to 12-hour mode
+        }
       }
       else
       {

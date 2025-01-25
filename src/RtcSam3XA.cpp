@@ -67,6 +67,9 @@ void RtcSam3XA::RtcSam3XA_Handler() {
     mTimestampACKUPD = millis();
 #endif
     if (mSetTimeRequest) {
+#if RTC_DEBUG_ACKUPD
+      Serial.println("I");
+#endif
       ::RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(),
           mSetTimeCache.minute(), mSetTimeCache.second(),
           mSetTimeCache.year(), mSetTimeCache.month(),
