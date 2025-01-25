@@ -36,8 +36,9 @@ extern "C" {
  * \param pucDay     If not null, current day is stored in this variable.
  * \param pucWeek    If not null, current week is stored in this variable.
  */
-extern void RTC_GetTimeAndDate( Rtc* pRtc, uint8_t* pucAMPM, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond,
-    uint16_t *pwYear, uint8_t *pucMonth, uint8_t *pucDay, uint8_t *pucWeek );
+extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
+    uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
+    uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay, uint8_t* const pucWeek );
 
 /**
  * \brief Sets the current time and date in the RTC.
@@ -57,11 +58,11 @@ extern void RTC_GetTimeAndDate( Rtc* pRtc, uint8_t* pucAMPM, uint8_t *pucHour, u
  *
  * \return 0 sucess, 1 fail to set
  */
-extern int RTC_SetTimeAndDate( Rtc* pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
+extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
     uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek );
 
-extern int RTC_GetTimeAlarm( Rtc* pRtc, uint8_t *pucHour, uint8_t *pucMinute, uint8_t *pucSecond );
-extern int RTC_GetDateAlarm( Rtc* pRtc, uint8_t *pucMonth, uint8_t *pucDay );
+extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond );
+extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
 
 #ifdef __cplusplus
 }

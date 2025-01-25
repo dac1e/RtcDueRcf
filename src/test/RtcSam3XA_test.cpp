@@ -225,7 +225,7 @@ static void testAlarmSubtractAndAdd (Stream& log) {
 
 }
 
-static void checkHourIn12hourMode(Stream& log, TM& stime, uint8_t expectedPm, uint8_t expectedHour) {
+static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
 
   std::time_t localTimeStart = RtcSam3XA::clock.setByLocalTime(stime);
@@ -243,42 +243,42 @@ static void checkHourIn12hourMode(Stream& log, TM& stime, uint8_t expectedPm, ui
   delay(900);// @1000ms
 
 
-  uint8_t hour; uint8_t pm;
-  RTC_GetTimeAndDate(RTC, &pm, &hour,
+  uint8_t hour; uint8_t AMPM;
+  RTC_GetTimeAndDate(RTC, &AMPM, &hour,
       nullptr, nullptr, nullptr,
       nullptr, nullptr, nullptr);
 
   log.print("Hour: "); log.print(hour);
-  log.println( (pm ? "PM" : "AM") );
+  log.println( (AMPM ? "PM" : "AM") );
   assert(hour == expectedHour);
-  assert(pm == expectedPm);
+  assert(AMPM == expectedAMPM);
 
   delay(100); // @700ms
 }
 
-static void test12hourMode(Stream& log) {
+static void test12hourRepresentation(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   // Default constructor initializes with midnight
   TM tm;
 
   // Check midnight
-  checkHourIn12hourMode(log, tm, 0, 12);
+  check12hourRepresentation(log, tm, 0, 12);
 
   // Check hours from 1:00AM..11:00 AM
   for(int hour = 1; hour < 12; hour++) {
     tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
-    checkHourIn12hourMode(log, tm, 0, hour);
+    check12hourRepresentation(log, tm, 0, hour);
   }
 
   // Check Noon
   tm.set(0, 0, 12, 1, 0, TM::make_tm_year(2000), -1);
-  checkHourIn12hourMode(log, tm, 1, 12);
+  check12hourRepresentation(log, tm, 1, 12);
 
   // Check hours from 1:00PM..11:00 PM
   for(int hour = 13; hour < 24; hour++) {
     tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
-    checkHourIn12hourMode(log, tm, 1, hour-12);
+    check12hourRepresentation(log, tm, 1, hour-12);
   }
 }
 
@@ -300,8 +300,12 @@ void run(Stream& log) {
   testDstEntry(log);
   testDstExit(log);
 
+  // Test 12 hour representation in 12 RTC 24 hour mode.
+  test12hourRepresentation(log);
+
+  // Test 12 hour representation in 12 RTC 12 hour mode.
   RTC_SetHourMode(RTC, 1);
-  test12hourMode(log);
+  test12hourRepresentation(log);
 
   RTC_SetHourMode(RTC, 0);
 }
