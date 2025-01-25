@@ -68,9 +68,12 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute
  * The returned alarm time is always in 24-hrs representation independent of whether
  * the RTC is running in 12-hrs or 24-hrs mode.
  *
- * \param pucHour    If not null, current hour is stored in this variable.
- * \param pucMinute  If not null, current minute is stored in this variable.
- * \param pucSecond  If not null, current second is stored in this variable.
+ * \param pucHour    If not null, alarm hour is stored in this variable.
+ *                      If hour alarm is not enabled this variable will be UINT8_MAX.
+ * \param pucMinute  If not null, alarm minute is stored in this variable.
+ *                      If minute alarm is not enabled this variable will be UINT8_MAX.
+ * \param pucSecond  If not null, alarm second is stored in this variable.
+ *                      If second alarm is not enabled this variable will be UINT8_MAX.
  *
  * \return 0 if time alarm is valid. Otherwise 1.
  */
@@ -81,8 +84,10 @@ extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* c
  * \brief Retrieves the alarm date as stored in the RTC.
  * Month, day and week values are numbered starting at 1.
  *
- * \param pucMonth   If not null, current month is stored in this variable.
- * \param pucDay     If not null, current day is stored in this variable.
+ * \param pucMonth   If not null, the alarm month is stored in this variable.
+ *                      If month alarm is not enabled this variable will be UINT8_MAX.
+ * \param pucDay     If not null, alarm day is stored in this variable.
+ *                      If day alarm is not enabled this variable will be UINT8_MAX.
  *
  * \return 0 if date alarm is valid. Otherwise 1.
  */
@@ -94,18 +99,17 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
  * Passing a null-pointer disables the corresponding field match.
  * Setting all pointers to 0 disables the time alarm.
  *
- * \param pucHour    If not null, the time alarm will hour-match this value.
- * \param pucMinute  If not null, the time alarm will minute-match this value.
- * \param pucSecond  If not null, the time alarm will second-match this value.
+ * \param ucHour    If not UINT8_MAX, the time alarm will hour-match this value.
+ * \param ucMinute  If not UINT8_MAX, the time alarm will minute-match this value.
+ * \param ucSecond  If not UINT8_MAX, the time alarm will second-match this value.
  *
- * \param pucMonth   If not null, the RTC alarm will month-match this value.
- * \param pucDay     If not null, the RTC alarm will day-match this value.
+ * \param ucMonth   If not UINT8_MAX, the RTC alarm will month-match this value.
+ * \param ucDay     If not UINT8_MAX, the RTC alarm will day-match this value.
  *
  * \return 0 success, 1 fail to set
  */
-extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, const uint8_t* const pucHour,
-    const uint8_t* const pucMinute, const uint8_t* const pucSecond,
-    const uint8_t* const pucMonth, const uint8_t* const pucDay) ;
+extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute,
+    uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay) ;
 
 #ifdef __cplusplus
 }

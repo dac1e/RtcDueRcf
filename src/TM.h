@@ -60,6 +60,8 @@ public:
   void set(int _sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, int tm_isdst);
 
+  bool operator ==(const TM &other) const;
+
   /**
    * Convert this time to a unix time stamp.
    * Prerequisite: tm_yday and tm_isdst are set correctly.
@@ -106,6 +108,12 @@ inline TM::TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, MONTH mon,
     int ad_year, DST dst) {
   set(*this, tm_sec, tm_min, tm_hour, tm_mday, make_tm_month(mon),
       make_tm_year(ad_year), make_tm_dst(dst));
+}
+
+inline bool TM::operator ==(const TM &other) const {
+  // Don't need to compare tm_yday, because it depends on tm_mon and tm_mday.
+  return tm_sec == other.tm_sec && tm_min == other.tm_min && tm_hour == other.tm_hour &&
+      tm_mday == other.tm_mday && tm_year == other.tm_year && tm_isdst == other.tm_isdst;
 }
 
 inline void TM::set(int _sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,

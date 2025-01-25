@@ -11,8 +11,9 @@
 #define RTCSAM3XA_SRC_RTCSAM3XA_ALARM_H_
 
 #include <stdint.h>
+#include <Printable.h>
 
-class RtcSam3XA_Alarm {
+class RtcSam3XA_Alarm : public Printable {
 public:
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
 
@@ -32,7 +33,18 @@ public:
     return second == other.second && minute == other.minute && hour == other.hour
         && day == other.day && month == other.month;
   }
+
 private:
+  /**
+   * Implementation of interface printable. Allows to print the time struct.
+   *
+   * Example:
+   *  RtcSam3XA_Alarm alarm; // Create an alarm structure with default contents.
+   *  Serial.prinln(alarm);  // Print it.
+   */
+  size_t printTo(Print& p) const override;
+  static size_t printMember(Print &p, const uint8_t m);
+
   RtcSam3XA_Alarm gaps2zero() const;
   RtcSam3XA_Alarm zero2gaps() const;
   friend class RtcSam3XA;
@@ -42,5 +54,4 @@ private:
   uint8_t day;
   uint8_t month; // 1..12
 };
-
 #endif /* RTCSAM3XA_SRC_RTCSAM3XA_ALARM_H_ */

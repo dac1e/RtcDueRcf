@@ -319,30 +319,30 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc,  uint8_t ucHour, uint8_t ucMinut
   return (pRtc->RTC_VER & RTC_VER_NVCAL) ;
 }
 
-extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, const uint8_t* const pucHour,
-    const uint8_t* const pucMinute, const uint8_t* const pucSecond,
-    const uint8_t* const pucMonth, const uint8_t* const pucDay)
+extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
+    uint8_t ucMinute, uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay)
 {
   RTC_DisableIt(RTC, RTC_IER_ALREN);
 
   {
-    const uint8_t hour = pucHour ? *pucHour : 0;
-    const uint8_t minute = pucMinute ? *pucMinute : 0;
-    const uint8_t second = pucSecond ? *pucSecond : 0;
+    const uint8_t hour   = ucHour   != UINT8_MAX ? ucHour   : 0;
+    const uint8_t minute = ucMinute != UINT8_MAX ? ucMinute : 0;
+    const uint8_t second = ucSecond != UINT8_MAX ? ucSecond : 0;
+
     const int n12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD;
     uint32_t dwAlarmTime = time2dwTime(hour, minute, second, n12HourMode);
 
-    if( pucHour )
+    if( ucHour != UINT8_MAX )
     {
       dwAlarmTime |= RTC_TIMALR_HOUREN;
     }
 
-    if( pucMinute )
+    if( ucMinute != UINT8_MAX )
     {
       dwAlarmTime |= RTC_TIMALR_MINEN;
     }
 
-    if( pucSecond )
+    if( ucSecond != UINT8_MAX )
     {
       dwAlarmTime |= RTC_TIMALR_SECEN;
     }
@@ -351,16 +351,16 @@ extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, const uint8_t* const pucHou
   }
 
   {
-    const uint8_t month = pucMonth ? *pucMonth : 0;
-    const uint8_t day = pucDay ? *pucDay : 0;
+    const uint8_t month = ucMonth != UINT8_MAX ? ucMonth : 0;
+    const uint8_t day = ucDay != UINT8_MAX ? ucDay : 0;
     uint32_t dwAlarmDate = date2dwDate(0, month, day, 0);
 
-    if( pucMonth )
+    if( ucMonth  != UINT8_MAX )
     {
       dwAlarmDate |= RTC_CALALR_MTHEN;
     }
 
-    if( pucDay )
+    if( ucDay  != UINT8_MAX )
     {
       dwAlarmDate |= RTC_CALALR_DATEEN;
     }

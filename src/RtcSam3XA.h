@@ -95,10 +95,10 @@ public:
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
   // RTC Alarm
-  void setAlarm(const RtcSam3XA_Alarm& alarmTime);
+  void setAlarm(const RtcSam3XA_Alarm& alarm);
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
   void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam), void *alarmCallbackParam = nullptr);
-  void getAlarm(RtcSam3XA_Alarm &alarmTime);
+  void getAlarm(RtcSam3XA_Alarm &alarm);
   void dstFixAlarm();
 
 private:

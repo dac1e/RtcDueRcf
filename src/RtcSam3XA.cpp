@@ -21,10 +21,10 @@ void RTC_Handler (void) {
   RtcSam3XA::clock.RtcSam3XA_Handler();
 }
 
-void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarmTime) {
-  getAlarmRaw(alarmTime);
+void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarm) {
+  getAlarmRaw(alarm);
   // Always return 24 hour mode
-  alarmTime.hour += 12 * RTC_GetHourMode(RTC);
+  alarm.hour += 12 * RTC_GetHourMode(RTC);
 }
 
 void RtcSam3XA::dstFixAlarm() {
@@ -169,16 +169,8 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
 
 }
 
-void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& a) {
-
-  const uint8_t* _hour = a.hour == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.hour;
-  const uint8_t* _minute = a.minute == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.minute;
-  const uint8_t* _second = a.second == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.second;
-  const uint8_t* _day = a.day == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.day;
-  const uint8_t* _month = a.month == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.month;
-
-  // Need to do a const_cast here, because the sam API ignores const correctness.
-  RTC_SetTimeAndDateAlarm(RTC, _hour, _minute, _second, _month, _day);
+void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& alarm) {
+  RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
 }
 
 void RtcSam3XA::getAlarmRaw(RtcSam3XA_Alarm& alarmTime) {
@@ -285,68 +277,3 @@ void RtcSam3XA_Alarm::add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLe
     }
   }
 }
-
-static inline void fillAlarmFraction(uint8_t& v) {
-  if(v == RtcSam3XA_Alarm::INVALID_VALUE) { v = 0; }
-}
-
-RtcSam3XA_Alarm RtcSam3XA_Alarm::gaps2zero() const {
-  RtcSam3XA_Alarm result = *this;
-
-  // Fill all less significant values below the highest
-  // significant valid value with 0, if set to
-  // INVALID_VALUE.
-  if(month != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    fillAlarmFraction(result.day);
-    fillAlarmFraction(result.hour);
-    fillAlarmFraction(result.minute);
-    fillAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    fillAlarmFraction(result.hour);
-    fillAlarmFraction(result.minute);
-    fillAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    fillAlarmFraction(result.minute);
-    fillAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    fillAlarmFraction(result.second);
-  }
-  return result;
-}
-
-static inline void emptyAlarmFraction(uint8_t& v) {
-  if(v == 0) { v = RtcSam3XA_Alarm::INVALID_VALUE; }
-}
-
-RtcSam3XA_Alarm RtcSam3XA_Alarm::zero2gaps() const {
-  RtcSam3XA_Alarm result = *this;
-
-  // Fill all less significant values below the highest
-  // significant valid value with INVALID_VALUE if
-  // set to 0.
-  if(month != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    emptyAlarmFraction(result.day);
-    emptyAlarmFraction(result.hour);
-    emptyAlarmFraction(result.minute);
-    emptyAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    emptyAlarmFraction(result.hour);
-    emptyAlarmFraction(result.minute);
-    emptyAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    emptyAlarmFraction(result.minute);
-    emptyAlarmFraction(result.second);
-  } else if(day != RtcSam3XA_Alarm::INVALID_VALUE) {
-    // Fill all lower significant values with 0 if not set
-    emptyAlarmFraction(result.second);
-  }
-  return result;
-}
-
