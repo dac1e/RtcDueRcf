@@ -20,9 +20,6 @@ extern "C" {
  * \brief Retrieves the current time and current date as stored in the RTC.
  * Month, day and week values are numbered starting at 1.
  *
- * The returned time is always in 24 hrs mode independent of whether the RTC is running
- * in 12 hrs or 24 hrs mode.
- *
  * \param pucAMPM    If not null, the variable will be set to 1 if time is PM. The variable will
  *                   be set to 0 if time is AM.
  * \param pucHour    If not null, current hour is stored in this variable. The hour representation
@@ -38,17 +35,21 @@ extern "C" {
  */
 extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
-    uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay, uint8_t* const pucWeek );
+    uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay,
+    uint8_t* const pucWeek );
 
 /**
  * \brief Sets the current time and date in the RTC.
- * Month, day and week values must be numbered starting from 1.
+ * Month, day and week values must be numbered starting from 1. The passed hour
+ * must be in 24 hour representation, independent of whether the RTC is running
+ * in 12 hour mode, or 24-hrs mode. An adjusted ucHour may used to always
+ * to match the current RTC hour mode. The RTC hour mode will not be changed.
  *
  * \note In successive update operations, the user must wait at least one second
  * after resetting the UPDTIM/UPDCAL bit in the RTC_CR before setting these
  * bits again. Please look at the RTC section of the data sheet for detail.
  *
- * \param ucHour    Current hour in 12 or 24 hour mode.
+ * \param ucHour    Current hour in 24-hrs representation.
  * \param ucMinute  Current minute.
  * \param ucSecond  Current second.
  * \param wYear     Current year.
@@ -61,8 +62,50 @@ extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
 extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
     uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek );
 
-extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond );
+/**
+ * \brief Retrieves the alarm time as stored in the RTC.
+ *
+ * The returned alarm time is always in 24-hrs representation independent of whether
+ * the RTC is running in 12-hrs or 24-hrs mode.
+ *
+ * \param pucHour    If not null, current hour is stored in this variable.
+ * \param pucMinute  If not null, current minute is stored in this variable.
+ * \param pucSecond  If not null, current second is stored in this variable.
+ *
+ * \return 0 if time alarm is valid. Otherwise 1.
+ */
+extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour,
+    uint8_t* const pucMinute, uint8_t* const pucSecond );
+
+/**
+ * \brief Retrieves the alarm date as stored in the RTC.
+ * Month, day and week values are numbered starting at 1.
+ *
+ * \param pucMonth   If not null, current month is stored in this variable.
+ * \param pucDay     If not null, current day is stored in this variable.
+ *
+ * \return 0 if date alarm is valid. Otherwise 1.
+ */
 extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
+
+/**
+ * \brief Sets a time alarm and date on the RTC.
+ * The match is performed only on the provided variables;
+ * Passing a null-pointer disables the corresponding field match.
+ * Setting all pointers to 0 disables the time alarm.
+ *
+ * \param pucHour    If not null, the time alarm will hour-match this value.
+ * \param pucMinute  If not null, the time alarm will minute-match this value.
+ * \param pucSecond  If not null, the time alarm will second-match this value.
+ *
+ * \param pucMonth   If not null, the RTC alarm will month-match this value.
+ * \param pucDay     If not null, the RTC alarm will day-match this value.
+ *
+ * \return 0 success, 1 fail to set
+ */
+extern int RTC_SetTimeAndDateAlarm_( Rtc* const pRtc, const uint8_t* const pucHour,
+    const uint8_t* const pucMinute, const uint8_t* const pucSecond,
+    const uint8_t* const pucMonth, const uint8_t* const pucDay) ;
 
 #ifdef __cplusplus
 }

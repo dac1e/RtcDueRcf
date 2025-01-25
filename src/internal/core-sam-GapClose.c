@@ -31,28 +31,28 @@
 /**
  * \brief calculate the RTC_TIMR bcd format.
  *
- * \param ucHour      Current hour in 24 hour mode [0..23].
+ * \param ucHour      Current hour in 24-hrs mode [0..23].
  * \param ucMinute    Current minute.
  * \param ucSecond    Current second.
- * \param n12HourMode If nonzero, the returned value will be for RTC_TIMR 12 hour mode.
- *                    Otherwise, the returned value will be for RTC_TIMR 24 hour mode.
+ * \param n12hrsepresentationn If nonzero, the returned value will be for RTC_TIMR 12-hrs mode.
+ *                    Otherwise, the returned value will be for RTC_TIMR 24-hrs mode.
  *
  * \return time in 32 bit RTC_TIMR bcd format on success, 0xFFFFFFFF on fail
  */
-static uint32_t time2dwTime( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond, int n12HourMode) {
+static uint32_t time2dwTime( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond, int n12HrsRepresentationn) {
     uint32_t dwAmPm = 0 ;
 
-    /* if 12-hour mode, set AMPM bit */
-    if ( n12HourMode )
+    /* if 12-hrs mode, set AMPM bit */
+    if ( n12HrsRepresentationn )
     {
-      // RTC is running in 12-hour mode
+      // RTC is running in 12-hrs mode
       if ( ucHour >= 12 )
       {
         // PM Time
         dwAmPm |= RTC_TIMR_AMPM ;
         if ( ucHour > 12 )
         {
-          ucHour -= 12 ; // convert PM time to 12-hour mode
+          ucHour -= 12 ; // convert PM time to 12-hrs mode
         }
       }
       else
@@ -60,7 +60,7 @@ static uint32_t time2dwTime( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, 
         // AM Time
         if( ucHour == 0 ) // midnight ?
         {
-          ucHour = 12; // midnight is 12:00h in 12-hour mode
+          ucHour = 12; // midnight is 12:00h in 12-hrs mode
         }
       }
     }
@@ -137,22 +137,22 @@ void dwTime2Hour( Rtc* const pRtc, uint32_t dwTime, uint8_t* const pucAMPM, uint
     const int n12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD;
     if ( n12HourMode )
     {
-        // RTC is running in 12 hour mode
+        // RTC is running in 12-hrs mode
         const uint8_t pm = (dwTime & RTC_TIMR_AMPM) == RTC_TIMR_AMPM;
         if ( pucAMPM )
         {
-            // Keep 12 hour representation
+            // Keep 12-hrs representation
             *pucAMPM = pm;
         }
         else
         {
-            // Convert to 24 hour representation.
+            // Convert to 24-hrs representation.
             if ( pm )
             {
                 // PM Time
                 if ( *pucHour < 12 )
                 {
-                    *pucHour += 12; // convert PM time to 24 hour representation.
+                    *pucHour += 12; // convert PM time to 24-hrs representation.
                 }
             }
             else
@@ -160,23 +160,23 @@ void dwTime2Hour( Rtc* const pRtc, uint32_t dwTime, uint8_t* const pucAMPM, uint
                 // AM Time
                 if ( *pucHour == 12 ) // midnight ?
                 {
-                    *pucHour = 0; // midnight is 0:00h in 24 hour representation.
+                    *pucHour = 0; // midnight is 0:00h in 24-hrs representation.
                 }
             }
         }
     }
     else if ( pucAMPM )
     {
-        // RTC is running in 24 hour mode
+        // RTC is running in 24-hrs mode
         *pucAMPM = *pucHour > 11;
 
         if( *pucHour > 12 )
         {
-          *pucHour -= 12; // convert PM to 12 hour representation.
+          *pucHour -= 12; // convert PM to 12-hrs representation.
         }
         else if( *pucHour == 0 )
         {
-          *pucHour = 12; // midnight is 12:00 in 12 hour representation.
+          *pucHour = 12; // midnight is 12:00 in 12-hrs representation.
         }
     }
 }
@@ -324,43 +324,25 @@ extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* c
 {
   const uint32_t dwAlarm = pRtc->RTC_TIMALR ;
 
+  // Get the alarm time in 24-hrs mode.
+  dwTime2time(pRtc, dwAlarm, 0, pucHour, pucMinute, pucSecond);
+
   /* Hour */
-  if ( pucHour )
+  if ( pucHour  && !(dwAlarm & RTC_TIMALR_HOUREN) )
   {
-      if( dwAlarm & RTC_TIMALR_HOUREN )
-      {
-        *pucHour = ((dwAlarm & 0x00030000) >> 20) * 10 + ((dwAlarm & 0x000F0000) >> 16);
-      }
-      else
-      {
-        *pucHour = UINT8_MAX;
-      }
+      *pucHour = UINT8_MAX;
   }
 
   /* Minute */
-  if ( pucMinute )
+  if ( pucMinute && !(dwAlarm & RTC_TIMALR_MINEN) )
   {
-      if( dwAlarm & RTC_TIMALR_MINEN )
-      {
-          *pucMinute = ((dwAlarm & 0x00007000) >> 12) * 10 + ((dwAlarm & 0x00000F00) >> 8);
-      }
-      else
-      {
-        *pucMinute = UINT8_MAX;
-      }
+      *pucMinute = UINT8_MAX;
   }
 
   /* Second */
-  if ( pucSecond )
+  if ( pucSecond && !(dwAlarm & RTC_TIMALR_SECEN) )
   {
-      if ( dwAlarm & RTC_TIMALR_SECEN )
-      {
-          *pucSecond = ((dwAlarm & 0x00000070) >> 4) * 10 + (dwAlarm & 0x0000000F);
-      }
-      else
-      {
-        *pucSecond = UINT8_MAX;
-      }
+      *pucSecond = UINT8_MAX;
   }
 
   return (pRtc->RTC_VER & RTC_VER_NVTIMALR) ;
@@ -370,29 +352,19 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
 {
   const uint32_t dwAlarm = pRtc->RTC_CALALR;
 
-  /* Compute alarm field value */
-  if ( pucMonth )
+  // Get the alarm date.
+  dwDate2date(dwAlarm, 0, pucMonth, pucDay, 0);
+
+  /* Month */
+  if ( pucMonth && !(dwAlarm & RTC_CALALR_MTHEN) )
   {
-      if(dwAlarm & RTC_CALALR_MTHEN)
-      {
-        *pucMonth = ((dwAlarm & 0x00100000) >> 20) * 10 + ((dwAlarm & 0x000F0000) >> 16);
-      }
-      else
-      {
-        *pucMonth = UINT8_MAX;
-      }
+      *pucMonth = UINT8_MAX;
   }
 
-  if ( pucDay )
+  /* Day */
+  if ( pucDay && !(dwAlarm & RTC_CALALR_DATEEN) )
   {
-      if( dwAlarm & RTC_CALALR_DATEEN )
-      {
-        *pucDay = ((dwAlarm & 0x30000000) >> 28) * 10 + ((dwAlarm & 0x0F000000) >> 24);
-      }
-      else
-      {
-        *pucDay = UINT8_MAX;
-      }
+      *pucDay = UINT8_MAX;
   }
 
   return (pRtc->RTC_VER & RTC_VER_NVCALALR) ;
