@@ -282,6 +282,49 @@ static void test12hourRepresentation(Stream& log) {
   }
 }
 
+class AlarmReceiver {
+  Stream& mLog;
+
+  static void alarmCallback(void* param) {
+    static_cast<AlarmReceiver*>(param)->onAlarm();
+  }
+public:
+  AlarmReceiver(Stream& log) : mLog(log) {
+    RtcSam3XA::clock.setAlarmCallback(alarmCallback, this);
+  }
+
+  /* Called within interrupt context */
+  void onAlarm() {
+    mLog.println(__FUNCTION__);
+  }
+
+  ~AlarmReceiver() {
+    RtcSam3XA::clock.setAlarmCallback(nullptr, nullptr);
+  }
+};
+
+static void testAlarm(Stream& log) {
+  AlarmReceiver alarmReceiver(log);
+
+  // Default constructor: 1st of January 2000  00:00:00h
+  TM stime;
+  std::mktime(&stime);
+  std::time_t localtime = RtcSam3XA::clock.setByLocalTime(stime);
+  // After 500 the time should be set and should be increased by one second.
+  delay(500);// @500ms
+
+  TM rtime;
+  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100);// @600ms
+
+  RtcSam3XA_Alarm alarm;
+  alarm.setSecond(10);
+  RtcSam3XA::clock.setAlarm(alarm);
+
+  delay(75000);
+}
+
 void run(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
@@ -300,6 +343,9 @@ void run(Stream& log) {
   testDstEntry(log);
   testDstExit(log);
 
+  // Test alarm in 24 hrs mode.
+  testAlarm(log);
+
   // Test 12 hour representation in 12 RTC 24 hour mode.
   test12hourRepresentation(log);
 
@@ -307,7 +353,8 @@ void run(Stream& log) {
   RTC_SetHourMode(RTC, 1);
   test12hourRepresentation(log);
 
-  RTC_SetHourMode(RTC, 0);
+
+  return;
 }
 
 static size_t i = 0;

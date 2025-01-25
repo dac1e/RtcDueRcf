@@ -162,8 +162,11 @@ time_t RtcSam3XA::getUnixTime() const {
 
 void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
     void *alarmCallbackParam) {
-  mAlarmCallbackPararm = alarmCallbackParam;
+  RTC_DisableIt(RTC, RTC_IER_ALREN);
   mAlarmCallback = alarmCallback;
+  mAlarmCallbackPararm = alarmCallbackParam;
+  RTC_EnableIt(RTC, RTC_IER_ALREN);
+
 }
 
 void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& a) {
