@@ -74,8 +74,8 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute
  *
  * \return 0 if time alarm is valid. Otherwise 1.
  */
-extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour,
-    uint8_t* const pucMinute, uint8_t* const pucSecond );
+extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute,
+    uint8_t* const pucSecond );
 
 /**
  * \brief Retrieves the alarm date as stored in the RTC.
@@ -103,7 +103,7 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
  *
  * \return 0 success, 1 fail to set
  */
-extern int RTC_SetTimeAndDateAlarm_( Rtc* const pRtc, const uint8_t* const pucHour,
+extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, const uint8_t* const pucHour,
     const uint8_t* const pucMinute, const uint8_t* const pucSecond,
     const uint8_t* const pucMonth, const uint8_t* const pucDay) ;
 

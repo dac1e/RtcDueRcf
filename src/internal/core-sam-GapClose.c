@@ -39,11 +39,11 @@
  *
  * \return time in 32 bit RTC_TIMR bcd format on success, 0xFFFFFFFF on fail
  */
-static uint32_t time2dwTime( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond, int n12HrsRepresentationn) {
+static uint32_t time2dwTime(uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond, int n12HrsRepresentation) {
     uint32_t dwAmPm = 0 ;
 
     /* if 12-hrs mode, set AMPM bit */
-    if ( n12HrsRepresentationn )
+    if ( n12HrsRepresentation )
     {
       // RTC is running in 12-hrs mode
       if ( ucHour >= 12 )
@@ -88,7 +88,7 @@ static uint32_t time2dwTime( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, 
  *
  * \return date in 32 bit RTC_CALR bcd format on success, 0xFFFFFFFF on fail
  */
-static uint32_t date2dwDate( Rtc* const pRtc, uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek ) {
+static uint32_t date2dwDate(uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek ) {
     uint8_t ucCent_bcd ;
     uint8_t ucYear_bcd ;
     uint8_t ucMonth_bcd ;
@@ -289,18 +289,17 @@ extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     dwDate2date( dwDate, pwYear, pucMonth, pucDay, pucWeek ) ;
 }
 
-extern int RTC_SetTimeAndDate( Rtc* const pRtc,
-    uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
-    uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek )
+extern int RTC_SetTimeAndDate( Rtc* const pRtc,  uint8_t ucHour, uint8_t ucMinute,
+    uint8_t ucSecond, uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek )
 {
   const int isRTCin12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD ;
-  const uint32_t dwTime = time2dwTime(pRtc, ucHour, ucMinute, ucSecond, isRTCin12HourMode) ;
+  const uint32_t dwTime = time2dwTime(ucHour, ucMinute, ucSecond, isRTCin12HourMode) ;
   if ( dwTime == 0xFFFFFFFF )
   {
       return 1 ;
   }
 
-  const uint32_t dwDate = date2dwDate(pRtc, wYear, ucMonth, ucDay, ucWeek);
+  const uint32_t dwDate = date2dwDate(wYear, ucMonth, ucDay, ucWeek);
   /* value over flow */
   if ( dwDate == 0xFFFFFFFF)
   {
@@ -320,32 +319,89 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc,
   return (pRtc->RTC_VER & RTC_VER_NVCAL) ;
 }
 
+extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, const uint8_t* const pucHour,
+    const uint8_t* const pucMinute, const uint8_t* const pucSecond,
+    const uint8_t* const pucMonth, const uint8_t* const pucDay)
+{
+  RTC_DisableIt(RTC, RTC_IER_ALREN);
+
+  {
+    const uint8_t hour = pucHour ? *pucHour : 0;
+    const uint8_t minute = pucMinute ? *pucMinute : 0;
+    const uint8_t second = pucSecond ? *pucSecond : 0;
+    const int n12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD;
+    uint32_t dwAlarmTime = time2dwTime(hour, minute, second, n12HourMode);
+
+    if( pucHour )
+    {
+      dwAlarmTime |= RTC_TIMALR_HOUREN;
+    }
+
+    if( pucMinute )
+    {
+      dwAlarmTime |= RTC_TIMALR_MINEN;
+    }
+
+    if( pucSecond )
+    {
+      dwAlarmTime |= RTC_TIMALR_SECEN;
+    }
+
+    pRtc->RTC_TIMALR = dwAlarmTime;
+  }
+
+  {
+    const uint8_t month = pucMonth ? *pucMonth : 0;
+    const uint8_t day = pucDay ? *pucDay : 0;
+    uint32_t dwAlarmDate = date2dwDate(0, month, day, 0);
+
+    if( pucMonth )
+    {
+      dwAlarmDate |= RTC_CALALR_MTHEN;
+    }
+
+    if( pucDay )
+    {
+      dwAlarmDate |= RTC_CALALR_DATEEN;
+    }
+
+    pRtc->RTC_CALALR = dwAlarmDate;
+  }
+
+  const int result = (pRtc->RTC_VER & RTC_VER_NVTIMALR) || (pRtc->RTC_VER & RTC_VER_NVCALALR);
+
+  RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR | RTC_SCCR_TIMCLR | RTC_SCCR_CALCLR);
+  RTC_EnableIt(RTC, RTC_IER_ALREN);
+
+  return result;
+}
+
 extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond )
 {
-  const uint32_t dwAlarm = pRtc->RTC_TIMALR ;
+  const uint32_t dwAlarmTime = pRtc->RTC_TIMALR ;
 
   // Get the alarm time in 24-hrs mode.
-  dwTime2time(pRtc, dwAlarm, 0, pucHour, pucMinute, pucSecond);
+  dwTime2time(pRtc, dwAlarmTime, 0, pucHour, pucMinute, pucSecond);
 
   /* Hour */
-  if ( pucHour  && !(dwAlarm & RTC_TIMALR_HOUREN) )
+  if ( pucHour  && !(dwAlarmTime & RTC_TIMALR_HOUREN) )
   {
       *pucHour = UINT8_MAX;
   }
 
   /* Minute */
-  if ( pucMinute && !(dwAlarm & RTC_TIMALR_MINEN) )
+  if ( pucMinute && !(dwAlarmTime & RTC_TIMALR_MINEN) )
   {
       *pucMinute = UINT8_MAX;
   }
 
   /* Second */
-  if ( pucSecond && !(dwAlarm & RTC_TIMALR_SECEN) )
+  if ( pucSecond && !(dwAlarmTime & RTC_TIMALR_SECEN) )
   {
       *pucSecond = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & RTC_VER_NVTIMALR) ;
+  return (pRtc->RTC_VER & RTC_VER_NVTIMALR);
 }
 
 extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay )
@@ -367,6 +423,6 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
       *pucDay = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & RTC_VER_NVCALALR) ;
+  return (pRtc->RTC_VER & RTC_VER_NVCALALR);
 }
 

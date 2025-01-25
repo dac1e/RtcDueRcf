@@ -174,11 +174,8 @@ void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& a) {
   const uint8_t* _day = a.day == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.day;
   const uint8_t* _month = a.month == RtcSam3XA_Alarm::INVALID_VALUE ? nullptr : &a.month;
 
-  RTC_DisableIt(RTC, RTC_IER_ALREN);
   // Need to do a const_cast here, because the sam API ignores const correctness.
-  RTC_SetTimeAlarm(RTC, const_cast<uint8_t*>(_hour),  const_cast<uint8_t*>(_minute),  const_cast<uint8_t*>(_second));
-  RTC_SetDateAlarm(RTC, const_cast<uint8_t*>(_month), const_cast<uint8_t*>(_day));
-  RTC_EnableIt(RTC, RTC_IER_ALREN);
+  RTC_SetTimeAndDateAlarm(RTC, _hour, _minute, _second, _month, _day);
 }
 
 void RtcSam3XA::getAlarmRaw(RtcSam3XA_Alarm& alarmTime) {
