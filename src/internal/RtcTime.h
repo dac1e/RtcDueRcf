@@ -74,10 +74,11 @@ public:
   void readFromRtc();
   void readFromRtc(Stream& log);
 
+  void writeToRtc() const;
+
   /** Determine whether this time is within daylight savings period. */
   int isdst() const;
 
-  static int isLeapYear(uint16_t year  /* 4 digits ad year. */);
   static int monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear);
 };
 

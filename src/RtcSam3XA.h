@@ -126,8 +126,10 @@ private:
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
   friend void ::RTC_Handler();
-  void RtcSam3XA_Handler();
-  void RtcSam3XA_FixAlarmHandler();
+  bool isDstTransition(std::tm &time);
+  inline void RtcSam3XA_DstChecker();
+  inline void RtcSam3XA_AckUpdHandler();
+  inline void RtcSam3XA_Handler();
 
   enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_FIX_ALARM_REQUEST};
 
@@ -138,6 +140,7 @@ private:
   void* mSecondCallbackPararm;
 
   void(*mAlarmCallback)(void*);
+
   void* mAlarmCallbackPararm;
 
 #if RTC_MEASURE_ACKUPD

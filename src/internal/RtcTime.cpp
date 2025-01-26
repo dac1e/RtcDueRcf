@@ -130,10 +130,6 @@ int RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
   return ::month_lengths[bIsLeapYear][tmMonth(month)];
 }
 
-int RtcTime::isLeapYear(uint16_t year) {
-  return ::isLeapYear(year);
-}
-
 int RtcTime::isdst() const {
   return ::isdst(*this);
 }
@@ -143,6 +139,7 @@ void RtcTime::set(const std::tm &time) {
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
+
   assert(time.tm_isdst >= 0);
   mRtc12hrsMode = time.tm_isdst;
   mYear = rtcYear(time);
@@ -182,6 +179,15 @@ std::time_t RtcTime::get(std::tm &time) const {
 #endif
 
   return result;
+}
+
+void RtcTime::writeToRtc() const {
+  RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
+      month(), day(), day_of_week());
+  // In order to detect whether RTC carries daylight savings time or
+  // standard time, 12-hrs mode of RTC is applied, when RTC carries
+  // daylight savings time.
+  RTC_SetHourMode(RTC, rtc12hrsMode());
 }
 
 void RtcTime::readFromRtc() {
