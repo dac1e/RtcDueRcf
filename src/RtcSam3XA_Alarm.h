@@ -39,9 +39,6 @@ public:
         && day == other.day && month == other.month;
   }
 
-  void subtract(int _seconds /* [0.. (24 * 60 * 60 * 28)[ */, bool bIsLeapYear);
-  void add(int _seconds /* [0.. (24 * 60 * 60 * 28)[ */, bool bIsLeapYear);
-
 private:
   /**
    * Implementation of interface printable. Allows to print the time struct.

@@ -126,12 +126,11 @@ private:
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
   friend void ::RTC_Handler();
-  bool isDstTransition(std::tm &time);
   inline void RtcSam3XA_DstChecker();
   inline void RtcSam3XA_AckUpdHandler();
   inline void RtcSam3XA_Handler();
 
-  enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_FIX_ALARM_REQUEST};
+  enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_RTC_REQUEST};
 
   volatile SET_TIME_REQUEST mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
@@ -149,11 +148,6 @@ private:
 public:
   uint32_t getTimestampACKUPD() const {
     return mTimestampACKUPD;
-  }
-#else
-public:
-  uint32_t getTimestampACKUPD() const {
-    return 0;
   }
 #endif
 };

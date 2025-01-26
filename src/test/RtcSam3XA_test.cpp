@@ -202,35 +202,35 @@ static void testRTCisdst(Stream& log) {
   delay(100);
 }
 
-static void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
-  RtcSam3XA_Alarm originalAlarm = alarm;
-  alarm.subtract(seconds, 0); // subtract  1 second.
-  assert(alarm == expected);
-  alarm.add(seconds, 0); // add 1 second.
-  assert(alarm == originalAlarm);
-}
+//static void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
+//  RtcSam3XA_Alarm originalAlarm = alarm;
+//  alarm.subtract(seconds, 0); // subtract  1 second.
+//  assert(alarm == expected);
+//  alarm.add(seconds, 0); // add 1 second.
+//  assert(alarm == originalAlarm);
+//}
 
-static void testAlarmSubtractAndAdd (Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  delay(100); // @100ms
-
-  {
-    RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
-    {
-      const RtcSam3XA_Alarm expected(59, 59, 23, 31, 11);
-      alarmSubtractAndAdd(alarm, 1, expected);
-    }
-  }
-
-  {
-    RtcSam3XA_Alarm alarm(0, 0, 0, 1, RtcSam3XA_Alarm::INVALID_VALUE); // Midnight first of any month
-    {
-      const RtcSam3XA_Alarm expected(59, 59, 23, 31, RtcSam3XA_Alarm::INVALID_VALUE);
-      alarmSubtractAndAdd(alarm, 1, expected);
-    }
-  }
-
-}
+//static void testAlarmSubtractAndAdd (Stream& log) {
+//  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+//  delay(100); // @100ms
+//
+//  {
+//    RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
+//    {
+//      const RtcSam3XA_Alarm expected(59, 59, 23, 31, 11);
+//      alarmSubtractAndAdd(alarm, 1, expected);
+//    }
+//  }
+//
+//  {
+//    RtcSam3XA_Alarm alarm(0, 0, 0, 1, RtcSam3XA_Alarm::INVALID_VALUE); // Midnight first of any month
+//    {
+//      const RtcSam3XA_Alarm expected(59, 59, 23, 31, RtcSam3XA_Alarm::INVALID_VALUE);
+//      alarmSubtractAndAdd(alarm, 1, expected);
+//    }
+//  }
+//
+//}
 
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
@@ -406,7 +406,7 @@ void run(Stream& log) {
     dumpTzInfo(log);
     delay(200);
 
-    testAlarmSubtractAndAdd(log);
+//    testAlarmSubtractAndAdd(log);
     testRTCisdst(log);
 
     testBasicSetGet(log);

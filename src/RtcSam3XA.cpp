@@ -72,29 +72,14 @@ void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
-bool RtcSam3XA::isDstTransition(std::tm &time) {
-  bool result = false;
-  Sam3XA::RtcTime dueTimeAndDate;
-  dueTimeAndDate.readFromRtc();
-  const bool is12hrsMode = dueTimeAndDate.rtc12hrsMode();
-  const bool isDst = dueTimeAndDate.isdst();
-  if (isDst != is12hrsMode) {
-    // Change RTC to carry daylight savings time so that alarms will be adjusted.
-    dueTimeAndDate.get(time);
-    result = true;
-  }
-  return result;
-}
-
 void RtcSam3XA::RtcSam3XA_DstChecker() {
-  if(mSetTimeRequest != SET_TIME_REQUEST::DST_FIX_ALARM_REQUEST) {
-    TM tm;
-    if(isDstTransition(tm)) {
+  if(mSetTimeRequest != SET_TIME_REQUEST::DST_RTC_REQUEST) {
+    TM tm; Sam3XA::RtcTime dueTimeAndDate;
+    if(dueTimeAndDate.dstRtcRequest(tm)) {
       // Fill cache with time.
       mSetTimeCache.set(tm);
-
       if(not mSetTimeRequest) {
-        mSetTimeRequest = SET_TIME_REQUEST::DST_FIX_ALARM_REQUEST;
+        mSetTimeRequest = SET_TIME_REQUEST::DST_RTC_REQUEST;
         RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
       }
     }
@@ -164,13 +149,7 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
   }
 
   Sam3XA::RtcTime dueTimeAndDate;
-
-#if RTC_DEBUG_HOUR_MODE
-  dueTimeAndDate.readFromRtc(Serial);
-#else
   dueTimeAndDate.readFromRtc();
-#endif
-
   return dueTimeAndDate.get(time);
 }
 

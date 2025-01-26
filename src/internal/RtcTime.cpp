@@ -126,9 +126,9 @@ int stdToDstDiff() {
 
 namespace Sam3XA {
 
-int RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
-  return ::month_lengths[bIsLeapYear][tmMonth(month)];
-}
+//int RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
+//  return ::month_lengths[bIsLeapYear][tmMonth(month)];
+//}
 
 int RtcTime::isdst() const {
   return ::isdst(*this);
@@ -181,6 +181,27 @@ std::time_t RtcTime::get(std::tm &time) const {
   return result;
 }
 
+bool RtcTime::dstRtcRequest(std::tm &time) {
+  bool result = false;
+  readFromRtc();
+  const bool is12hrsMode = rtc12hrsMode();
+  const bool isDst = isdst();
+  if (isDst != is12hrsMode) {
+    // Change RTC to carry daylight savings time so that alarms will be adjusted.
+    get(time);
+    result = true;
+#if RTC_DEBUG_HOUR_MODE
+  Serial.print(__FUNCTION__);
+  if(is12hrsMode) {
+    Serial.println(" to 24-hrs mode.");
+  } else {
+    Serial.println(" to 12-hrs mode.");
+  }
+#endif
+  }
+  return result;
+}
+
 void RtcTime::writeToRtc() const {
   RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
       month(), day(), day_of_week());
@@ -195,16 +216,14 @@ void RtcTime::readFromRtc() {
     &mHour, &mMinute, &mSecond, &mYear, &mMonth,
     &mDayOfMonth, &mDayOfWeekDay);
   mIsFromRTC = 1;
-}
-
-void RtcTime::readFromRtc(Stream& log) {
-  readFromRtc();
-  log.print(__FUNCTION__);
-  if(mRtc12hrsMode) {
-    log.println(" @RTC 12-hrs mode.");
+#if RTC_DEBUG_HOUR_MODE
+  Serial.print(__FUNCTION__);
+  if(rtc12hrsMode()) {
+    Serial.println(" @RTC 12-hrs mode.");
   } else {
-    log.println(" @RTC 24-hrs mode.");
+    Serial.println(" @RTC 24-hrs mode.");
   }
+#endif
 }
 
 } // namespace Sam3XA_Rtc

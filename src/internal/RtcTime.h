@@ -64,22 +64,19 @@ public:
   static uint8_t  rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
   static uint8_t  rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
-  /** Set this Sam3XA RTC struct from a tm struct. */
-  void set(const std::tm &time);
-
   /** Get a tm struct from this Sam3XA RTC struct. */
   std::time_t get(std::tm &time) const;
 
+  /** Set this Sam3XA RTC struct from a tm struct. */
+  void set(const std::tm &time);
+
   /** Read 24 hour representation independent of the hrs mode the RTC is running in. */
   void readFromRtc();
-  void readFromRtc(Stream& log);
-
   void writeToRtc() const;
 
   /** Determine whether this time is within daylight savings period. */
+  bool dstRtcRequest(std::tm &time);
   int isdst() const;
-
-  static int monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear);
 };
 
 } // namespace Sam3XA_Rtc
