@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <ctime>
 
+#define RTC_DEBUG_HOUR_MODE true
+
 class Stream;
 
 namespace Sam3XA {

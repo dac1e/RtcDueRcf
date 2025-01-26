@@ -75,7 +75,7 @@ std::time_t TM::mkgmtime(const std::tm& time) {
   return ::mkgmtime(time, time.tm_isdst);
 }
 
-TM::TM() : TM(0, 0, 0, 1, make_tm_month(TM::January), make_tm_year(2000), false) {
+TM::TM() : TM(0, 0, 0, 1, make_tm_month(TM::January), make_tm_year(2000), DST_UNKNOWN) {
 }
 
 void TM::set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday

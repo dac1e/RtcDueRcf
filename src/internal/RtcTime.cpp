@@ -2,14 +2,14 @@
 
 #include "core-sam-GapClose.h"
 
-#define MEASURE_Sam3XA_RtcTime_isdst true
+#define MEASURE_Sam3XA_RtcTime_isdst false
 #define ASSERT_Sam3XA_RtcTime_isdst true
 
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
 #endif
 
-#if MEASURE_Sam3XA_RtcTime_isdst
+#if MEASURE_Sam3XA_RtcTime_isdst || RTC_DEBUG_HOUR_MODE
 #include "Arduino.h"
 #endif
 

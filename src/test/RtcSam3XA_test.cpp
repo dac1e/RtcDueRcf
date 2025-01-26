@@ -61,8 +61,7 @@ uint32_t getHourMode( Rtc* pRtc )
 namespace RtcSam3XA_test {
 
 static void testBasicSetGet(Stream &log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   // Default contstructor: 1st of January 2000  00:00:00h
   TM stime;
@@ -100,8 +99,7 @@ static void testBasicSetGet(Stream &log) {
 }
 
 static void testDstEntry(Stream& log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   constexpr int HOUR_START = 1;
@@ -137,8 +135,7 @@ static void testDstEntry(Stream& log) {
 }
 
 static void testDstExit(Stream& log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   constexpr int HOUR_START = 2;
@@ -182,8 +179,7 @@ static void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
 }
 
 static void testRTCisdst(Stream& log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   Sam3XA::RtcTime rtc;
@@ -215,8 +211,7 @@ static void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSa
 }
 
 static void testAlarmSubtractAndAdd (Stream& log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   {
@@ -268,12 +263,8 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   delay(100); // @700ms
 }
 
-static void test12hourRepresentation(Stream& log) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
-
-  // Default constructor initializes with midnight
-  TM tm;
+static void test12hourRepresentation(Stream& log, TM& tm) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   // Check midnight
   check12hourRepresentation(log, tm, 0, 12);
@@ -295,9 +286,9 @@ static void test12hourRepresentation(Stream& log) {
   }
 }
 
-static void testAlarm(Stream& log, TM& stime, uint32_t runtimeAfterSetByLocalTime) {
-  const uint32_t hrsMode = getHourMode(RTC);
-  log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
+    uint32_t runtimeAfterSetByLocalTime) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   // Default constructor: 1st of January 2000  00:00:00h
   std::mktime(&stime);
@@ -312,9 +303,6 @@ static void testAlarm(Stream& log, TM& stime, uint32_t runtimeAfterSetByLocalTim
   delay(500);// @1000ms
   runtimeAfterSetByLocalTime -= 500;
 
-  RtcSam3XA_Alarm salarm;
-  salarm.setHour(0);
-  salarm.setSecond(10);
   RtcSam3XA::clock.setAlarm(salarm);
 
   RtcSam3XA_Alarm ralarm;
@@ -376,9 +364,10 @@ public:
   }
 };
 
-static void testAlarm(Stream& log) {
-  // Test alarm starting at 00:00h
-  TM stime;
+static void testAlarm(Stream& log, TM& stime) {
+  RtcSam3XA_Alarm salarm;
+  salarm.setHour(0);
+  salarm.setSecond(10);
 
   {
     AlarmReceiver alarmReceiver(log);
@@ -386,12 +375,17 @@ static void testAlarm(Stream& log) {
 
     expectedAlarms[0].tm_sec = 10;
     expectedAlarms[0].tm_min =  0;
+    expectedAlarms[0].tm_mon =  stime.tm_mon;
+    mktime(&expectedAlarms[0]);
 
     expectedAlarms[1].tm_sec = 10;
     expectedAlarms[1].tm_min =  1;
+    expectedAlarms[1].tm_mon =  stime.tm_mon;
+    mktime(&expectedAlarms[1]);
 
     alarmReceiver.setExpectedAlarms(2, expectedAlarms);
-    testAlarm(log, stime, 75000 /* Give 75 seconds for the alarms to appear. */);
+
+    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the alarms to appear. */);
   }
 
   // Test alarm starting at 12:00h
@@ -399,17 +393,16 @@ static void testAlarm(Stream& log) {
   {
     AlarmReceiver alarmReceiver(log);
     alarmReceiver.setExpectedAlarms(0, nullptr);
-    testAlarm(log, stime, 75000 /* Give 75 seconds for the alarms to appear. */);
+    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the alarms to appear. */);
   }
 }
 
 void run(Stream& log) {
   RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   /* --- Run RTC in 24-hrs mode --- */
   {
-    const uint32_t hrsMode = getHourMode(RTC);
-    log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
     dumpTzInfo(log);
     delay(200);
 
@@ -420,24 +413,35 @@ void run(Stream& log) {
     testDstEntry(log);
     testDstExit(log);
 
-    // Test alarm in 24 hrs mode.
-    testAlarm(log);
+    // Test 12 hour representation in RTC 24 hour mode.
+    {
+      TM tm;// Default constructor initializes Midnight 1.January 2000 that will put RTC into 24-hrs mode
+      test12hourRepresentation(log, tm);
+    }
 
-    // Test 12 hour representation in 12 RTC 24 hour mode.
-    test12hourRepresentation(log);
+    // Test alarm in 24 hrs mode.
+    {
+      TM tm; // Default constructor initializes Midnight 1.January 2000 that will put RTC into 24-hrs mode
+      testAlarm(log, tm);
+    }
   }
 
-//  /* --- Run RTC in 12-hrs mode --- */
-//  {
-//    const uint32_t hrsMode = getHourMode(RTC);
-//    log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
-//
-//    // Test 12 hour representation in 12 RTC 12 hour mode.
-//    test12hourRepresentation(log);
-//
-//    // Test alarm in 12 hrs mode.
-//    testAlarm(log);
-//  }
+  /* --- Run RTC in 12-hrs mode --- */
+  {
+    // Test 12 hour representation in RTC 12 hour mode.
+    {
+      TM tm; // Default constructor initializes Midnight 1.January 2000
+      tm.tm_mon = 3; // Choose April to get into daylight savings that will put RTC into 12-hrs mode.
+      test12hourRepresentation(log, tm);
+    }
+
+    // Test alarm in 12 hrs mode.
+    {
+      TM tm; // Default constructor initializes Midnight 1.January 2000
+      tm.tm_mon = 3; // Choose April to get into daylight savings that will put RTC into 12-hrs mode.
+      testAlarm(log, tm);
+    }
+  }
 
   return;
 }

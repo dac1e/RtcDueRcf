@@ -12,7 +12,7 @@
 #include "internal/core-sam-GapClose.h"
 #include "internal/RtcTime.h"
 
-#if RTC_MEASURE_ACKUPD
+#if RTC_MEASURE_ACKUPD || RTC_DEBUG_HOUR_MODE
 #include <Arduino.h>
 #endif
 
@@ -34,7 +34,6 @@ int dstToMormalTimeDiff() {
   // west direction. result will become positive.
   return tzrule_DstBegin->offset - tzrule_DstEnd->offset;
 }
-
 
 } // anonymous namespace
 
@@ -195,7 +194,7 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
 
   Sam3XA::RtcTime dueTimeAndDate;
 
-#if DEBUG_RTC_HOUR_MODE
+#if RTC_DEBUG_HOUR_MODE
   dueTimeAndDate.readFromRtc(Serial);
 #else
   dueTimeAndDate.readFromRtc();
