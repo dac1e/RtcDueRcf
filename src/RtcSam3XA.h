@@ -31,24 +31,24 @@ public:
    * TM time;
    * RtcSam3XA::clock.getLocalTime(time);
    *
-   * const TM time {24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY), TM::make_tm_year(2016), false};
+   * const TM time {24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY),
+   *   TM::make_tm_year(2016), false};
    * RtcSam3XA::clock.setByLocalTime(time);
    */
   static RtcSam3XA clock;
 
   /**
    * Set timezone. Refer to
-   * https://man7.org/linux/man-pages/man3/tzset.3.html
-   * for the explanation of the timezone string format.
+   * https://man7.org/linux/man-pages/man3/tzset.3.html for the explanation
+   * of the timezone string format.
    *
-   * Note: When the time zone is changed, the local time
-   * and the alarms will not change.
+   * Note: When the time zone is changed, the local time and the alarms
+   * will not change.
    *
-   * E.g. The local time is 15:00h and there is an alarm
-   * set at 16:00h. After the time zone has changed, the
-   * local time within the new time zone is 15:00h and the
-   * alarm time will appear at 16:00h within the new time
-   * zone.
+   * E.g. The local time is 15:00h and there is an alarm set at 16:00h.
+   * After the time zone has changed, the local time within the new time
+   * zone is 15:00h and the alarm time will appear at 16:00h within the new
+   * time zone.
    */
   static void tzset(const char* timezone) {
     setenv("TZ", timezone, true);
@@ -62,30 +62,31 @@ public:
   void begin(const char* timezone = nullptr, const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
 
   /**
-   * Set the RTC by the local time.
+   * @brief Set the RTC by the local time.
    *
-   * The RTC does not support dates before 1st of January 2000. So the
+   * Note: The RTC does not support dates before 1st of January 2000. So the
    * tm_year that contains the elapsed years since 1900 must be greater
    * than 100.
+   *
    *
    * @return The local time as expired seconds since 1st of January 1970.
    */
   std::time_t setByLocalTime(const std::tm &time);
 
   /**
-   * Set the RTC by a unix time stamp.
-   * Prerequisite: time zone is set correctly.
+   * Set the RTC by a unix time stamp. Prerequisite: time zone is set
+   * correctly.
    */
   void setByUnixTime(std::time_t timestamp);
 
   /**
-   * Get the local time from the RTC.
+   * @brief Get the local time from the RTC.
    */
-  std::time_t getLocalTime(std::tm &td) const;
+  std::time_t getLocalTime(std::tm &time) const;
 
   /**
-   * Get a unix time stamp from the RTC.
-   * Prerequisite: time zone is set correctly.
+   * Get a unix time stamp from the RTC. Prerequisite: time zone is set
+   * correctly.
    */
   std::time_t getUnixTime() const;
 
@@ -95,26 +96,46 @@ public:
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
   // RTC Alarm
+  /**
+   * @brief Set the callback to be called upon alarm.
+   *
+   * @param alarmCallback       The function to be called.
+   * @param alarmCallbackParam  This parameter will be passed
+   *                            to the callback function.
+   */
+  void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam),
+      void *alarmCallbackParam = nullptr);
+
+  /**
+   * @brief Set alarm time and date.
+   *
+   * @param alarm The alarm time and alarm date, when
+   *              the alarm shall appear.
+   */
   void setAlarm(const RtcSam3XA_Alarm& alarm);
-  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
-  void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam), void *alarmCallbackParam = nullptr);
   void getAlarm(RtcSam3XA_Alarm &alarm);
+  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
   void dstFixAlarm();
 
 private:
-  /** Constructor is private. There is only one object RtcSam3XA::clock. */
+  /**
+   * @brief Default constructor. Constructor is private,
+   *        because there must be only one object
+   *        RtcSam3XA::clock.
+   */
   RtcSam3XA();
 
   // Global interrupt handler forwards to RtcSam3XA_Handler()
   friend void ::RTC_Handler();
   void RtcSam3XA_Handler();
   void onSecTransitionInterrupt();
-  void getAlarmRaw(RtcSam3XA_Alarm& alarmTime);
 
   volatile bool mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
+
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;
+
   void(*mAlarmCallback)(void*);
   void* mAlarmCallbackPararm;
 

@@ -26,13 +26,21 @@ public:
   void setDay(int tm_mday) {second = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
   void setMonth(int tm_mon /* 0..11 */ ) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
 
-  void subtract(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
-  void add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear);
+  /**
+   * Fill with the RTC contents.
+   */
+  void readFromRtc();
 
+  /**
+   * Test equality with other alarm.
+   */
   bool operator==(const RtcSam3XA_Alarm& other) const {
     return second == other.second && minute == other.minute && hour == other.hour
         && day == other.day && month == other.month;
   }
+
+  void subtract(int _seconds /* [0.. (24 * 60 * 60 * 28)[ */, bool bIsLeapYear);
+  void add(int _seconds /* [0.. (24 * 60 * 60 * 28)[ */, bool bIsLeapYear);
 
 private:
   /**

@@ -10,10 +10,34 @@
 #include "RtcSam3XA.h"
 
 #include "internal/core-sam-GapClose.h"
+#include "internal/RtcTime.h"
 
 #if RTC_MEASURE_ACKUPD
 #include <Arduino.h>
 #endif
+
+namespace {
+
+// Substitute function, because the original api function  RTC_GetHourMode()
+// from rtc.h has a bug.
+uint32_t RTC_GetHourMode_()
+{
+    return RTC->RTC_MR & 0x00000001;
+}
+
+int dstToMormalTimeDiff() {
+  // Change from standard to daylight savings time -> fix the alarms
+  const __tzinfo_type* const tz = __gettzinfo();
+  const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[!tz->__tznorth];
+  const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
+  // Note: Unit of the offsets is seconds. The offsets become negative in
+  // west direction. result will become positive.
+  return tzrule_DstBegin->offset - tzrule_DstEnd->offset;
+}
+
+
+} // anonymous namespace
+
 
 RtcSam3XA RtcSam3XA::clock;
 
@@ -22,21 +46,38 @@ void RTC_Handler (void) {
 }
 
 void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarm) {
-  getAlarmRaw(alarm);
-  // Always return 24 hour mode
-  alarm.hour += 12 * RTC_GetHourMode(RTC);
+  alarm.readFromRtc();
 }
 
 void RtcSam3XA::dstFixAlarm() {
   Sam3XA::RtcTime dueTimeAndDate;
-  // Use the hour mode bit to store the information whether
-  // the alarm is already dst adjusted. It is a save location
-  // to store this info, because the information isn't lost
-  // when the RTC power is backed up with a battery.
-  const bool is12hrMode = RTC_GetHourMode(RTC);
+  // Use the hour mode bit to store the information whether the alarm is
+  // already dst adjusted. It is a save location to store this info,
+  // because the information isn't lost when the RTC power is backed up
+  // with a battery.
+
+  // Cannot use RTC_GetHourMode() from rtc.h because it has a bug.
+  // const bool is12hrMode = RTC_GetHourMode(RTC);
+  const bool is12hrsMode = RTC_GetHourMode_();
   dueTimeAndDate.readFromRtc();
   if (dueTimeAndDate.isdst()) {
-    // Let the RTC
+    if(not is12hrsMode) {
+      // Change from standard to daylight savings time -> fix the alarms
+      const int timeDiff = dstToMormalTimeDiff();
+      // add time diff to alarm time
+      RtcSam3XA_Alarm alarm;
+      getAlarm(alarm);
+      alarm = alarm.gaps2zero();
+    }
+  } else {
+    if(is12hrsMode) {
+      // Change from daylight savings to standard time -> fix the alarms
+      const int timeDiff = dstToMormalTimeDiff();
+      // add time diff to alarm time
+      RtcSam3XA_Alarm alarm;
+      getAlarm(alarm);
+
+    }
   }
 }
 
@@ -70,15 +111,13 @@ void RtcSam3XA::RtcSam3XA_Handler() {
 #if RTC_DEBUG_ACKUPD
       Serial.println("I");
 #endif
-      ::RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(),
-          mSetTimeCache.minute(), mSetTimeCache.second(),
-          mSetTimeCache.year(), mSetTimeCache.month(),
-          mSetTimeCache.day(), mSetTimeCache.day_of_week());
+      ::RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(), mSetTimeCache.minute(),
+        mSetTimeCache.second(), mSetTimeCache.year(), mSetTimeCache.month(),
+        mSetTimeCache.day(), mSetTimeCache.day_of_week());
+
       mSetTimeRequest = false;
     }
-
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
-    //    RTC_EnableIt(RTC, RTC_IER_SECEN);
   }
 
   /* Second increment interrupt */
@@ -173,107 +212,9 @@ void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& alarm) {
   RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
 }
 
-void RtcSam3XA::getAlarmRaw(RtcSam3XA_Alarm& alarmTime) {
-  RTC_GetTimeAlarm(RTC, &alarmTime.hour, &alarmTime.minute, &alarmTime.second);
-  RTC_GetDateAlarm(RTC, &alarmTime.month, &alarmTime.day);
-}
-
 void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),
     void *secondCallbackParam) {
   mSecondCallback = secondCallback;
   mSecondCallbackPararm = secondCallbackParam;
 }
 
-
-/******************
- * RtcSam3XA_Alarm
- *****************/
-
-RtcSam3XA_Alarm::RtcSam3XA_Alarm() :
-    second(INVALID_VALUE), minute(INVALID_VALUE), hour(INVALID_VALUE), day(INVALID_VALUE), month(INVALID_VALUE) {
-}
-
-RtcSam3XA_Alarm::RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon)
-  : second(tm_sec < 60 ? tm_sec : INVALID_VALUE), minute(tm_min < 60 ? tm_min : INVALID_VALUE)
-  , hour(tm_hour < 24 ? tm_hour : INVALID_VALUE), day(tm_mday < 32 ? tm_mday : INVALID_VALUE)
-  , month(tm_mon < 12 ? tm_mon+1 : INVALID_VALUE) {
-}
-
-static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
-  if(q > 0) {
-    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
-      int r = q % d;
-      q = q / d;
-      if(r > v) {
-        r -= d;
-        ++q;
-      }
-      v -= r;
-      return true;
-    }
-  }
-  return false;
-}
-
-void RtcSam3XA_Alarm::subtract(int _seconds, bool bIsLeapYear) {
-  // Check allowed boundaries.
-  assert(_seconds < 24 * 60 * 60 * 28);
-  assert(_seconds > 0);
-  int q = _seconds;
-
-  if(not subtractTimeFraction(q, second, 60) ) {return;}
-  if(not subtractTimeFraction(q, minute, 60) ) {return;}
-  if(not subtractTimeFraction(q, hour, 24) )   {return;}
-  if (day != INVALID_VALUE) {
-    uint8_t _day = day - 1;
-    int d = 31;
-    if(month != INVALID_VALUE) {
-      const uint8_t _month = month - 1;
-      const int previousMonth = (_month - 1 + 12) % 12 + 1;
-      d = Sam3XA::RtcTime::monthLength(previousMonth, bIsLeapYear);
-    }
-    subtractTimeFraction(q, _day, d);
-    day = _day + 1;
-    if (month != INVALID_VALUE) {
-      month = (month - 1 - q + 12) % 12 + 1;
-    }
-  }
-}
-
-static inline bool addTimeFraction(int& q, uint8_t& v, unsigned d) {
-  if(q > 0) {
-    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
-      const int r = (v + q) % d;
-      q = q / d;
-      if(r < v) {
-        ++q;
-      }
-      v = r;
-      return true;
-    }
-  }
-  return false;
-}
-
-void RtcSam3XA_Alarm::add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear) {
-  assert(_seconds < 24 * 60 * 60 * 28);
-  assert(_seconds > 0);
-  int q = _seconds;
-
-  if(not addTimeFraction(q, second, 60) ) {return;}
-  if(not addTimeFraction(q, minute, 60) ) {return;}
-  if(not addTimeFraction(q, hour, 24) )   {return;}
-  if (day != INVALID_VALUE) {
-    uint8_t _day = day - 1;
-    int d = 31;
-    if(month != INVALID_VALUE) {
-      const uint8_t tm_mon = month - 1;
-      d = Sam3XA::RtcTime::monthLength(month, bIsLeapYear);
-    }
-    addTimeFraction(q, _day, d);
-    day = _day + 1;
-    if (month != INVALID_VALUE) {
-      month = (month - 1 + q + 12) % 12 + 1;
-    }
-  }
-}

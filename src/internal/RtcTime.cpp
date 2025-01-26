@@ -89,7 +89,6 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
 #if MEASURE_Sam3XA_RtcTime_isdst
   const uint32_t s = micros();
 #endif
-
   int result = 0;
   if(_daylight) {
     const __tzinfo_type * const tz = __gettzinfo ();
@@ -97,7 +96,7 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
 
     if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
-      // Note that the offsets become negative in west direction.
+      // Note: Unit of the offsets is seconds. The offsets become negative in west direction.
       const int normalTimeToDstDifference = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
       result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, normalTimeToDstDifference);
     }
@@ -109,7 +108,6 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
   Serial.print(d);
   Serial.println("usec");
 #endif
-
   return result;
 }
 
@@ -149,6 +147,7 @@ std::time_t RtcTime::get(std::tm &time) const {
   time.tm_wday = tm_wday();
   time.tm_yday = -1; // invalid
   time.tm_isdst = 0;
+
   // mktime will fix the tm_yday as well as tm_ist and the
   // hour, if time is within daylight savings period.
   std::time_t result = mktime(&time);

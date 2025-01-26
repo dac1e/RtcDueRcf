@@ -5,7 +5,10 @@
  *      Author: Wolfgang
  */
 
-#include "print.h"
+#include <assert.h>
+#include <print.h>
+#include "internal/core-sam-GapClose.h"
+#include "internal/RtcTime.h"
 #include "RtcSam3XA_Alarm.h"
 
 static inline void fillAlarmFraction(uint8_t& v) {
@@ -89,4 +92,97 @@ RtcSam3XA_Alarm RtcSam3XA_Alarm::zero2gaps() const {
   return result;
 }
 
+RtcSam3XA_Alarm::RtcSam3XA_Alarm() :
+    second(INVALID_VALUE), minute(INVALID_VALUE), hour(INVALID_VALUE), day(INVALID_VALUE), month(INVALID_VALUE) {
+}
+
+RtcSam3XA_Alarm::RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon)
+  : second(tm_sec < 60 ? tm_sec : INVALID_VALUE), minute(tm_min < 60 ? tm_min : INVALID_VALUE)
+  , hour(tm_hour < 24 ? tm_hour : INVALID_VALUE), day(tm_mday < 32 ? tm_mday : INVALID_VALUE)
+  , month(tm_mon < 12 ? tm_mon+1 : INVALID_VALUE) {
+}
+
+static inline bool subtractTimeFraction(int& q, uint8_t& v, unsigned d) {
+  if(q > 0) {
+    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
+      int r = q % d;
+      q = q / d;
+      if(r > v) {
+        r -= d;
+        ++q;
+      }
+      v -= r;
+      return true;
+    }
+  }
+  return false;
+}
+
+void RtcSam3XA_Alarm::subtract(int _seconds, bool bIsLeapYear) {
+  // Check allowed boundaries.
+  assert(_seconds < 24 * 60 * 60 * 28);
+  assert(_seconds > 0);
+  int q = _seconds;
+
+  if(not subtractTimeFraction(q, second, 60) ) {return;}
+  if(not subtractTimeFraction(q, minute, 60) ) {return;}
+  if(not subtractTimeFraction(q, hour, 24) )   {return;}
+  if (day != INVALID_VALUE) {
+    uint8_t _day = day - 1;
+    int d = 31;
+    if(month != INVALID_VALUE) {
+      const uint8_t _month = month - 1;
+      const int previousMonth = (_month - 1 + 12) % 12 + 1;
+      d = Sam3XA::RtcTime::monthLength(previousMonth, bIsLeapYear);
+    }
+    subtractTimeFraction(q, _day, d);
+    day = _day + 1;
+    if (month != INVALID_VALUE) {
+      month = (month - 1 - q + 12) % 12 + 1;
+    }
+  }
+}
+
+static inline bool addTimeFraction(int& q, uint8_t& v, unsigned d) {
+  if(q > 0) {
+    if (v != RtcSam3XA_Alarm::INVALID_VALUE) {
+      const int r = (v + q) % d;
+      q = q / d;
+      if(r < v) {
+        ++q;
+      }
+      v = r;
+      return true;
+    }
+  }
+  return false;
+}
+
+void RtcSam3XA_Alarm::add(int _seconds /* 0.. (24 * 60 * 60 * 28) */, bool bIsLeapYear) {
+  assert(_seconds < 24 * 60 * 60 * 28);
+  assert(_seconds > 0);
+  int q = _seconds;
+
+  if(not addTimeFraction(q, second, 60) ) {return;}
+  if(not addTimeFraction(q, minute, 60) ) {return;}
+  if(not addTimeFraction(q, hour, 24) )   {return;}
+  if (day != INVALID_VALUE) {
+    uint8_t _day = day - 1;
+    int d = 31;
+    if(month != INVALID_VALUE) {
+      const uint8_t tm_mon = month - 1;
+      d = Sam3XA::RtcTime::monthLength(month, bIsLeapYear);
+    }
+    addTimeFraction(q, _day, d);
+    day = _day + 1;
+    if (month != INVALID_VALUE) {
+      month = (month - 1 + q + 12) % 12 + 1;
+    }
+  }
+}
+
+void RtcSam3XA_Alarm::readFromRtc() {
+  RTC_GetTimeAlarm(RTC, &hour, &minute, &second);
+  RTC_GetDateAlarm(RTC, &month, &day);
+}
 

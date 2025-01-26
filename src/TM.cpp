@@ -5,8 +5,8 @@
  *      Author: Wolfgang
  */
 
+#include <print.h>
 #include "TM.h"
-#include "print.h"
 
 namespace {
 
