@@ -85,7 +85,7 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct
   return result;
 }
 
-inline int isdst(const Sam3XA::RtcTime& rtcTime) {
+inline int isdst_(const Sam3XA::RtcTime& rtcTime) {
 #if MEASURE_Sam3XA_RtcTime_isdst
   const uint32_t s = micros();
 #endif
@@ -126,13 +126,7 @@ int stdToDstDiff() {
 
 namespace Sam3XA {
 
-//int RtcTime::monthLength(uint8_t month /* 1..12 */, bool bIsLeapYear) {
-//  return ::month_lengths[bIsLeapYear][tmMonth(month)];
-//}
-
-int RtcTime::isdst() const {
-  return ::isdst(*this);
-}
+int RtcTime::isdst() const {return isdst_(*this);}
 
 void RtcTime::set(const std::tm &time) {
   mIsFromRTC = 0;

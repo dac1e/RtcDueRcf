@@ -50,8 +50,6 @@ private:
   size_t printTo(Print& p) const override;
   static size_t printMember(Print &p, const uint8_t m);
 
-  RtcSam3XA_Alarm gaps2zero() const;
-  RtcSam3XA_Alarm zero2gaps() const;
   friend class RtcSam3XA;
   uint8_t second;
   uint8_t minute;
