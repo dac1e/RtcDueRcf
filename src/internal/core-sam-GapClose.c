@@ -267,7 +267,7 @@ extern void dwDate2date( uint32_t dwDate, uint16_t* const pwYear, uint8_t* const
  *        Exported functions
  *----------------------------------------------------------------------------*/
 
-extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
+extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
     uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay, uint8_t* const pucWeek )
 {
@@ -285,8 +285,10 @@ extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     }
     while( dwTime != pRtc->RTC_TIMR );
 
-    dwTime2time( pRtc, dwTime, pucAMPM, pucHour, pucMinute, pucSecond ) ;
-    dwDate2date( dwDate, pwYear, pucMonth, pucDay, pucWeek ) ;
+    dwTime2time( pRtc, dwTime, pucAMPM, pucHour, pucMinute, pucSecond );
+    dwDate2date( dwDate, pwYear, pucMonth, pucDay, pucWeek );
+
+    return pRtc->RTC_MR & 0x00000001;
 }
 
 extern int RTC_SetTimeAndDate( Rtc* const pRtc,  uint8_t ucHour, uint8_t ucMinute,

@@ -408,11 +408,8 @@ void run(Stream& log) {
 
   /* --- Run RTC in 24-hrs mode --- */
   {
-    log.println("*** Set RTC to 24 hrs mode ***");
-    RTC_SetHourMode(RTC, 0);
     const uint32_t hrsMode = getHourMode(RTC);
     log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
-
     dumpTzInfo(log);
     delay(200);
 
@@ -430,19 +427,17 @@ void run(Stream& log) {
     test12hourRepresentation(log);
   }
 
-  /* --- Run RTC in 12-hrs mode --- */
-  {
-    log.println("*** Set RTC to 12 hrs mode ***");
-    RTC_SetHourMode(RTC, 1);
-    const uint32_t hrsMode = getHourMode(RTC);
-    log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
-
-    // Test 12 hour representation in 12 RTC 12 hour mode.
-    test12hourRepresentation(log);
-
-    // Test alarm in 12 hrs mode.
-    testAlarm(log);
-  }
+//  /* --- Run RTC in 12-hrs mode --- */
+//  {
+//    const uint32_t hrsMode = getHourMode(RTC);
+//    log.print("--- RtcSam3XA_test::"); log.print(__FUNCTION__); log.print("@RTC in "); log.println(sHrsMode[hrsMode]);
+//
+//    // Test 12 hour representation in 12 RTC 12 hour mode.
+//    test12hourRepresentation(log);
+//
+//    // Test alarm in 12 hrs mode.
+//    testAlarm(log);
+//  }
 
   return;
 }

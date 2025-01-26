@@ -96,9 +96,9 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
 
     if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
-      // Note: Unit of the offsets is seconds. The offsets become negative in west direction.
-      const int normalTimeToDstDifference = tzrule_DstEnd->offset - tzrule_DstBegin->offset;
-      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, normalTimeToDstDifference);
+      // Unit of the offsets is seconds.
+      const int stdToDstDifference = rtcTime.dst() ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, stdToDstDifference);
     }
   }
 
@@ -109,6 +109,17 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
   Serial.println("usec");
 #endif
   return result;
+}
+
+/**
+ * Get the time difference between standard time and daylight savings in seconds.
+ */
+int stdToDstDiff() {
+  const __tzinfo_type * const tz = __gettzinfo ();
+  const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[not tz->__tznorth];
+  const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
+  // Unit of the offsets is seconds.
+  return tzrule_DstEnd->offset - tzrule_DstBegin->offset;
 }
 
 } // anonymous namespace
@@ -131,6 +142,7 @@ void RtcTime::set(const std::tm &time) {
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
+  mDst = time.tm_isdst;
   mYear = rtcYear(time);
   mMonth = rtcMonth(time);
   mDayOfMonth = time.tm_mday;
@@ -148,12 +160,21 @@ std::time_t RtcTime::get(std::tm &time) const {
   time.tm_yday = -1; // invalid
   time.tm_isdst = 0;
 
-  // mktime will fix the tm_yday as well as tm_ist and the
-  // hour, if time is within daylight savings period.
+  // Get UTC from RTC time.
   std::time_t result = mktime(&time);
+  if(dst()) {
+    // RTC carries daylight savings time (typically 1 hour ahead).
+    // That might even be the case if we are not in dst period.
+    // Hence we must fix the UTC here.
+    result += stdToDstDiff();
+  }
+
+  // Calculate local time from UTC. localtime_r will
+  // also fix the tm_yday as well as tm_ist and the
+  // hour, if time is within daylight savings period.
   localtime_r(&result, &time);
 
-#if ASSERT_RtcTime_isdst
+#if ASSERT_Sam3XA_RtcTime_isdst
   assert(isdst() == time.tm_isdst);
 #endif
 
@@ -161,9 +182,14 @@ std::time_t RtcTime::get(std::tm &time) const {
 }
 
 void RtcTime::readFromRtc() {
-  ::RTC_GetTimeAndDate(RTC, nullptr, // Read 24 hour representation
-      &mHour, &mMinute, &mSecond, &mYear, &mMonth,
-      &mDayOfMonth, &mDayOfWeekDay);
+  // Read 24 hour representation
+
+  // In order to detect whether RTC carries daylight savings time or
+  // standard time, 12-hrs mode of RTC is applied, when RTC carries
+  // daylight savings time.
+  mDst = ::RTC_GetTimeAndDate(RTC, nullptr,
+    &mHour, &mMinute, &mSecond, &mYear, &mMonth,
+    &mDayOfMonth, &mDayOfWeekDay);
 }
 
 } // namespace Sam3XA_Rtc

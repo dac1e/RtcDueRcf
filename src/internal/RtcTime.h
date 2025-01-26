@@ -20,6 +20,7 @@ class RtcTime {
   uint8_t mHour;
   uint8_t mMinute;
   uint8_t mSecond;
+  uint8_t mDst; // nonzero, if RTC carries daylight savings time.
 
   uint16_t mYear; // 4 digits ad year
   uint8_t mMonth; // 1..12
@@ -40,6 +41,7 @@ public:
   inline uint8_t month() const {return mMonth;}
   inline uint8_t day() const {return mDayOfMonth;}
   inline uint8_t day_of_week() const {return mDayOfWeekDay;}
+  inline uint8_t dst() const {return mDst;}
 
   inline int tm_hour()const {return mHour;}
   inline int tm_min()const {return mMinute;}

@@ -111,10 +111,13 @@ void RtcSam3XA::RtcSam3XA_Handler() {
 #if RTC_DEBUG_ACKUPD
       Serial.println("I");
 #endif
-      ::RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(), mSetTimeCache.minute(),
+      RTC_SetTimeAndDate(RTC, mSetTimeCache.hour(), mSetTimeCache.minute(),
         mSetTimeCache.second(), mSetTimeCache.year(), mSetTimeCache.month(),
         mSetTimeCache.day(), mSetTimeCache.day_of_week());
-
+      // In order to detect whether RTC carries daylight savings time or
+      // standard time, 12-hrs mode of RTC is applied, when RTC carries
+      // daylight savings time.
+      RTC_SetHourMode(RTC, mSetTimeCache.dst());
       mSetTimeRequest = false;
     }
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
@@ -163,10 +166,12 @@ std::time_t RtcSam3XA::setByLocalTime(const std::tm &time) {
   std::tm buffer = time;
   const time_t localTime = mktime(&buffer);
 
+#if 0
   // Calculate local standard time (I.e. local time
-  // without daylight savings shift.)
+  // without daylight savings shift).
   std::time_t localStandardTime = TM::mkgmtime(buffer);
   gmtime_r(&localStandardTime, &buffer);
+#endif
 
   // Fill cache with standard time.
   mSetTimeCache.set(buffer);

@@ -32,8 +32,10 @@ extern "C" {
  * \param pucMonth   If not null, current month is stored in this variable.
  * \param pucDay     If not null, current day is stored in this variable.
  * \param pucWeek    If not null, current week is stored in this variable.
+ *
+ * \return           0 if RTC is running in 24-hrs mode. 1 if RTC is running in 12-hrs mode.
  */
-extern void RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
+extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
     uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay,
     uint8_t* const pucWeek );
