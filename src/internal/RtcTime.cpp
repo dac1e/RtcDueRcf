@@ -2,8 +2,8 @@
 
 #include "core-sam-GapClose.h"
 
-#define ASSERT_Sam3XA_RtcTime_isdst true
 #define MEASURE_Sam3XA_RtcTime_isdst true
+#define ASSERT_Sam3XA_RtcTime_isdst true
 
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
@@ -97,7 +97,7 @@ inline int isdst(const Sam3XA::RtcTime& rtcTime) {
 
     if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
       // Unit of the offsets is seconds.
-      const int stdToDstDifference = rtcTime.dst() ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+      const int stdToDstDifference = rtcTime.rtc12hrsMode() ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
       result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, stdToDstDifference);
     }
   }
@@ -139,10 +139,12 @@ int RtcTime::isdst() const {
 }
 
 void RtcTime::set(const std::tm &time) {
+  mIsFromRTC = 0;
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
-  mDst = time.tm_isdst;
+  assert(time.tm_isdst >= 0);
+  mRtc12hrsMode = time.tm_isdst;
   mYear = rtcYear(time);
   mMonth = rtcMonth(time);
   mDayOfMonth = time.tm_mday;
@@ -150,6 +152,7 @@ void RtcTime::set(const std::tm &time) {
 }
 
 std::time_t RtcTime::get(std::tm &time) const {
+  time.tm_isdst = mIsFromRTC ? 0 : mRtc12hrsMode;
   time.tm_hour = tm_hour();
   time.tm_min = tm_min();
   time.tm_sec = tm_sec();
@@ -157,12 +160,12 @@ std::time_t RtcTime::get(std::tm &time) const {
   time.tm_mon = tm_mon();
   time.tm_mday = tm_mday();
   time.tm_wday = tm_wday();
-  time.tm_yday = -1; // invalid
-  time.tm_isdst = 0;
+  time.tm_yday = -1;
 
   // Get UTC from RTC time.
   std::time_t result = mktime(&time);
-  if(dst()) {
+
+  if(mIsFromRTC && rtc12hrsMode()) {
     // RTC carries daylight savings time (typically 1 hour ahead).
     // That might even be the case if we are not in dst period.
     // Hence we must fix the UTC here.
@@ -182,14 +185,20 @@ std::time_t RtcTime::get(std::tm &time) const {
 }
 
 void RtcTime::readFromRtc() {
-  // Read 24 hour representation
-
-  // In order to detect whether RTC carries daylight savings time or
-  // standard time, 12-hrs mode of RTC is applied, when RTC carries
-  // daylight savings time.
-  mDst = ::RTC_GetTimeAndDate(RTC, nullptr,
+  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr,
     &mHour, &mMinute, &mSecond, &mYear, &mMonth,
     &mDayOfMonth, &mDayOfWeekDay);
+  mIsFromRTC = 1;
+}
+
+void RtcTime::readFromRtc(Stream& log) {
+  readFromRtc();
+  log.print(__FUNCTION__);
+  if(mRtc12hrsMode) {
+    log.println(" @RTC 12-hrs mode.");
+  } else {
+    log.println(" @RTC 24-hrs mode.");
+  }
 }
 
 } // namespace Sam3XA_Rtc

@@ -17,7 +17,8 @@
 #include "internal/RtcTime.h"
 #include "RtcSam3XA_Alarm.h"
 
-#define RTC_MEASURE_ACKUPD true
+#define RTC_DEBUG_HOUR_MODE true
+#define RTC_MEASURE_ACKUPD false
 
 class RtcSam3XA {
 public:

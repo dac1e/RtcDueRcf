@@ -117,7 +117,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
       // In order to detect whether RTC carries daylight savings time or
       // standard time, 12-hrs mode of RTC is applied, when RTC carries
       // daylight savings time.
-      RTC_SetHourMode(RTC, mSetTimeCache.dst());
+      RTC_SetHourMode(RTC, mSetTimeCache.rtc12hrsMode());
       mSetTimeRequest = false;
     }
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
@@ -194,7 +194,13 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
   }
 
   Sam3XA::RtcTime dueTimeAndDate;
+
+#if DEBUG_RTC_HOUR_MODE
+  dueTimeAndDate.readFromRtc(Serial);
+#else
   dueTimeAndDate.readFromRtc();
+#endif
+
   return dueTimeAndDate.get(time);
 }
 

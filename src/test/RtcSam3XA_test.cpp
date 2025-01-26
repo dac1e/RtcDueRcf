@@ -349,9 +349,9 @@ public:
 
   /* Called within interrupt context */
   void onAlarm() {
-    mLog.print(__FUNCTION__);
     TM rtime;
     RtcSam3XA::clock.getLocalTime(rtime);
+    mLog.print(__FUNCTION__);
     mLog.print(" @ ");
     mLog.println(rtime);
     if(mExpectedAlarmIndex < mExpectedAlarmsCount) {
