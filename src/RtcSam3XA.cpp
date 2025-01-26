@@ -48,40 +48,30 @@ void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarm) {
   alarm.readFromRtc();
 }
 
-void RtcSam3XA::dstFixAlarm() {
-  Sam3XA::RtcTime dueTimeAndDate;
-  // Use the hour mode bit to store the information whether the alarm is
-  // already dst adjusted. It is a save location to store this info,
-  // because the information isn't lost when the RTC power is backed up
-  // with a battery.
+void RtcSam3XA::RtcSam3XA_FixAlarmHandler() {
+  if(mSetTimeRequest != SET_TIME_REQUEST::DST_FIX_ALARM_REQUEST) {
+    Sam3XA::RtcTime dueTimeAndDate;
+    dueTimeAndDate.readFromRtc();
 
-  // Cannot use RTC_GetHourMode() from rtc.h because it has a bug.
-  // const bool is12hrMode = RTC_GetHourMode(RTC);
-  const bool is12hrsMode = RTC_GetHourMode_();
-  dueTimeAndDate.readFromRtc();
-  if (dueTimeAndDate.isdst()) {
-    if(not is12hrsMode) {
-      // Change from standard to daylight savings time -> fix the alarms
-      const int timeDiff = dstToMormalTimeDiff();
-      // add time diff to alarm time
-      RtcSam3XA_Alarm alarm;
-      getAlarm(alarm);
-      alarm = alarm.gaps2zero();
-    }
-  } else {
-    if(is12hrsMode) {
-      // Change from daylight savings to standard time -> fix the alarms
-      const int timeDiff = dstToMormalTimeDiff();
-      // add time diff to alarm time
-      RtcSam3XA_Alarm alarm;
-      getAlarm(alarm);
+    const bool is12hrsMode = dueTimeAndDate.rtc12hrsMode();
+    const bool isDst = dueTimeAndDate.isdst();
+    if (isDst != is12hrsMode) {
+      // Change RTC to carry daylight savings time so that alarms will be adjusted.
+      TM tm; dueTimeAndDate.get(tm);
 
+      // Fill cache with time.
+      mSetTimeCache.set(tm);
+
+      if(not mSetTimeRequest) {
+        mSetTimeRequest = SET_TIME_REQUEST::DST_FIX_ALARM_REQUEST;
+        RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+      }
     }
   }
 }
 
 RtcSam3XA::RtcSam3XA()
-  : mSetTimeRequest(false)
+  : mSetTimeRequest(SET_TIME_REQUEST::NO_REQUEST)
   , mSecondCallback(nullptr)
   , mSecondCallbackPararm(nullptr)
   , mAlarmCallback(nullptr)
@@ -92,14 +82,16 @@ RtcSam3XA::RtcSam3XA()
 {
 }
 
-void RtcSam3XA::onSecTransitionInterrupt() {
-  if (mSecondCallback) {
-    (*mSecondCallback)(mSecondCallbackPararm);
-  }
-}
-
 void RtcSam3XA::RtcSam3XA_Handler() {
   const uint32_t status = RTC->RTC_SR;
+  /* Second increment interrupt */
+  if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
+    RtcSam3XA_FixAlarmHandler();
+    if (mSecondCallback) {
+      (*mSecondCallback)(mSecondCallbackPararm);
+    }
+    RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
+  }
 
   /* Acknowledge for Update interrupt */
   if ((status & RTC_SR_ACKUPD) == RTC_SR_ACKUPD) {
@@ -117,15 +109,9 @@ void RtcSam3XA::RtcSam3XA_Handler() {
       // standard time, 12-hrs mode of RTC is applied, when RTC carries
       // daylight savings time.
       RTC_SetHourMode(RTC, mSetTimeCache.rtc12hrsMode());
-      mSetTimeRequest = false;
+      mSetTimeRequest = SET_TIME_REQUEST::NO_REQUEST;
     }
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
-  }
-
-  /* Second increment interrupt */
-  if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-    onSecTransitionInterrupt();
-    RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
   }
 
   /* Time or date alarm */
@@ -172,9 +158,9 @@ std::time_t RtcSam3XA::setByLocalTime(const std::tm &time) {
   gmtime_r(&localStandardTime, &buffer);
 #endif
 
-  // Fill cache with standard time.
+  // Fill cache with time.
   mSetTimeCache.set(buffer);
-  mSetTimeRequest = true;
+  mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
 
   RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
   RTC_EnableIt(RTC, RTC_IER_ACKEN);

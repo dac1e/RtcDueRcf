@@ -55,6 +55,7 @@ std::time_t dstdiff(const std::tm& time) {
   return dst_diff;
 }
 
+#if 0
 std::time_t mkgmtime(const std::tm& time, int isdst) {
   using time_t = std::time_t;
   const bool leapYear = isLeapYear(time.tm_year);
@@ -68,12 +69,15 @@ std::time_t mkgmtime(const std::tm& time, int isdst) {
   }
   return result;
 }
+#endif
 
 } // anonymous namespace
 
+#if 0
 std::time_t TM::mkgmtime(const std::tm& time) {
   return ::mkgmtime(time, time.tm_isdst);
 }
+#endif
 
 TM::TM() : TM(0, 0, 0, 1, make_tm_month(TM::January), make_tm_year(2000), DST_UNKNOWN) {
 }

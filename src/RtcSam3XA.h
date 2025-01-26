@@ -115,7 +115,6 @@ public:
   void setAlarm(const RtcSam3XA_Alarm& alarm);
   void getAlarm(RtcSam3XA_Alarm &alarm);
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
-  void dstFixAlarm();
 
 private:
   /**
@@ -128,9 +127,11 @@ private:
   // Global interrupt handler forwards to RtcSam3XA_Handler()
   friend void ::RTC_Handler();
   void RtcSam3XA_Handler();
-  void onSecTransitionInterrupt();
+  void RtcSam3XA_FixAlarmHandler();
 
-  volatile bool mSetTimeRequest;
+  enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_FIX_ALARM_REQUEST};
+
+  volatile SET_TIME_REQUEST mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
 
   void(*mSecondCallback)(void*);

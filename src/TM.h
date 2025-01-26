@@ -62,6 +62,7 @@ public:
 
   bool operator ==(const TM &other) const;
 
+#if 0
   /**
    * Convert this time to a unix time stamp.
    * Prerequisite: tm_yday and tm_isdst are set correctly.
@@ -79,6 +80,7 @@ public:
    * @return The unix time stamp for the given time.
    */
   static std::time_t mkgmtime(const std::tm& time);
+#endif
 
 private:
   /**
