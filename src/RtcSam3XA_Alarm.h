@@ -27,11 +27,6 @@ public:
   void setMonth(int tm_mon /* 0..11 */ ) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
 
   /**
-   * Fill with the RTC contents.
-   */
-  void readFromRtc();
-
-  /**
    * Test equality with other alarm.
    */
   bool operator==(const RtcSam3XA_Alarm& other) const {
@@ -40,6 +35,8 @@ public:
   }
 
 private:
+  static size_t printMember(Print &p, const uint8_t m);
+
   /**
    * Implementation of interface printable. Allows to print the time struct.
    *
@@ -48,7 +45,6 @@ private:
    *  Serial.prinln(alarm);  // Print it.
    */
   size_t printTo(Print& p) const override;
-  static size_t printMember(Print &p, const uint8_t m);
 
   friend class RtcSam3XA;
   uint8_t second;

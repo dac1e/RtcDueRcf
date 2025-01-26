@@ -1,6 +1,5 @@
-#include "RtcTime.h"
-
 #include "core-sam-GapClose.h"
+#include "RtcTime.h"
 
 #define MEASURE_Sam3XA_RtcTime_isdst false
 #define ASSERT_Sam3XA_RtcTime_isdst true

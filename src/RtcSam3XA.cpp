@@ -6,11 +6,11 @@
  */
 
 #include <assert.h>
-#include "TM.h"
-#include "RtcSam3XA.h"
 
-#include "internal/core-sam-GapClose.h"
+#include "TM.h"
 #include "internal/RtcTime.h"
+#include "internal/core-sam-GapClose.h"
+#include "RtcSam3XA.h"
 
 #if RTC_MEASURE_ACKUPD || RTC_DEBUG_HOUR_MODE
 #include <Arduino.h>
@@ -179,7 +179,9 @@ void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& alarm) {
 }
 
 void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarm) {
-  alarm.readFromRtc();
+  RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
+  RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day);
+
 }
 
 void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),

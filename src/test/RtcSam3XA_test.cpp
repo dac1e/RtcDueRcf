@@ -7,8 +7,9 @@
 
 #include <assert.h>
 #include "Arduino.h"
-#include "../RtcSam3XA.h"
+
 #include "../TM.h"
+#include "../RtcSam3XA.h"
 #include "../internal/core-sam-GapClose.h"
 #include "RtcSam3XA_test.h"
 

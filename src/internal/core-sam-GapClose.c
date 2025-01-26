@@ -5,11 +5,9 @@
  *      Author: Wolfgang
  */
 
-#include "core-sam-GapClose.h"
-
-#include "chip.h"
 #include <stdint.h>
-
+#include "chip.h"
+#include "core-sam-GapClose.h"
 
 /*----------------------------------------------------------------------------
  *        Definitions
