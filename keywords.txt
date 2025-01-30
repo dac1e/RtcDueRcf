@@ -6,22 +6,22 @@
 # Datatypes
 #######################################
 
-RtcSam3XA	KEYWORD1
+RtcSam3XA		KEYWORD1
 RtcSam3XA_Alarm	KEYWORD1
-TM	KEYWORD1
+TM				KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-begin	KEYWORD2
-dumpTimingSpec	KEYWORD2
-receivedBitsCount	KEYWORD2
-receivedProtocol	KEYWORD2
-receivedProtocolCount	KEYWORD2
-receivedValue	KEYWORD2
-resetAvailable	KEYWORD2
-resume	KEYWORD2
-suspend	KEYWORD2
-toTimingSpecTable	KEYWORD2
+begin				KEYWORD2
+setLocalTime		KEYWORD2
+setUTC				KEYWORD2
+getLocalTime		KEYWORD2
+getUTC				KEYWORD2
+setAlarm			KEYWORD2
+getAlarm			KEYWORD2
+clearAlarm			KEYWORD2
+setAlarmCallback	KEYWORD2
+setSecondCallback	KEYWORD2
 tzset	KEYWORD2

@@ -38,15 +38,15 @@
 
 /**
  * RtcSam3XA offers functions to operate the built in Real Time Clock
- * (RTC) and it' alarms features.
+ * (RTC) and it's alarms features.
  * The RTC is represented as a single object named RtcSam3XA::clock.
  *
  * The standard structure std::tm and the standard type std::time_t
  * are used to operate the RTC.
- * There is the class TM derived from std::tm that enhances structure
- * std::tm with some convenience functions for std::tm.
+ * There is the class TM that is derived from std::tm that enhances
+ * structure std::tm with some convenience functions for std::tm.
  *
- * The class RtcSam3XA_alarm is used to operate the alarm features
+ * The class RtcSam3XA_Alarm is used to operate the alarm features
  * of the RTC.
  */
 class RtcSam3XA {

@@ -212,7 +212,7 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
   return dueTimeAndDate.get(time);
 }
 
-void RtcSam3XA::setByUnixTime(std::time_t timestamp) {
+void RtcSam3XA::setUTC(std::time_t timestamp) {
   tm time;
   localtime_r(&timestamp, &time);
   setLocalTime(time);

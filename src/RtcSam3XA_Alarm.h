@@ -42,7 +42,8 @@
  *
  * Set alarm example:
  *
- *  // Create an alarm with all fields set to INVALID_VALUE.
+ *  // Default constructor creates an alarm with all fields set to
+ *  // INVALID_VALUE.
  *  RtcSam3XA_Alarm alarm;
  *
  *  // Let an alarm appear whenever the hour is 13 and the second
@@ -51,14 +52,14 @@
  *  alarm.setHour(13)
  *  alarm.setSecond(40)
  *  RtcSam3XA::clock.setAlarm(alarm);
-
+ *
  *
  * RtcSam3XA_Alarm implements the interface Printable. This allows
  *  to print this class.
  *
  * Print example:
  *  RtcSam3XA_Alarm alarm;// Create an alarm structure with defaults.
- *  Serial.prinln(alarm); // Print it.
+ *  Serial.println(alarm); // Print it.
  */
 class RtcSam3XA_Alarm : public Printable {
   friend class RtcSam3XA;
