@@ -19,23 +19,8 @@ class Stream;
 
 namespace Sam3XA {
 
-// Time structure to read from and write to the Sam3X RTC.
+/** Time structure to read from and write to the Sam3X RTC. */
 class RtcTime {
-  uint8_t mHour;
-  uint8_t mMinute;
-  uint8_t mSecond;
-
-  //  0: RTC runs in 24-hrs mode.
-  //  1: RTC runs in 12-hrs mode.
-  uint8_t  mRtc12hrsMode;
-
-  uint16_t mYear; // 4 digits ad year
-  uint8_t mMonth; // 1..12
-  uint8_t mDayOfMonth;  // 1..31
-  uint8_t mDayOfWeekDay;// 1..7
-
-  uint8_t mIsFromRTC;
-
   static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time) {
     // Calling mktime will fix tm_wday.
@@ -77,6 +62,23 @@ public:
   /** Determine whether this time is within daylight savings period. */
   bool dstRtcRequest(std::tm &time);
   int isdst() const;
+
+private:
+
+  uint8_t mHour;
+  uint8_t mMinute;
+  uint8_t mSecond;
+
+  //  0: RTC runs in 24-hrs mode.
+  //  1: RTC runs in 12-hrs mode.
+  uint8_t  mRtc12hrsMode;
+
+  uint16_t mYear; // 4 digits ad year
+  uint8_t mMonth; // 1..12
+  uint8_t mDayOfMonth;  // 1..31
+  uint8_t mDayOfWeekDay;// 1..7
+
+  uint8_t mIsFromRTC;
 };
 
 } // namespace Sam3XA_Rtc

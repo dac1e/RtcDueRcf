@@ -18,32 +18,45 @@
 
 namespace {
 
-// Substitute function, because the original api function  RTC_GetHourMode()
-// from rtc.h has a bug.
+/**
+ * Substitute for the original api function  RTC_GetHourMode()
+ * from rtc.h which has a bug.
+ */
 uint32_t RTC_GetHourMode_()
 {
     return RTC->RTC_MR & 0x00000001;
 }
 
-int dstToMormalTimeDiff() {
-  // Change from standard to daylight savings time -> fix the alarms
+/**
+ * Calculate the seconds that will be switched forward, when daylight
+ * savings starts.
+ * This is identical to the seconds that will be switched backward,
+ * when daylight saving ends.
+ */
+int dstToStandardTimeDiff() {
   const __tzinfo_type* const tz = __gettzinfo();
   const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[!tz->__tznorth];
   const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
   // Note: Unit of the offsets is seconds. The offsets become negative in
-  // west direction. result will become positive.
+  // west direction. Result will become positive.
   return tzrule_DstBegin->offset - tzrule_DstEnd->offset;
 }
 
 } // anonymous namespace
 
-
 RtcSam3XA RtcSam3XA::clock;
 
+/**
+ * Global interrupt handler forwards to RtcSam3XA_Handler()
+ */
 void RTC_Handler (void) {
   RtcSam3XA::clock.RtcSam3XA_Handler();
 }
 
+/**
+ * Default constructor. Constructor is private, because there must
+ * be only one object RtcSam3XA::clock.
+ */
 RtcSam3XA::RtcSam3XA()
   : mSetTimeRequest(SET_TIME_REQUEST::NO_REQUEST)
   , mSecondCallback(nullptr)
@@ -57,6 +70,14 @@ RtcSam3XA::RtcSam3XA()
 }
 
 void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
+  RTC_DisableIt(RTC,
+     RTC_IDR_ACKDIS |
+     RTC_IDR_ALRDIS |
+     RTC_IDR_SECDIS |
+     RTC_IDR_TIMDIS |
+     RTC_IDR_CALDIS
+  );
+
   if(timezone != nullptr) {
     tzset(timezone);
   }
@@ -72,6 +93,11 @@ void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
+/**
+ * Check daylight savings transition, and update the RTC accordingly.
+ * Adjusting the RTC to local daylight saving time  ensures, that
+ * the RTC alarms happen at the expected hour.
+ */
 void RtcSam3XA::RtcSam3XA_DstChecker() {
   if(mSetTimeRequest != SET_TIME_REQUEST::DST_RTC_REQUEST) {
     TM tm; Sam3XA::RtcTime dueTimeAndDate;
@@ -86,6 +112,9 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
   }
 }
 
+/**
+ * Pick the mSetTimeCache and write it to the RTC.
+ */
 void RtcSam3XA::RtcSam3XA_AckUpdHandler() {
   if (mSetTimeRequest) {
     mSetTimeCache.writeToRtc();
@@ -93,6 +122,9 @@ void RtcSam3XA::RtcSam3XA_AckUpdHandler() {
   }
 }
 
+/**
+ * RtcSam3XA interrupt handler
+ */
 void RtcSam3XA::RtcSam3XA_Handler() {
   const uint32_t status = RTC->RTC_SR;
   /* Second increment interrupt */
@@ -113,7 +145,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
   }
 
-  /* Time or date alarm */
+  /* RTC alarm */
   if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
     if(mAlarmCallback) {
       (*mAlarmCallback)(mAlarmCallbackPararm);
@@ -122,17 +154,27 @@ void RtcSam3XA::RtcSam3XA_Handler() {
   }
 }
 
+/**
+ * Place the time in the mSetTimeCache, set the mSetTimeRequest
+ * to true. Set a RTC time and calendar update request.
+ * This update request will fire an interrupt, once the RTC
+ * is ready to accept a new time and date. The RTC_Handler
+ * will then pickup the time and date from the mSetTimeCache
+ * and write it to the RTC.
+ */
 std::time_t RtcSam3XA::setByLocalTime(const std::tm &time) {
   assert(time.tm_year >= TM::make_tm_year(2000));
 
   RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
   RTC_DisableIt(RTC, RTC_IER_ACKEN);
 
-  // Call mktime in order to fix tm_yday, tm_isdst
-  // and the hour, depending on whether the time is
-  // within daylight saving period or not.
-  std::tm buffer = time;
-  const time_t localTime = mktime(&buffer);
+  /**
+   * Call mktime in order to fix tm_yday, tm_isdst and the hour,
+   * depending on whether the time is within daylight saving
+   * period or not.
+   */
+   std::tm buffer = time;
+   const time_t localTime = mktime(&buffer);
 
   // Fill cache with time.
   mSetTimeCache.set(buffer);

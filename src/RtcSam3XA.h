@@ -19,119 +19,162 @@
 
 #define RTC_MEASURE_ACKUPD false
 
+/**
+ * RtcSam3XA offers functions to operate the built in Real Time Clock
+ * (RTC) and it' alarms features.
+ * The RTC is represented as a single object named RtcSam3XA::clock.
+ *
+ * The standard structure std::tm and the standard type std::time_t
+ * are used to operate the RTC.
+ * There is the class TM derived from std::tm that enhances structure
+ * std::tm with some convenience functions for std::tm.
+ *
+ * The class RtcSam3XA_alarm is used to operate the alarm features
+ * of the RTC.
+ */
 class RtcSam3XA {
 public:
   /**
-   * RtcSam3XA clock is the one and only clock object.
+   * The static object RtcSam3XA::clock is the one and only clock object.
    *
    * Usage examples:
    *
    * include "TM.H
    *
+   * // Read the local time and date from RTC.
    * TM time;
    * RtcSam3XA::clock.getLocalTime(time);
    *
-   * const TM time {24, 59, 11, 12, TM::make_tm_month(TM::FEBRUARY),
-   *   TM::make_tm_year(2016), false};
+   * // Write the local time and date to the RTC.
+   * const TM time {24, 59, 11, 12, TM::make_tm_month(2), TM::make_tm_year(2016), false};
    * RtcSam3XA::clock.setByLocalTime(time);
    */
   static RtcSam3XA clock;
 
   /**
-   * Set timezone. Refer to
-   * https://man7.org/linux/man-pages/man3/tzset.3.html for the explanation
-   * of the timezone string format.
+   * Set time zone. Setting the time zone is required for the correct
+   * collaboration of the standard C++ entities std::tm, std::time_t,
+   * std::mktime(), std::gmtime(), std::localtime() along with the
+   * this RtcSam3XA class. It is also needed for determining the day light
+   * savings (referred to as dst) begin and end.
    *
-   * Note: When the time zone is changed, the local time and the alarms
-   * will not change.
+   * Note: When the time zone changes, the local time and the alarms
+   * still operate local.
    *
    * E.g. The local time is 15:00h and there is an alarm set at 16:00h.
    * After the time zone has changed, the local time within the new time
-   * zone is 15:00h and the alarm time will appear at 16:00h within the new
-   * time zone.
+   * zone is still 15:00h and the alarm time will still appear at 16:00h
+   * within the new time zone.
+   *
+   * @param timezone Refer to https://man7.org/linux/man-pages/man3/tzset.3.html
+   *  for the explanation of the timezone string format.
    */
   static void tzset(const char* timezone) {
     setenv("TZ", timezone, true);
   }
 
-  enum RTC_OSCILLATOR {RC = 0, XTAL = 1};
-
   /**
-   * Start RTC and set time zone optionally.
+   * Start RTC and optionally set time zone.
    */
-  void begin(const char* timezone = nullptr, const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
+  enum RTC_OSCILLATOR {RC = 0, XTAL = 1};
+  void begin(const char* timezone = nullptr,
+      const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
 
   /**
-   * @brief Set the RTC by the local time.
+   * Set the RTC by passing the local time as std::tm struct.
    *
-   * Note: The RTC does not support dates before 1st of January 2000. So the
-   * tm_year that contains the elapsed years since 1900 must be greater
-   * than 100.
+   * Note: The RTC does not support dates before 1st of January 2000. Hence
+   * the tm_year that is containing the elapsed years since 1900 must be
+   * greater than 100.
    *
+   * @time The local time.
+   *    Note: time.tm_yday and time.wday fields may be random and
+   *    tm_isdst (the daylight savings flag) can be set to -1. This is
+   *    because all these fields will anyway be fixed before time is
+   *    used to set the RTC. Fixing is performed by calling
+   *    std::mktime(). This function uses the time zone information for
+   *    the tm_isdst calculation. However, there is one situation
+   *    when std::mktime() has to solve an ambiguity. This is when
+   *    setting the time to the day and the hour, when time switches
+   *    back from daylight savings to standard time. Typically that
+   *    happens between 2:00h and 3:00h.
+   *    So when setting the time to e.g. 2:30h at that day, the
+   *    calculation assumes that you mean standard time 2:30h (after
+   *    the hour has been switched back). If you mean 2:30h at daylight
+   *    saving time (before the hour has been switched back), you have
+   *    to set tm_dst to 1.
    *
    * @return The local time as expired seconds since 1st of January 1970.
    */
   std::time_t setByLocalTime(const std::tm &time);
 
   /**
-   * Set the RTC by a unix time stamp. Prerequisite: time zone is set
-   * correctly.
+   * Set the RTC by passing a Unix time stamp. Prerequisite: time zone
+   *  is set correctly.
    */
   void setByUnixTime(std::time_t timestamp);
 
   /**
-   * @brief Get the local time from the RTC.
+   * Get the local time from the RTC.
    */
   std::time_t getLocalTime(std::tm &time) const;
 
   /**
-   * Get a unix time stamp from the RTC. Prerequisite: time zone is set
-   * correctly.
+   * Get the Unix time stamp from the RTC. Prerequisite: time zone is
+   *  set correctly.
    */
   std::time_t getUnixTime() const;
 
   /**
-   * Set the callback being called upon RTC second transition.
-   */
-  void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
-
-  // RTC Alarm
-  /**
-   * @brief Set the callback to be called upon alarm.
+   * Set alarm time and date.
    *
-   * @param alarmCallback       The function to be called.
-   * @param alarmCallbackParam  This parameter will be passed
-   *                            to the callback function.
+   * @param alarm The alarm time and alarm date, to be set.
+   */
+  void setAlarm(const RtcSam3XA_Alarm& alarm);
+
+  /**
+   * Get the current RTC alarm time and date.
+   *
+   * @param alarm Reference to the variable receiving the alarm time
+   *              and date.
+   */
+  void getAlarm(RtcSam3XA_Alarm &alarm);
+
+  /**
+   * @brief Delete alarm settings.
+   *
+   */
+  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
+
+  /**
+   * Set the callback to be called upon RTC alarm.
+   *
+   * @param alarmCallback The function to be called upon alarm.
+   * @param alarmCallbackParam This parameter will be passed
+   *  to the alarmCallback function.
    */
   void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam),
       void *alarmCallbackParam = nullptr);
 
   /**
-   * @brief Set alarm time and date.
+   * Set the callback being called upon every RTC second transition.
    *
-   * @param alarm The alarm time and alarm date, when
-   *              the alarm shall appear.
+   * @param secondCallback The function to be called upon second
+   *  transition.
+   * @param alarmCallbackParam This parameter will be passed
+   *  to the secondCallback function.
    */
-  void setAlarm(const RtcSam3XA_Alarm& alarm);
-  void getAlarm(RtcSam3XA_Alarm &alarm);
-  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
+  void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
 private:
-  /**
-   * @brief Default constructor. Constructor is private,
-   *        because there must be only one object
-   *        RtcSam3XA::clock.
-   */
   RtcSam3XA();
-
-  // Global interrupt handler forwards to RtcSam3XA_Handler()
   friend void ::RTC_Handler();
+
+  inline void RtcSam3XA_Handler();
   inline void RtcSam3XA_DstChecker();
   inline void RtcSam3XA_AckUpdHandler();
-  inline void RtcSam3XA_Handler();
 
   enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_RTC_REQUEST};
-
   volatile SET_TIME_REQUEST mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
 
@@ -139,7 +182,6 @@ private:
   void* mSecondCallbackPararm;
 
   void(*mAlarmCallback)(void*);
-
   void* mAlarmCallbackPararm;
 
 #if RTC_MEASURE_ACKUPD
@@ -154,7 +196,7 @@ public:
 
 namespace TZ {
   /**
-   * Some predefined timezone strings for convenience.
+   * Some predefined time zone strings for convenience.
    */
   constexpr char* UTC = "UTC+0:00:00"; // (Coordinated Universal Time)
 

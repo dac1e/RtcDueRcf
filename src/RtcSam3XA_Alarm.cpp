@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <print.h>
+
 #include "RtcSam3XA_Alarm.h"
 
 size_t RtcSam3XA_Alarm::printTo(Print &p) const {
@@ -17,6 +18,11 @@ size_t RtcSam3XA_Alarm::printTo(Print &p) const {
   result += p.print(" day:"); result += printMember(p, day);
   result += p.print(" month:"); result += printMember(p, month);
   return result;
+}
+
+bool RtcSam3XA_Alarm::operator ==(const RtcSam3XA_Alarm &other) const {
+  return second == other.second && minute == other.minute && hour == other.hour && day == other.day
+      && month == other.month;
 }
 
 size_t RtcSam3XA_Alarm::printMember(Print &p, const uint8_t m) {

@@ -6,12 +6,12 @@
  */
 
 #include <assert.h>
-#include "Arduino.h"
-
 #include "../TM.h"
 #include "../RtcSam3XA.h"
 #include "../internal/core-sam-GapClose.h"
 #include "RtcSam3XA_test.h"
+
+#include "Arduino.h"
 
 namespace {
 
@@ -20,14 +20,14 @@ const char* const sHrsMode[] = {"24hrs mode.", "12hrs mode."};
 // Provide an example instance.
 void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
   // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
-  time.set(second, minute, hour, 27, TM::make_tm_month(TM::March),
+  time.set(second, minute, hour, 27, 2,
       TM::make_tm_year(2016), -1 /* -1: unknown */);
 }
 
 // Provide an example instance.
 void makeCETdstEndTime(TM& time, int second, int minute, int hour, int dst = 1 /* 1: still in dst */) {
   // 30th of October 2016 2:00:00h is an daylight savings end in CET time zone.
-  time.set(second, minute, hour, 30, TM::make_tm_month(TM::October),
+  time.set(second, minute, hour, 30, 9,
       TM::make_tm_year(2016), dst);
 }
 
