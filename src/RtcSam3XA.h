@@ -69,11 +69,20 @@ public:
   static RtcSam3XA clock;
 
   /**
-   * Set time zone. Setting the time zone is required for the correct
-   * collaboration of the standard C++ entities std::tm, std::time_t,
-   * std::mktime(), std::gmtime(), std::localtime() along with the
-   * this RtcSam3XA class. It is also needed for determining the day light
-   * savings (referred to as dst) begin and end.
+   * Set time zone.
+   *
+   * Example 1 using predefined time zone string (see bottom of this file.):
+   *  RtcSam3X::clock.tzset(TZ::CET);
+   *
+   * Example 2 using custom time zone string:
+   *  (refer to https://man7.org/linux/man-pages/man3/tzset.3.html)
+   *  RtcSam3X´::clock.tzset("CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3");
+   *
+   * Setting the time zone is required for the correct collaboration of
+   * the standard C++ entities std::tm, std::time_t, std::mktime(),
+   * std::gmtime(), std::localtime() along with the this RtcSam3XA class.
+   * It is also needed for determining the daylight savings (also referred
+   * to as dst) begin and end.
    *
    * Note: When the time zone changes, the local time and the alarms
    * still operate local.
@@ -95,8 +104,8 @@ public:
    * savings condition. X is evaluated from the actual time zone information
    * (typically X is 1 hour.)
    * How to keep track of whether the RTC already jumped forward or
-   * backward so that another jump would't be applied upon a CPU reset?
-   * This is done by using the 12-hrs mode register of the RTC.
+   * backward so that another jump woun't be applied upon a CPU reset?
+   * This is done by using the 12-hrs mode of the RTC.
    * The decision was taken to let the RTC run in 12-hrs mode within the
    * daylight savings period and in the 24-hrs mode outside of it.
    *

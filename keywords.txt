@@ -24,4 +24,4 @@ getAlarm			KEYWORD2
 clearAlarm			KEYWORD2
 setAlarmCallback	KEYWORD2
 setSecondCallback	KEYWORD2
-tzset	KEYWORD2
+tzset				KEYWORD2
