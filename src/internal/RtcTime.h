@@ -19,11 +19,17 @@ class Stream;
 
 namespace Sam3XA {
 
-/** Time structure to read from and write to the Sam3X RTC. */
+/**
+ * A class to read RTC registers from and write RTC registers
+ * to the Sam3X RTC.
+ * This class will always hold a 24-hrs representation of the
+ * time independent of what the current RTC hrs mode is.
+ * Conversion from/to 12 hrs mode will be performed if needed.
+ */
 class RtcTime {
   static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time) {
-    // Calling mktime will fix tm_wday.
+    /** Calling mktime will calculate and set tm_wday. */
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
   }
 
@@ -49,17 +55,31 @@ public:
   static uint8_t  rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
   static uint8_t  rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
-  /** Get a tm struct from this Sam3XA RTC struct. */
+  /** Get a tm struct from this RtcTime. */
   std::time_t get(std::tm &time) const;
 
-  /** Set this Sam3XA RTC struct from a tm struct. */
+  /** Set RtcTime from a tm struct. */
   void set(const std::tm &time);
 
-  /** Read 24 hour representation independent of the hrs mode the RTC is running in. */
+  /**
+   * Read the RTC time and date and stores the result in this object.
+   * Convert the result to 24 hrs mode if RTC runs in 12 hrs mode.
+   */
   void readFromRtc();
+
+  /**
+   * Write the time and date of this object to the RTC. If RTC runs
+   * in 12-hrs mode, RTC registers will be set with a 12-hrs mode
+   * time format. I.e. hours mode of the RTC isn't changed.
+   */
   void writeToRtc() const;
 
-  /** Determine whether this time is within daylight savings period. */
+  /**
+   * Determine whether this time is within daylight savings period.
+   * Let the RTC run in 12-hrs mode during the daylight savings
+   * period. Let it run in 24-hrs mode outside of the daylight
+   * savings period (as per software design decision).
+   */
   bool dstRtcRequest(std::tm &time);
   int isdst() const;
 

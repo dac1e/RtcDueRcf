@@ -40,7 +40,8 @@ public:
    *  The value is positive if daylight savings is in effect, zero if it is
    *  not in effect, and negative if no information is available.
    */
-  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon, int tm_year, int tm_isdst);
+  TM(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
+      int tm_year, int tm_isdst);
 
   /**
    * Constructor initializing the std::tm structure with 1st of January 2000
@@ -66,8 +67,8 @@ public:
    *  The value is positive if daylight savings is in effect, zero if it is
    *  not in effect, and negative if no information is available.
    */
-  void set(int _sec, int tm_min, int tm_hour, int tm_mday,
-      int tm_mon /* 0..11 */, int tm_year/* year since 1900 */, int tm_isdst);
+  void set(int _sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
+      int tm_year, int tm_isdst);
 
   /**
    * Test if this tm structure is equal to another one. fields tm_yday and
@@ -87,6 +88,7 @@ public:
 private:
   static void set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday,
       int tm_mon /* 0..11 */, int tm_year /* year since 1900 */, int tm_isdst);
+
   size_t printTo(Print& p) const override;
 };
 

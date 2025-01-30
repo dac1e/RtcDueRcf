@@ -14,11 +14,34 @@
 #include <Printable.h>
 
 /**
- * RtcSam3XA_Alarm implements the interface Printable. This allows to print this class.
+ * The class RtcSam3XA_Alarm is used to operate the alarm features of
+ *  the RTC.
  *
- * Example:
- *  RtcSam3XA_Alarm alarm; // Create an alarm structure with default contents.
- *  Serial.prinln(alarm);  // Print it.
+ * An alarm consist the following specifiers second, minute, hour,
+ *  day, year that determines when the alarm shall appear.
+ * Any of those fields may be set to INVALID_VALUE. If a
+ *  field is set to INVALID_VALUE, only other fields no set to
+ *  INVALID_VALUE will determine when the alarm shall appear.
+ *
+ * Set alarm example:
+ *
+ *  // Create an alarm with all fields set to INVALID_VALUE.
+ *  RtcSam3XA_Alarm alarm;
+ *
+ *  // Let an alarm appear whenever the hour is 13 and the second
+ *  // is 40. I.e. the alarm appears every day between
+ *  // [13:00 to 13:59], whenever the second transitions to 40.
+ *  alarm.setHour(13)
+ *  alarm.setSecond(40)
+ *  RtcSam3XA::clock.setAlarm(alarm);
+
+ *
+ * RtcSam3XA_Alarm implements the interface Printable. This allows
+ *  to print this class.
+ *
+ * Print example:
+ *  RtcSam3XA_Alarm alarm;// Create an alarm structure with defaults.
+ *  Serial.prinln(alarm); // Print it.
  */
 class RtcSam3XA_Alarm : public Printable {
   friend class RtcSam3XA;
@@ -27,11 +50,13 @@ public:
   RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon /* 0..11 */);
 
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
+
   void setSecond(int tm_sec) {second = tm_sec < 60 ? tm_sec : INVALID_VALUE;}
   void setMinute(int tm_min) {minute = tm_min < 60 ? tm_min : INVALID_VALUE;}
   void setHour(int tm_hour) {hour = tm_hour < 24 ? tm_hour : INVALID_VALUE;}
-  void setDay(int tm_mday) {second = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
-  void setMonth(int tm_mon /* 0..11 */ ) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
+  void setDay(int tm_mday) {day = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
+  void setMonth(int tm_mon) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
+
   bool operator ==(const RtcSam3XA_Alarm &other) const;
 
 private:

@@ -162,7 +162,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
  * will then pickup the time and date from the mSetTimeCache
  * and write it to the RTC.
  */
-std::time_t RtcSam3XA::setByLocalTime(const std::tm &time) {
+std::time_t RtcSam3XA::setLocalTime(const std::tm &time) {
   assert(time.tm_year >= TM::make_tm_year(2000));
 
   RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
@@ -198,10 +198,10 @@ std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
 void RtcSam3XA::setByUnixTime(std::time_t timestamp) {
   tm time;
   localtime_r(&timestamp, &time);
-  setByLocalTime(time);
+  setLocalTime(time);
 }
 
-time_t RtcSam3XA::getUnixTime() const {
+time_t RtcSam3XA::getUTC() const {
   tm time;
   getLocalTime(time);
   return mktime(&time);

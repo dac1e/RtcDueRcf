@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map For RtcSam3XA
+#######################################
+
+#######################################
+# Datatypes
+#######################################
+
+RtcSam3XA	KEYWORD1
+RtcSam3XA_Alarm	KEYWORD1
+TM	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+dumpTimingSpec	KEYWORD2
+receivedBitsCount	KEYWORD2
+receivedProtocol	KEYWORD2
+receivedProtocolCount	KEYWORD2
+receivedValue	KEYWORD2
+resetAvailable	KEYWORD2
+resume	KEYWORD2
+suspend	KEYWORD2
+toTimingSpecTable	KEYWORD2
+tzset	KEYWORD2

@@ -47,7 +47,7 @@ public:
    *
    * // Write the local time and date to the RTC.
    * const TM time {24, 59, 11, 12, TM::make_tm_month(2), TM::make_tm_year(2016), false};
-   * RtcSam3XA::clock.setByLocalTime(time);
+   * RtcSam3XA::clock.setLocalTime(time);
    */
   static RtcSam3XA clock;
 
@@ -68,6 +68,26 @@ public:
    *
    * @param timezone Refer to https://man7.org/linux/man-pages/man3/tzset.3.html
    *  for the explanation of the timezone string format.
+   *
+   * RTC alarms will be adjusted according to actual daylight savings
+   * condition. That means that the RTC must hold the local daylight saving
+   * time during the daylight saving time period. It must hold the
+   * local standard time outside of the daylight savings period.
+   * Hence the RTC will jump X hours forward when entering the
+   * daylight savings period and X hours backward when leaving the daylight
+   * savings condition. X is evaluated from the actual time zone information
+   * (typically X is 1 hour.)
+   * How to keep track of whether the RTC already jumped forward or
+   * backward so that another jump would't be applied upon a CPU reset?
+   * This is done by using the 12-hrs mode register of the RTC.
+   * The decision was taken to let the RTC run in 12-hrs mode within the
+   * daylight savings period and in the 24-hrs mode outside of it.
+   *
+   * Hence, the jump information isn't lost upon a CPU power fail, while
+   * the RTC is powered by a backup battery.
+   * There is also no problem reading a 24-hrs format from the RTC that
+   * is running in a 12-hrs mode and vice versa, because it will be converted
+   * via software. The same is valid for writing to the RTC.
    */
   static void tzset(const char* timezone) {
     setenv("TZ", timezone, true);
@@ -81,7 +101,7 @@ public:
       const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
 
   /**
-   * Set the RTC by passing the local time as std::tm struct.
+   * Set the RTC by passing the local time in a std::tm struct.
    *
    * Note: The RTC does not support dates before 1st of January 2000. Hence
    * the tm_year that is containing the elapsed years since 1900 must be
@@ -106,13 +126,13 @@ public:
    *
    * @return The local time as expired seconds since 1st of January 1970.
    */
-  std::time_t setByLocalTime(const std::tm &time);
+  std::time_t setLocalTime(const std::tm &time);
 
   /**
-   * Set the RTC by passing a Unix time stamp. Prerequisite: time zone
-   *  is set correctly.
+   * Set the RTC local time by passing a UTC Unix time stamp.
+   * Prerequisite: time zone is set correctly.
    */
-  void setByUnixTime(std::time_t timestamp);
+  void setUTC(std::time_t timestamp);
 
   /**
    * Get the local time from the RTC.
@@ -123,7 +143,7 @@ public:
    * Get the Unix time stamp from the RTC. Prerequisite: time zone is
    *  set correctly.
    */
-  std::time_t getUnixTime() const;
+  std::time_t getUTC() const;
 
   /**
    * Set alarm time and date.
