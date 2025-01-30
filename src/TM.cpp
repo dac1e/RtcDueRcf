@@ -17,8 +17,7 @@ void TM::set(std::tm& time, int tm_sec, int tm_min, int tm_hour, int tm_mday
   time.tm_yday = -1; // unknown
 }
 
-bool TM::operator ==(const TM &other) const {
-  // Don't need to compare tm_yday, because it depends on tm_mon and tm_mday.
+bool TM::operator ==(const std::tm &other) const {
   return tm_sec == other.tm_sec && tm_min == other.tm_min && tm_hour == other.tm_hour && tm_mday == other.tm_mday
       && tm_year == other.tm_year && tm_isdst == other.tm_isdst;
 }
