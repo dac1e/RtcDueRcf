@@ -38,7 +38,7 @@
 
 /**
  * RtcSam3XA offers functions to operate the built in Real Time Clock
- * (RTC) and it's alarms features.
+ * (RTC) and it's alarm features.
  * The RTC is represented as a single object named RtcSam3XA::clock.
  *
  * The standard structure std::tm and the standard type std::time_t
@@ -79,8 +79,8 @@ public:
    *  RtcSam3X´::clock.tzset("CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3");
    *
    * Setting the time zone is required for the correct collaboration of
-   * the standard C++ entities std::tm, std::time_t, std::mktime(),
-   * std::gmtime(), std::localtime() along with the this RtcSam3XA class.
+   * the standard C++ entities std::tm, std::time_t, mktime(), gmtime(),
+   * gmtime_r(), localtime(), localtime_r() along with the this RtcSam3XA class.
    * It is also needed for determining the daylight savings (also referred
    * to as dst) begin and end.
    *
