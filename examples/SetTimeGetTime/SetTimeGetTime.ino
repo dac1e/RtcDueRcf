@@ -27,8 +27,9 @@
 #include "TM.h"
 
 /*
- * Set the RTC to 1st of January 2000 00:00:00h. Read RTC time and
- * print on Serial.
+ * Set the RTC to an arbitrary time and date of 31st of
+ * January 2000 12:15:30h. Read RTC time and print on
+ * Serial.
  */
 
 //The setup function is called once at startup of the sketch
@@ -39,9 +40,9 @@ void setup()
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
 
-  // Set time to 1st of January 2000 00:00:00h.
-  Serial.println("**** 1st of January 2000 00:00:00h ****");
-  TM time; // time is initialized with 1st of January 2000 00:00:00h by default constructor.
+  // Set time to 31st of January 2000 00:00:00h.
+  Serial.println("**** 31st of January 2000 12:15:30h ****");
+  TM time(30, 15, 12, 31, 0 /* 0 = Jan. */, TM::make_tm_year(2000), -1);
   RtcSam3XA::clock.setLocalTime(time);
 }
 
@@ -53,20 +54,11 @@ void loop()
   {
     /**
      * Read the local time and print it.
-     * Then convert the local time to
-     * UTC (Greenwich meantime) and
-     * print it.
      */
-    const std::time_t rawtime = RtcSam3XA::clock.getLocalTime(time);
+    RtcSam3XA::clock.getLocalTime(time);
     Serial.print("Local time: ");
     Serial.print(time);
-    Serial.print(time.tm_isdst ? " Dayl. savg." : " Normal Time");
-
-    TM utc;
-    gmtime_r(&rawtime, &utc);
-    Serial.print(", (UTC=");
-    Serial.print(utc);
-    Serial.println(')');
+    Serial.println(time.tm_isdst ? " Dayl. savg." : " Normal Time");
   }
   delay(1000);
 }
