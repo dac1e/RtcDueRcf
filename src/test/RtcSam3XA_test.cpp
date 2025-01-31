@@ -93,7 +93,7 @@ static void testBasicSetGet(Stream &log) {
   log.println(stime);
 
   TM rtime;
-  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -102,7 +102,7 @@ static void testBasicSetGet(Stream &log) {
 
   // After 1600 (100 + 1600) the time should be set and should be increased by one second.
   delay(1500);// @1600ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @1700ms
   assert(localtime == localTimeStart + 1);
@@ -131,7 +131,7 @@ static void testDstEntry(Stream& log) {
   log.println(stime);
 
   TM rtime;
-  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -140,13 +140,13 @@ static void testDstEntry(Stream& log) {
 
   // After 1600 (100 + 1400) the time should be set and should be increased by one second.
   delay(1500); // @1600ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
   delay(1900);  // @3600ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @3700ms
   assert(rtime.tm_hour == HOUR_START + 2);
@@ -167,7 +167,7 @@ static void testDstExit(Stream& log) {
   log.println(stime);
 
   TM rtime;
-  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -176,13 +176,13 @@ static void testDstExit(Stream& log) {
 
   // After 1600 (100 + 1500) the time should be set and should be increased by one second.
   delay(1500); // @1500ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
   delay(1900);  // @3600ms
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @3700ms
   assert(rtime.tm_hour == HOUR_START);
@@ -257,7 +257,7 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   log.println(stime);
 
   TM rtime;
-  std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  std::time_t localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -316,7 +316,7 @@ static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
   runtimeAfterSetByLocalTime -= 500;
 
   TM rtime;
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   log.println(rtime);
   delay(500);// @1000ms
   runtimeAfterSetByLocalTime -= 500;
@@ -331,7 +331,7 @@ static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
   delay(runtimeAfterSetByLocalTime);
 
   log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
-  localtime = RtcSam3XA::clock.getLocalTime(rtime);
+  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   log.println(rtime);
   delay(100); // Additional delay just for log.print().
 
@@ -356,7 +356,7 @@ public:
   /* Called within interrupt context */
   void onAlarm() {
     TM rtime;
-    RtcSam3XA::clock.getLocalTime(rtime);
+    RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
     mLog.print(__FUNCTION__);
     mLog.print(" @ ");
     mLog.println(rtime);
@@ -492,7 +492,7 @@ void loop(Stream& log) {
 
     {
       TM rtime;
-      std::time_t localtime = RtcSam3XA::clock.getLocalTime(rtime);
+      std::time_t localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
       logtime(log, rtime, localtime);
     }
 

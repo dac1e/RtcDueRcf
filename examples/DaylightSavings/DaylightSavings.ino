@@ -79,7 +79,7 @@ void setup()
 void loop()
 {
   // Print out the local time every second
-  TM time;
+  TM localTime;
   {
     /**
      * Read the local time and print it.
@@ -87,20 +87,20 @@ void loop()
      * UTC (Greenwich meantime) and
      * print it.
      */
-    const std::time_t rawtime = RtcSam3XA::clock.getLocalTime(time);
+    const std::time_t utc = RtcSam3XA::clock.getLocalTimeAndUTC(localTime);
     Serial.print("Local time: ");
-    Serial.print(time);
-    Serial.print(time.tm_isdst ? " Dayl. savg." : " Normal Time");
+    Serial.print(localTime);
+    Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");
 
-    TM utc;
-    gmtime_r(&rawtime, &utc);
+    TM utcTime;
+    gmtime_r(&utc, &utcTime);
     Serial.print(", (UTC=");
-    Serial.print(utc);
+    Serial.print(utcTime);
     Serial.println(')');
   }
 
-  if(isDaylightSavings != time.tm_isdst) {
-    isDaylightSavings = time.tm_isdst;
+  if(isDaylightSavings != localTime.tm_isdst) {
+    isDaylightSavings = localTime.tm_isdst;
     loopCountDown = 15; // Set time again after 15 loops
   }
 

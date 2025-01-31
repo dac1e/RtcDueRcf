@@ -220,7 +220,7 @@ std::time_t RtcSam3XA::setLocalTime(const std::tm &time) {
   return localTime;
 }
 
-std::time_t RtcSam3XA::getLocalTime(std::tm &time) const {
+std::time_t RtcSam3XA::getLocalTimeAndUTC(std::tm &time) const {
   if (mSetTimeRequest) {
     return mSetTimeCache.get(time);
   }
@@ -234,11 +234,6 @@ void RtcSam3XA::setUTC(std::time_t timestamp) {
   tm time;
   localtime_r(&timestamp, &time);
   setLocalTime(time);
-}
-
-time_t RtcSam3XA::getUTC() const {
-  tm time;
-  return getLocalTime(time);
 }
 
 void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),

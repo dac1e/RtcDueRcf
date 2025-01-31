@@ -157,26 +157,42 @@ public:
    *    saving time (before the hour has been switched back), you have
    *    to set tm_dst to 1.
    *
-   * @return The local time as expired seconds since 1st of January 1970.
+   * @return The local time as expired seconds since 1st of January 1970 0:00:00h.
    */
   std::time_t setLocalTime(const std::tm &time);
 
   /**
-   * Set the RTC local time by passing a UTC Unix time stamp.
-   * Prerequisite: time zone is set correctly.
+   * Set the RTC local time by passing a UTC Unix time stamp. Prerequisite:
+   * time zone is set correctly.
+   *
+   * @param timestamp UTC time.
+   *
    */
   void setUTC(std::time_t timestamp);
 
   /**
-   * Get the local time from the RTC.
+   * Get the local time. Prerequisite: time zone is set correctly.
+   *
+   * @param time Reference to the variable that will receive the local time.
    */
-  std::time_t getLocalTime(std::tm &time) const;
+  void getLocalTime(std::tm &time) const {getLocalTimeAndUTC(time);}
 
   /**
-   * Get the Unix time stamp from the RTC. Prerequisite: time zone is
-   *  set correctly.
+   * Get the Unix time stamp from the RTC. Prerequisite: time zone is set
+   * correctly.
+   *
+   * @return The UTC (Greenwhich meantime).
    */
-  std::time_t getUTC() const;
+  time_t getUTC() const {tm time; return getLocalTimeAndUTC(time);}
+
+  /**
+   * Get the local time and UTC from the RTC.
+   *
+   * @param time Reference to the variable that will receive the local time.
+   *
+   * @return The UTC (Greenwhich meantime).
+   */
+  std::time_t getLocalTimeAndUTC(std::tm &time) const;
 
   /**
    * Set alarm time and date.
@@ -194,8 +210,7 @@ public:
   void getAlarm(RtcSam3XA_Alarm &alarm);
 
   /**
-   * @brief Delete alarm settings.
-   *
+   * Delete alarm settings.
    */
   void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
 
