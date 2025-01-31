@@ -34,7 +34,9 @@
 #include "internal/RtcTime.h"
 #include "RtcSam3XA_Alarm.h"
 
-#define RTC_MEASURE_ACKUPD false
+#ifndef RTC_MEASURE_ACKUPD
+  #define RTC_MEASURE_ACKUPD false
+#endif
 
 /**
  * RtcSam3XA offers functions to operate the built in Real Time Clock
@@ -121,10 +123,15 @@ public:
 
   /**
    * Start RTC and optionally set time zone.
+   *
+   * @param timezone See description function tzset().
+   * @param irqPrio RTC interrupt priority. [0..15] 0 is highest, 15 is lowest.
+   * @param source The type of oscillator to be used for the clock.
+   *
    */
   enum RTC_OSCILLATOR {RC = 0, XTAL = 1};
-  void begin(const char* timezone = nullptr,
-      const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL);
+  void begin(const char* timezone = nullptr, const uint8_t irqPrio = 8,
+      const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL );
 
   /**
    * Set the RTC by passing the local time in a std::tm struct.
@@ -133,7 +140,7 @@ public:
    * the tm_year that is containing the elapsed years since 1900 must be
    * greater than 100.
    *
-   * @time The local time.
+   * @param time The local time.
    *    Note: time.tm_yday and time.wday fields may be random and
    *    tm_isdst (the daylight savings flag) can be set to -1. This is
    *    because all these fields will anyway be fixed before time is
@@ -231,12 +238,13 @@ private:
   void* mAlarmCallbackPararm;
 
 #if RTC_MEASURE_ACKUPD
-private:
   uint32_t mTimestampACKUPD;
+
 public:
   uint32_t getTimestampACKUPD() const {
     return mTimestampACKUPD;
   }
+
 #endif
 };
 

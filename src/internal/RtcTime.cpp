@@ -25,8 +25,17 @@
 #include "core-sam-GapClose.h"
 #include "RtcTime.h"
 
-#define MEASURE_Sam3XA_RtcTime_isdst true
-#define ASSERT_Sam3XA_RtcTime_isdst  true
+#ifndef RTC_DEBUG_HOUR_MODE
+  #define RTC_DEBUG_HOUR_MODE false
+#endif
+
+#ifndef MEASURE_Sam3XA_RtcTime_isdst
+  #define MEASURE_Sam3XA_RtcTime_isdst false
+#endif
+
+#ifndef MEASURE_Sam3XA_RtcTime_isdst
+  #define ASSERT_Sam3XA_RtcTime_isdst  false
+#endif
 
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
@@ -156,8 +165,9 @@ void RtcTime::set(const std::tm &time) {
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
-
+#if ASSERT_Sam3XA_RtcTime_isdst
   assert(time.tm_isdst >= 0);
+#endif
   mRtc12hrsMode = time.tm_isdst;
   mYear = rtcYear(time);
   mMonth = rtcMonth(time);

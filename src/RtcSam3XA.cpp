@@ -29,7 +29,11 @@
 #include "internal/core-sam-GapClose.h"
 #include "RtcSam3XA.h"
 
-#if RTC_MEASURE_ACKUPD || RTC_DEBUG_HOUR_MODE
+#ifndef MEASURE_DST_RTC_REQUEST
+#define MEASURE_DST_RTC_REQUEST true
+#endif
+
+#if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST
 #include <Arduino.h>
 #endif
 
@@ -86,14 +90,9 @@ RtcSam3XA::RtcSam3XA()
 {
 }
 
-void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
-  RTC_DisableIt(RTC,
-     RTC_IDR_ACKDIS |
-     RTC_IDR_ALRDIS |
-     RTC_IDR_SECDIS |
-     RTC_IDR_TIMDIS |
-     RTC_IDR_CALDIS
-  );
+void RtcSam3XA::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSCILLATOR source) {
+  RTC_DisableIt(RTC, RTC_IDR_ACKDIS | RTC_IDR_ALRDIS | RTC_IDR_SECDIS
+      | RTC_IDR_TIMDIS | RTC_IDR_CALDIS);
 
   if(timezone != nullptr) {
     tzset(timezone);
@@ -103,22 +102,32 @@ void RtcSam3XA::begin(const char* timezone, const RTC_OSCILLATOR source) {
     pmc_switch_sclk_to_32kxtal(0);
     while (!pmc_osc_is_ready_32kxtal());
   }
+
   NVIC_DisableIRQ(RTC_IRQn);
   NVIC_ClearPendingIRQ(RTC_IRQn);
-  NVIC_SetPriority(RTC_IRQn, 0);
+  NVIC_SetPriority(RTC_IRQn, irqPrio);
   RTC_EnableIt(RTC, RTC_IER_SECEN | RTC_IER_ACKEN);
   NVIC_EnableIRQ(RTC_IRQn);
 }
 
 /**
  * Check daylight savings transition, and update the RTC accordingly.
- * Adjusting the RTC to local daylight saving time  ensures, that
- * the RTC alarms happen at the expected hour.
+ * Adjusting the RTC to local daylight saving time ensures, that
+ * the RTC alarms happen at the expected time.
+ *
+ * When compiled with option -Os, the function takes 10us to execute,
+ * in case RTC update is not required. It takes 80us when transition
+ * is required (2 times in a year). These values are related to
+ * compile option -Os.
  */
 void RtcSam3XA::RtcSam3XA_DstChecker() {
   if(mSetTimeRequest != SET_TIME_REQUEST::DST_RTC_REQUEST) {
+#if MEASURE_DST_RTC_REQUEST
+    const uint32_t start = micros();
+#endif
     TM tm; Sam3XA::RtcTime dueTimeAndDate;
-    if(dueTimeAndDate.dstRtcRequest(tm)) {
+    const bool request = dueTimeAndDate.dstRtcRequest(tm);
+    if(request) {
       // Fill cache with time.
       mSetTimeCache.set(tm);
       if(not mSetTimeRequest) {
@@ -126,6 +135,15 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
         RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
       }
     }
+#if MEASURE_DST_RTC_REQUEST
+    const uint32_t diff = micros()-start;
+    if(request) {
+      Serial.print("DST_RTC_REQUEST (TRUE)  duration: ");
+    } else {
+      Serial.print("DST_RTC_REQUEST (FALSE) duration: ");
+    }
+    Serial.println(diff);
+#endif
   }
 }
 

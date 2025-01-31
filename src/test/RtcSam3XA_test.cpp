@@ -416,7 +416,7 @@ static void testAlarm(Stream& log, TM& stime) {
 }
 
 void run(Stream& log) {
-  RtcSam3XA::clock.begin(TZ::CET, RtcSam3XA::RTC_OSCILLATOR::XTAL);
+  RtcSam3XA::clock.begin(TZ::CET);
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
   /* --- Run RTC in 24-hrs mode --- */
@@ -424,7 +424,6 @@ void run(Stream& log) {
     dumpTzInfo(log);
     delay(200);
 
-//    testAlarmSubtractAndAdd(log);
     testRTCisdst(log);
 
     testBasicSetGet(log);
