@@ -26,10 +26,42 @@
 #include "RtcSam3XA.h"
 #include "TM.h"
 
-/*
- * Set the RTC to 1st of January 2000 00:00:00h. Read RTC time and
- * print on Serial.
+/**
+ * Watch on Serial monitor how daylight savings transition on RTC works.
+ *
+ * 1) The RTC is set to a time just before daylight savings period
+ * starts.
+ *
+ * 2) After the RTC has been switched to daylight savings period it stays
+ * there for approx. 15 seconds.
+ *
+ * 3) Then the RTC is set to a time just before daylight savings
+ * period ends.
+ *
+ * 4) After the RTC has been switched to normal time period it stays
+ * there for approx. 15 seconds.
+ *
+ * 5) Begin at step 1)
  */
+
+static bool isDaylightSavings = false;
+static int loopCountDown = -1;
+
+void setTimeJustBeforeDstEntry() {
+  // Set time to 30 seconds before daylight savings starts:
+  // 27th of March 2016 01:59:30h.
+  Serial.println("**** Set RTC to 27th of March 2016 01:59:30h ****");
+  TM time(30, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
+  RtcSam3XA::clock.setLocalTime(time);
+}
+
+void setTimeJustBeforeDstExit() {
+  // Set time to 30 seconds before daylight savings ends:
+  // 30th of October 2016 2:59:30h.
+  Serial.println("**** Set RTC to 30th of October 2016 2:59:30h ****");
+  TM time(30, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
+  RtcSam3XA::clock.setLocalTime(time);
+}
 
 //The setup function is called once at startup of the sketch
 void setup()
@@ -39,10 +71,8 @@ void setup()
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
 
-  // Set time to 1st of January 2000 00:00:00h.
-  Serial.println("**** 1st of January 2000 00:00:00h ****");
-  TM time; // time is initialized with 1st of January 2000 00:00:00h by default constructor.
-  RtcSam3XA::clock.setLocalTime(time);
+  setTimeJustBeforeDstEntry();
+  isDaylightSavings = false;
 }
 
 // The loop function is called in an endless loop
@@ -68,5 +98,27 @@ void loop()
     Serial.print(utc);
     Serial.println(')');
   }
+
+  if(isDaylightSavings != time.tm_isdst) {
+    isDaylightSavings = time.tm_isdst;
+    loopCountDown = 15; // Set time again after 15 loops
+  }
+
+  if(loopCountDown == 0)
+  {
+    // 15 loops expired.
+    if(isDaylightSavings) {
+      // Set time again
+      setTimeJustBeforeDstExit();
+    } else {
+      // Set time again
+      setTimeJustBeforeDstEntry();
+    }
+  }
+
+  if(loopCountDown >= 0) { // stop counter at -1
+    --loopCountDown;
+  }
+
   delay(1000);
 }
