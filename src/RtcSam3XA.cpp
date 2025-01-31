@@ -30,7 +30,7 @@
 #include "RtcSam3XA.h"
 
 #ifndef MEASURE_DST_RTC_REQUEST
-#define MEASURE_DST_RTC_REQUEST true
+#define MEASURE_DST_RTC_REQUEST false
 #endif
 
 #if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST

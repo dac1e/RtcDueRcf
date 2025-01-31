@@ -49,5 +49,5 @@ void loop()
     Serial.print("UTC: ");
     Serial.println(utc);
   }
-  delay(4000); // wait 4 seconds
+  delay(2000); // wait 4 seconds
 }
