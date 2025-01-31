@@ -238,8 +238,7 @@ void RtcSam3XA::setUTC(std::time_t timestamp) {
 
 time_t RtcSam3XA::getUTC() const {
   tm time;
-  getLocalTime(time);
-  return mktime(&time);
+  return getLocalTime(time);
 }
 
 void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
