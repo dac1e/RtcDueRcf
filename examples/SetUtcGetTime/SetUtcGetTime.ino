@@ -28,42 +28,12 @@
 
 /**
  * Set time zone to CET (Central European Time).
- *
- * Demonstrate on Serial monitor how daylight savings transition on RTC works.
- *
- * 1) The RTC is set to a time just before daylight savings period
- * starts.
- *
- * 2) After the RTC has been switched to daylight savings period it stays
- * there for approx. 15 seconds.
- *
- * 3) Then the RTC is set to a time just before daylight savings
- * period ends.
- *
- * 4) After the RTC has been switched to normal time period it stays
- * there for approx. 15 seconds.
- *
- * 5) Begin at step 1)
+ * Set the RTC to UTC 1.1.2000 0:00:00h. Read local time
+ * and print on Serial.
+ * Note CET local time will be one hour ahead
+ * respectively 2 hours ahead, when daylight savings
+ * period is entered.
  */
-
-static bool isDaylightSavings = false;
-static int loopCountDown = -1;
-
-void setTimeJustBeforeDstEntry() {
-  // Set time to 30 seconds before daylight savings starts:
-  // 27th of March 2016 01:59:30h.
-  Serial.println("**** Set RTC to 27th of March 2016 01:59:30h ****");
-  TM time(30, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
-  RtcSam3XA::clock.setLocalTime(time);
-}
-
-void setTimeJustBeforeDstExit() {
-  // Set time to 30 seconds before daylight savings ends:
-  // 30th of October 2016 2:59:30h.
-  Serial.println("**** Set RTC to 30th of October 2016 2:59:30h ****");
-  TM time(30, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
-  RtcSam3XA::clock.setLocalTime(time);
-}
 
 //The setup function is called once at startup of the sketch
 void setup()
@@ -73,8 +43,12 @@ void setup()
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
 
-  setTimeJustBeforeDstEntry();
-  isDaylightSavings = false;
+  // Note: The RTC does not accept any year lower than 2000.
+  // Set time to 1st of January 2000 0:00:00h UTC which is
+  // 1st of January 2000 1:00:00h CET (Central Europe Time).
+  Serial.println("**** 1st of January 2000 0:00:00h UTC ****");
+  const std::time_t timestamp = 946684800;
+  RtcSam3XA::clock.setUTC(timestamp);
 }
 
 // The loop function is called in an endless loop
@@ -100,27 +74,5 @@ void loop()
     Serial.print(utcTime);
     Serial.println(')');
   }
-
-  if(isDaylightSavings != localTime.tm_isdst) {
-    isDaylightSavings = localTime.tm_isdst;
-    loopCountDown = 15; // Set time again after 15 loops
-  }
-
-  if(loopCountDown == 0)
-  {
-    // 15 loops expired.
-    if(isDaylightSavings) {
-      // Set time again
-      setTimeJustBeforeDstExit();
-    } else {
-      // Set time again
-      setTimeJustBeforeDstEntry();
-    }
-  }
-
-  if(loopCountDown >= 0) { // stop counter at -1
-    --loopCountDown;
-  }
-
   delay(1000);
 }

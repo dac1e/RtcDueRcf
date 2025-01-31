@@ -27,8 +27,9 @@
 #include "TM.h"
 
 /*
+ * Set time zone to CET (Central European Time).
  * Set the RTC to an arbitrary time and date of 31st of
- * January 2000 12:15:30h. Read RTC time and print on
+ * January 2000 12:15:30h. Read local time and print on
  * Serial.
  */
 
