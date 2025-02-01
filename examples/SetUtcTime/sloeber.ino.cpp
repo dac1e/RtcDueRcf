@@ -11,6 +11,6 @@
 void setup() ;
 void loop() ;
 
-#include "SetTimeGetTime.ino"
+#include "SetUtcTime.ino"
 
 #endif

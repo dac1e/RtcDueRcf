@@ -27,10 +27,10 @@
 #include "TM.h"
 
 /*
- * Set time zone to CET (Central European Time).
- * Set the RTC to an arbitrary time and date of 31st of
- * January 2000 12:15:30h. Read local time and print on
- * Serial.
+ * Set time zone to CET (Central European Time). Set
+ * the RTC to an arbitrary time and date of 31st of
+ * January 2000 12:15:30h. Read local time and print
+ * on Serial.
  */
 
 //The setup function is called once at startup of the sketch
@@ -41,8 +41,7 @@ void setup()
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
 
-  // Set local time to 31st of January 2000 00:00:00h.
-  Serial.println("**** 31st of January 2000 12:15:30h ****");
+  Serial.println("**** Set local time to 31st of January 2000 12:15:30h ****");
   TM time(30, 15, 12, 31, 0 /* 0 = Jan. */, TM::make_tm_year(2000), -1);
   RtcSam3XA::clock.setTime(time);
 }

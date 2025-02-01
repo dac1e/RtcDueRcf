@@ -46,9 +46,9 @@ void setup()
   const std::time_t utcTimeStamp = std::mktime(&tm);
 
   RtcSam3XA::clock.begin(TZ::CET);
-  Serial.println("**** Set time to 1st of January 2000 0:00:00h UTC ****");
+  Serial.println("**** Set UTC time to 1st of January 2000 0:00:00h ****");
 
-  // Set UTC time to 1st of January 2000 00:00:00h. This result
+  // Set UTC time to 1st of January 2000 00:00:00h. This results
   // to 1st of January 2000 1:00:00h CET (Central Europe Time).
   RtcSam3XA::clock.setTime(utcTimeStamp);
 }

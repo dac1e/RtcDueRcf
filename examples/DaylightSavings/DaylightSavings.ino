@@ -52,17 +52,17 @@ static int loopCountDown = -1;
 void setTimeJustBeforeDstEntry() {
   // Set time to 30 seconds before daylight savings starts:
   // 27th of March 2016 01:59:30h.
-  Serial.println("**** Set RTC to 27th of March 2016 01:59:30h ****");
+  Serial.println("**** Set local time to 27th of March 2016 01:59:30h ****");
   TM time(30, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
-  RtcSam3XA::clock.setLocalTime(time);
+  RtcSam3XA::clock.setTime(time);
 }
 
 void setTimeJustBeforeDstExit() {
   // Set time to 30 seconds before daylight savings ends:
   // 30th of October 2016 2:59:30h.
-  Serial.println("**** Set RTC to 30th of October 2016 2:59:30h ****");
+  Serial.println("**** Set local time to 30th of October 2016 2:59:30h ****");
   TM time(30, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
-  RtcSam3XA::clock.setLocalTime(time);
+  RtcSam3XA::clock.setTime(time);
 }
 
 //The setup function is called once at startup of the sketch
@@ -84,10 +84,8 @@ void loop()
   TM localTime;
   {
     /**
-     * Read the local time and print it.
-     * Then convert the local time to
-     * UTC (Greenwich meantime) and
-     * print it.
+     * Read the local time and print it. Then convert the local time to UTC
+     * (Greenwich meantime) and print it.
      */
     const std::time_t utc = RtcSam3XA::clock.getLocalTimeAndUTC(localTime);
     Serial.print("Local time: ");
