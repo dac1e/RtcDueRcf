@@ -28,11 +28,10 @@
 
 /**
  * Set time zone to CET (Central European Time).
- * Set the RTC to UTC 1.1.2000 0:00:00h. Read local time
- * and print on Serial.
- * Note CET local time will be one hour ahead
- * respectively 2 hours ahead, when daylight savings
- * period is entered.
+ *
+ * Set the RTC by 1.Jan.2000 0:00:00h UTC (Greenwich meantime).
+ * Read local time frequently from RTC and print on Serial.
+ * Note: local time CET will be one hour ahead of UTC.
  */
 
 //The setup function is called once at startup of the sketch
@@ -40,15 +39,18 @@ void setup()
 {
   Serial.begin(9600);
 
-  // Set time zone to Central European Time.
-  RtcSam3XA::clock.begin(TZ::CET);
+  TM tm(0, 0, 0, 1, 0 /* 0 = Jan. */, TM::make_tm_year(2000), -1);
 
-  // Note: The RTC does not accept any year lower than 2000.
-  // Set time to 1st of January 2000 0:00:00h UTC which is
-  // 1st of January 2000 1:00:00h CET (Central Europe Time).
-  Serial.println("**** 1st of January 2000 0:00:00h UTC ****");
-  const std::time_t timestamp = 946684800;
-  RtcSam3XA::clock.setUTC(timestamp);
+  // Create UTC timestamp for 1st of January 2000 00:00:00h
+  RtcSam3XA::clock.tzset(TZ::UTC);
+  const std::time_t utcTimeStamp = std::mktime(&tm);
+
+  RtcSam3XA::clock.begin(TZ::CET);
+  Serial.println("**** Set time to 1st of January 2000 0:00:00h UTC ****");
+
+  // Set UTC time to 1st of January 2000 00:00:00h. This result
+  // to 1st of January 2000 1:00:00h CET (Central Europe Time).
+  RtcSam3XA::clock.setTime(utcTimeStamp);
 }
 
 // The loop function is called in an endless loop

@@ -189,6 +189,12 @@ void RtcSam3XA::RtcSam3XA_Handler() {
   }
 }
 
+bool RtcSam3XA::setTime(std::time_t utcTimestamp) {
+  tm time;
+  localtime_r(&utcTimestamp, &time);
+  return setTime(time);
+}
+
 /**
  * Place the time in the mSetTimeCache, set the mSetTimeRequest
  * to true. Set a RTC time and calendar update request.
@@ -197,8 +203,8 @@ void RtcSam3XA::RtcSam3XA_Handler() {
  * will then pickup the time and date from the mSetTimeCache
  * and write it to the RTC.
  */
-std::time_t RtcSam3XA::setLocalTime(const std::tm &time) {
-  if(time.tm_year >= TM::make_tm_year(2000)) {
+bool RtcSam3XA::setTime(const std::tm &localTime) {
+  if(localTime.tm_year >= TM::make_tm_year(2000)) {
     RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
     RTC_DisableIt(RTC, RTC_IER_ACKEN);
 
@@ -207,7 +213,7 @@ std::time_t RtcSam3XA::setLocalTime(const std::tm &time) {
      * depending on whether the time is within daylight saving
      * period or not.
      */
-     std::tm buffer = time;
+     std::tm buffer = localTime;
      const time_t localTime = mktime(&buffer);
 
     // Fill cache with time.
@@ -216,13 +222,9 @@ std::time_t RtcSam3XA::setLocalTime(const std::tm &time) {
 
     RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
     RTC_EnableIt(RTC, RTC_IER_ACKEN);
-    return localTime;
+    return true;
   }
-
-  /**
-   * Return 1.1.2000 0:00:00. The RTC does not support years < 1999.
-   */
-  return  946684800;
+  return false;
 }
 
 std::time_t RtcSam3XA::getLocalTimeAndUTC(std::tm &time) const {
@@ -233,12 +235,6 @@ std::time_t RtcSam3XA::getLocalTimeAndUTC(std::tm &time) const {
   Sam3XA::RtcTime dueTimeAndDate;
   dueTimeAndDate.readFromRtc();
   return dueTimeAndDate.get(time);
-}
-
-void RtcSam3XA::setUTC(std::time_t timestamp) {
-  tm time;
-  localtime_r(&timestamp, &time);
-  setLocalTime(time);
 }
 
 void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),

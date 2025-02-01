@@ -41,10 +41,10 @@ void setup()
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
 
-  // Set time to 31st of January 2000 00:00:00h.
+  // Set local time to 31st of January 2000 00:00:00h.
   Serial.println("**** 31st of January 2000 12:15:30h ****");
   TM time(30, 15, 12, 31, 0 /* 0 = Jan. */, TM::make_tm_year(2000), -1);
-  RtcSam3XA::clock.setLocalTime(time);
+  RtcSam3XA::clock.setTime(time);
 }
 
 // The loop function is called in an endless loop

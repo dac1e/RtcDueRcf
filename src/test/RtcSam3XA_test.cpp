@@ -83,13 +83,13 @@ static void testBasicSetGet(Stream &log) {
 
   // Default contstructor: 1st of January 2000  00:00:00h
   TM stime;
-  std::mktime(&stime);
+  std::mktime(&stime); // Fix tm_yday, tm_wday and tm_isdst
 
 #if RTC_MEASURE_ACKUPD
   uint32_t timestamp_setClock = millis();
 #endif
 
-  std::time_t localTimeStart = RtcSam3XA::clock.setLocalTime(stime);
+  RtcSam3XA::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
@@ -98,14 +98,14 @@ static void testBasicSetGet(Stream &log) {
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(localtime == localTimeStart);
+  assert(rtime == stime);
 
   // After 1600 (100 + 1600) the time should be set and should be increased by one second.
   delay(1500);// @1600ms
   localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   logtime(log, rtime, localtime);
   delay(100); // @1700ms
-  assert(localtime == localTimeStart + 1);
+  assert(localtime == std::mktime(&stime) + 1);
 
 #if RTC_MEASURE_ACKUPD
   // Measure the set clock - latency an print.
@@ -127,7 +127,7 @@ static void testDstEntry(Stream& log) {
   makeCETdstBeginTime(stime, 57, 59, HOUR_START);
 
   std::mktime(&stime);
-  std::time_t localtimeStart = RtcSam3XA::clock.setLocalTime(stime);
+  RtcSam3XA::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
@@ -163,7 +163,7 @@ static void testDstExit(Stream& log) {
   makeCETdstEndTime(stime, 57, 59, HOUR_START);
 
   std::mktime(&stime);
-  std::time_t localtimeStart = RtcSam3XA::clock.setLocalTime(stime);
+  RtcSam3XA::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
@@ -253,7 +253,7 @@ static void testRTCisdst(Stream& log) {
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
 
-  std::time_t localTimeStart = RtcSam3XA::clock.setLocalTime(stime);
+  RtcSam3XA::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
@@ -262,7 +262,7 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
   // The latency is about 350msec.
-  assert(localtime == localTimeStart);
+  assert(localtime == std::mktime(&stime));
 
   // After 1000 (100 + 900) the time should be set.
   delay(900);// @1000ms
@@ -310,13 +310,13 @@ static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
 
   // Default constructor: 1st of January 2000  00:00:00h
   std::mktime(&stime);
-  std::time_t localtime = RtcSam3XA::clock.setLocalTime(stime);
+  RtcSam3XA::clock.setTime(stime);
   // After 500 the time should be set and should be increased by one second.
   delay(500);// @500ms
   runtimeAfterSetByLocalTime -= 500;
 
   TM rtime;
-  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
+  RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   log.println(rtime);
   delay(500);// @1000ms
   runtimeAfterSetByLocalTime -= 500;
@@ -331,7 +331,7 @@ static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
   delay(runtimeAfterSetByLocalTime);
 
   log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
-  localtime = RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
+  RtcSam3XA::clock.getLocalTimeAndUTC(rtime);
   log.println(rtime);
   delay(100); // Additional delay just for log.print().
 
@@ -473,7 +473,7 @@ void loop(Stream& log) {
       TM stime;
       makeCETdstBeginTime(stime, 00, 59, HOUR_START);
       std::mktime(&stime);
-      std::time_t localtimeStart = RtcSam3XA::clock.setLocalTime(stime);
+      RtcSam3XA::clock.setTime(stime);
       log.print("Setting clock to dst time ");
       log.println(stime);
     }
@@ -485,7 +485,7 @@ void loop(Stream& log) {
       makeCETdstEndTime(stime, 00, 59, HOUR_START);
 
       std::mktime(&stime);
-      std::time_t localtimeStart = RtcSam3XA::clock.setLocalTime(stime);
+      RtcSam3XA::clock.setTime(stime);
       log.print("Setting clock to std time ");
       log.println(stime);
     }

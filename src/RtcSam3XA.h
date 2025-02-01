@@ -134,20 +134,20 @@ public:
       const RTC_OSCILLATOR source = RTC_OSCILLATOR::XTAL );
 
   /**
-   * Set the RTC by passing the local time in a std::tm struct.
+   * Set the RTC by passing the local time as std::tm struct.
    *
-   * Note: The RTC does not support dates before 1st of January 2000. Hence
-   * the tm_year that is containing the elapsed years since 1900 must be
-   * greater than 100.
+   * Note: The RTC does not support dates before 1st of January 2000.
+   * Hence the tm_year that is holding the elapsed years since
+   * 1900 must be greater than 100.
    *
-   * @param time The local time.
+   * @param localTime The local time.
    *    Note: time.tm_yday and time.wday fields may be random and
    *    tm_isdst (the daylight savings flag) can be set to -1. This is
    *    because all these fields will anyway be fixed before time is
    *    used to set the RTC. Fixing is performed by calling
-   *    std::mktime(). This function uses the time zone information for
+   *    mktime(). This function uses the time zone information for
    *    the tm_isdst calculation. However, there is one situation
-   *    when std::mktime() has to solve an ambiguity. This is when
+   *    when mktime() has to solve an ambiguity. This is when
    *    setting the time to the day and the hour, when time switches
    *    back from daylight savings to standard time. Typically that
    *    happens between 2:00h and 3:00h.
@@ -157,40 +157,44 @@ public:
    *    saving time (before the hour has been switched back), you have
    *    to set tm_dst to 1.
    *
-   * @return The local time as expired seconds since 1st of January 1970 0:00:00h.
+   * @return true if successful. false, if date is lower than 1st of
+   *    January 2000.
+   *
    */
-  std::time_t setLocalTime(const std::tm &time);
+  bool setTime(const std::tm &localTime);
 
   /**
-   * Set the RTC local time by passing a UTC Unix time stamp. Prerequisite:
+   * Set the RTC time by passing a UTC time stamp. Prerequisite:
    * time zone is set correctly.
    *
-   * @param timestamp UTC time.
+   * @param utcTimestamp UTC time.
    *
+    * @return true if successful. false, if date is lower than 1st of
+   *    January 2000.
    */
-  void setUTC(std::time_t timestamp);
+  bool setTime(std::time_t utcTimestamp);
 
   /**
    * Get the local time. Prerequisite: time zone is set correctly.
    *
-   * @param time Reference to the variable that will receive the local time.
+   * @param[out] time The variable that will receive the local time.
    */
   void getLocalTime(std::tm &time) const {getLocalTimeAndUTC(time);}
 
   /**
-   * Get the Unix time stamp from the RTC. Prerequisite: time zone is set
-   * correctly.
+   * Get the Unix time stamp from the RTC. Prerequisite: time zone
+   * is set correctly.
    *
-   * @return The UTC (Greenwhich meantime).
+   * @return The UTC time (Greenwhich meantime).
    */
   time_t getUTC() const {tm time; return getLocalTimeAndUTC(time);}
 
   /**
    * Get the local time and UTC from the RTC.
    *
-   * @param time Reference to the variable that will receive the local time.
+   * @param[out] time The variable that will receive the local time.
    *
-   * @return The UTC (Greenwhich meantime).
+   * @return The UTC time (Greenwhich meantime).
    */
   std::time_t getLocalTimeAndUTC(std::tm &time) const;
 
