@@ -27,21 +27,18 @@
 #include "TM.h"
 
 /**
- * Set time zone to CET (Central European Time).
+ * Demonstrate daylight savings transition on Serial monitor for time
+ * zone CET (Central European Time).
  *
- * Demonstrate on Serial monitor how daylight savings transition on RTC works.
+ * 1) Set the local time just before daylight savings period starts.
  *
- * 1) The RTC is set to a time just before daylight savings period
- * starts.
- *
- * 2) After the RTC has been switched to daylight savings period it stays
+ * 2) After local time has switched to daylight savings period it stays
  * there for approx. 15 seconds.
  *
- * 3) Then the RTC is set to a time just before daylight savings
- * period ends.
+ * 3) Then set the local time just before daylight savings period ends.
  *
- * 4) After the RTC has been switched to normal time period it stays
- * there for approx. 15 seconds.
+ * 4) After local time has switched to normal time period it stays
+ * there for approximately 15 seconds.
  *
  * 5) Begin at step 1)
  */
@@ -52,16 +49,16 @@ static int loopCountDown = -1;
 void setTimeJustBeforeDstEntry() {
   // Set time to 30 seconds before daylight savings starts:
   // 27th of March 2016 01:59:30h.
-  Serial.println("**** Set local time to 27th of March 2016 01:59:30h ****");
-  TM time(30, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
+  Serial.println("**** Set local time to 27th of March 2016 01:59:50h ****");
+  TM time(50, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
   RtcSam3XA::clock.setTime(time);
 }
 
 void setTimeJustBeforeDstExit() {
   // Set time to 30 seconds before daylight savings ends:
   // 30th of October 2016 2:59:30h.
-  Serial.println("**** Set local time to 30th of October 2016 2:59:30h ****");
-  TM time(30, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
+  Serial.println("**** Set local time to 30th of October 2016 2:59:50h ****");
+  TM time(50, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
   RtcSam3XA::clock.setTime(time);
 }
 

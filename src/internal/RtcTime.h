@@ -48,6 +48,9 @@ class RtcTime {
     std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
   }
 
+  void readFromRtc_();
+  void getRaw(std::tm &time) const;
+
 public:
   inline uint8_t hour() const {return mHour;}
   inline uint8_t minute() const {return mMinute;}

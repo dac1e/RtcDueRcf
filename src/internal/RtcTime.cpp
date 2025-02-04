@@ -26,7 +26,7 @@
 #include "RtcTime.h"
 
 #ifndef RTC_DEBUG_HOUR_MODE
-  #define RTC_DEBUG_HOUR_MODE false
+  #define RTC_DEBUG_HOUR_MODE true
 #endif
 
 #ifndef MEASURE_Sam3XA_RtcTime_isdst
@@ -75,12 +75,16 @@ inline bool isLastWdayWithinMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
   return not isMdayValidWithinMonth(calcMdayOfNextWdayOccurance(tm_wday, rtcTime), rtcTime);
 }
 
-inline int expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
+inline int32_t expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
   return ((rtcTime.tm_hour() * 60) + rtcTime.tm_min()) * 60 + rtcTime.tm_sec();
 }
 
+/**
+ * rtcAheadTime is 0 or positive when checking against dst begin rule.
+ * rtcAheadTime is 0 or negative when checking against dst end rule.
+ */
 int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct* const tzrule,
-    int normalTimeToDstDifference) {
+    int32_t rtcAheadTime) {
   int result = 0;
   if(rtcTime.month() >= tzrule->m) {
     if(rtcTime.month() == tzrule->m) {
@@ -89,15 +93,12 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct
       // Note: When transition happens to daylight saving time, the there is no
       // difference between local standard time and daylight saving time.
       int d = tzrule->d;
-      if(normalTimeToDstDifference != 0) {
-        const int localStandardTimeDaylightTransition = tzrule->s + normalTimeToDstDifference;
-        if(localStandardTimeDaylightTransition < 0) {
-          // The standard time of the daylight transition is the predecessor day
-          // of daylight saving time dst transition. This will typically
-          // not happen when the shift is from 3:00h dst to 2:00 std
-          d = (++d % 7);
-          normalTimeToDstDifference += 24 * 60 * 60;
-        }
+      int32_t rule_s = tzrule->s + rtcAheadTime;
+      int32_t constexpr SEC_PER_DAY = 60 * 60 * 24;
+      if(rule_s < 0) {
+        rule_s = 0;
+      } else if (rule_s >= SEC_PER_DAY) {
+        rule_s = SEC_PER_DAY - 1;
       }
 
       const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(d, rtcTime);
@@ -105,8 +106,7 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct
         (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, rtcTime));
 
       if(dayMatch) {
-
-        if(expiredSecondsWithinDay(rtcTime) - normalTimeToDstDifference >= tzrule->s) {
+        if(expiredSecondsWithinDay(rtcTime) >= rule_s) {
           result = 1;
         }
       }
@@ -118,29 +118,48 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct
 }
 
 inline int isdst_(const Sam3XA::RtcTime& rtcTime) {
-#if MEASURE_Sam3XA_RtcTime_isdst
-  const uint32_t s = micros();
-#endif
-  int result = 0;
   if(_daylight) {
+#if MEASURE_Sam3XA_RtcTime_isdst
+    const uint32_t s = micros();
+#endif
     const __tzinfo_type * const tz = __gettzinfo ();
     const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[not tz->__tznorth];
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
 
-    if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, 0)) {
-      // Unit of the offsets is seconds.
-      const int stdToDstDifference = rtcTime.rtc12hrsMode() ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
-      result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, stdToDstDifference);
-    }
-  }
+    const bool isRtcDst = rtcTime.rtc12hrsMode(); // is RTC carrying daylight savings time ?
 
+    int result = tzrule_DstBegin->m >= tzrule_DstEnd->m;
+
+    const int32_t rtcAheadTimeForDstBeginCheck = isRtcDst ? tzrule_DstEnd->offset - tzrule_DstBegin->offset : 0;
+    if(not result)
+    {
+      // North hemisphere
+      // rtcAheadTimeForDstBeginCheck may be positive or -1.
+      if(hasTransitionedDstRule(rtcTime, tzrule_DstBegin, rtcAheadTimeForDstBeginCheck - 1)) {
+        // Unit of the offsets is seconds.
+        const int rtcAheadTimeForDstEndCheck = isRtcDst ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+        // rtcAheadTimeForDstEndCheck may be 0 or negative.
+        result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, rtcAheadTimeForDstEndCheck);
+      }
+    } else {
+      // South hemisphere
+      // rtcAheadTimeForDstBeginCheck may be positive or -1.
+      if(not hasTransitionedDstRule(rtcTime, tzrule_DstBegin, rtcAheadTimeForDstBeginCheck) - 1) {
+        // Unit of the offsets is seconds.
+        const int rtcAheadTimeForDstEndCheck = isRtcDst ? 0 : tzrule_DstEnd->offset - tzrule_DstBegin->offset;
+        // rtcAheadTimeForDstEndCheck may be 0 or negative.
+        result = not hasTransitionedDstRule(rtcTime, tzrule_DstEnd, rtcAheadTimeForDstEndCheck);
+      }
+    }
 #if MEASURE_Sam3XA_RtcTime_isdst
-  const uint32_t d = micros() - s;
-  Serial.print("isdst duration: ");
-  Serial.print(d);
-  Serial.println("usec");
+    const uint32_t d = micros() - s;
+    Serial.print("isdst duration: ");
+    Serial.print(d);
+    Serial.println("usec");
 #endif
-  return result;
+    return result;
+  }
+  return 0;
 }
 
 /**
@@ -175,8 +194,8 @@ void RtcTime::set(const std::tm &time) {
   mDayOfWeekDay = rtcDayOfWeek(time);
 }
 
-std::time_t RtcTime::get(std::tm &time) const {
-  time.tm_isdst = mIsFromRTC ? 0 : mRtc12hrsMode;
+void RtcTime::getRaw(std::tm &time) const {
+  time.tm_isdst = -1;
   time.tm_hour = tm_hour();
   time.tm_min = tm_min();
   time.tm_sec = tm_sec();
@@ -185,11 +204,16 @@ std::time_t RtcTime::get(std::tm &time) const {
   time.tm_mday = tm_mday();
   time.tm_wday = tm_wday();
   time.tm_yday = -1;
+}
+
+std::time_t RtcTime::get(std::tm &time) const {
+  getRaw(time);
+  time.tm_isdst = mIsFromRTC ? 0 : mRtc12hrsMode;
 
   // Get UTC from RTC time.
   std::time_t result = mktime(&time);
 
-  if(mIsFromRTC && rtc12hrsMode()) {
+  if(mIsFromRTC && mRtc12hrsMode) {
     // RTC carries daylight savings time (typically 1 hour ahead).
     // That might even be the case if we are not in dst period.
     // Hence we must fix the UTC here.
@@ -210,42 +234,69 @@ std::time_t RtcTime::get(std::tm &time) const {
 
 bool RtcTime::dstRtcRequest(std::tm &time) {
   bool result = false;
-  readFromRtc();
-  const bool is12hrsMode = rtc12hrsMode();
-  const bool isDst = isdst();
-  if (isDst != is12hrsMode) {
-    // Change RTC to carry daylight savings time so that alarms will be adjusted.
-    get(time);
-    result = true;
+  readFromRtc_();
+  if(isdst()) {
+    if (not mRtc12hrsMode) {
+      result = true;
+      getRaw(time);
+      time.tm_isdst = 1;
+      time.tm_hour -= stdToDstDiff() / 3600;
 #if RTC_DEBUG_HOUR_MODE
-  Serial.print(__FUNCTION__);
-  if(is12hrsMode) {
-    Serial.println(" to 24-hrs mode.");
-  } else {
-    Serial.println(" to 12-hrs mode.");
-  }
+      Serial.print(__FUNCTION__); Serial.print(", ");
+      Serial.print(time.tm_hour); Serial.print(':');
+      Serial.print(time.tm_min);  Serial.print(':');
+      Serial.print(time.tm_sec);
+      Serial.println(", request to 12-hrs mode.");
 #endif
+    }
+  } else {
+    if (mRtc12hrsMode) {
+      result = true;
+      getRaw(time);
+      time.tm_isdst = 0;
+      time.tm_hour += stdToDstDiff() / 3600;
+#if RTC_DEBUG_HOUR_MODE
+      Serial.print(__FUNCTION__); Serial.print(", ");
+      Serial.print(time.tm_hour); Serial.print(':');
+      Serial.print(time.tm_min);  Serial.print(':');
+      Serial.print(time.tm_sec);
+      Serial.println(", request to 24-hrs mode.");
+#endif
+    }
   }
   return result;
 }
 
 void RtcTime::writeToRtc() const {
-  RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
+  ::RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
       month(), day(), day_of_week());
   // In order to detect whether RTC carries daylight savings time or
   // standard time, 12-hrs mode of RTC is applied, when RTC carries
   // daylight savings time.
-  RTC_SetHourMode(RTC, rtc12hrsMode());
+#if RTC_DEBUG_HOUR_MODE
+  Serial.print(__FUNCTION__);
+  if(mRtc12hrsMode) {
+    Serial.println(", set to 12-hrs mode.");
+  } else {
+    Serial.println(", set to 24-hrs mode.");
+  }
+#endif
+  RTC_SetHourMode(RTC, mRtc12hrsMode);
 }
 
 void RtcTime::readFromRtc() {
-  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr,
-    &mHour, &mMinute, &mSecond, &mYear, &mMonth,
-    &mDayOfMonth, &mDayOfWeekDay);
+  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
+      &mDayOfWeekDay);
+  mIsFromRTC = 1;
+}
+
+void RtcTime::readFromRtc_() {
+  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
+      &mDayOfWeekDay);
   mIsFromRTC = 1;
 #if RTC_DEBUG_HOUR_MODE
   Serial.print(__FUNCTION__);
-  if(rtc12hrsMode()) {
+  if(mRtc12hrsMode) {
     Serial.println(" @RTC 12-hrs mode.");
   } else {
     Serial.println(" @RTC 24-hrs mode.");

@@ -27,27 +27,11 @@
 #include "TM.h"
 
 /**
- * Set time zone to CET (Central European Time).
+ * Demonstrate RTC alarm in combination with daylight savings transition.
  *
- * Demonstrate on Serial monitor how daylight savings transition on RTC works.
- *
- * 1) The RTC is set to a time just before daylight savings period
- * starts.
- *
- * 2) After the RTC has been switched to daylight savings period it stays
- * there for approx. 15 seconds.
- *
- * 3) Then the RTC is set to a time just before daylight savings
- * period ends.
- *
- * 4) After the RTC has been switched to normal time period it stays
- * there for approx. 15 seconds.
- *
- * 5) Begin at step 1)
+ * Set the local time just before daylight savings period starts.
+ * Set an alarm at the hour when the daylight saving period starts (3:00h)
  */
-
-static bool isDaylightSavings = false;
-static int loopCountDown = -1;
 
 void setTimeJustBeforeDstEntry() {
   // Set time to 30 seconds before daylight savings starts:
@@ -57,13 +41,37 @@ void setTimeJustBeforeDstEntry() {
   RtcSam3XA::clock.setTime(time);
 }
 
-void setTimeJustBeforeDstExit() {
-  // Set time to 30 seconds before daylight savings ends:
-  // 30th of October 2016 2:59:30h.
-  Serial.println("**** Set local time to 30th of October 2016 2:59:30h ****");
-  TM time(30, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
-  RtcSam3XA::clock.setTime(time);
-}
+//void setTimeAtDstEntry() {
+//  // Set time to 30 seconds before daylight savings starts:
+//  // 27th of March 2016 03:00:00h.
+//  Serial.println("**** Set local time to 27th of March 2016 03:00:00h ****");
+//  TM time(00, 00, 3, 27, 2, TM::make_tm_year(2016), 1);
+//  RtcSam3XA::clock.setTime(time);
+//}
+
+class AlarmReceiver {
+  volatile bool mAlarm;
+  void onAlarm() {
+    // This function runs within an interrupt context,
+    // so we keep it short and just set a flag.
+    mAlarm = true;
+  }
+public:
+  void checkAlarm() {
+    if(mAlarm) {
+      mAlarm = false;
+      Serial.println("Alarm");
+    }
+  }
+
+  static void alarmHandler(void* param) {
+    // param is pointer to alarmReceiver.
+    AlarmReceiver * const pAlarmReceiver = static_cast<AlarmReceiver*>(param);
+    pAlarmReceiver->onAlarm();
+  }
+};
+
+AlarmReceiver alarmReceiver;
 
 //The setup function is called once at startup of the sketch
 void setup()
@@ -72,9 +80,16 @@ void setup()
 
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
-
   setTimeJustBeforeDstEntry();
-  isDaylightSavings = false;
+
+
+  RtcSam3XA::clock.setAlarmCallback(alarmReceiver.alarmHandler,
+      &alarmReceiver /* callback parameter is pointer to the alarmReceiver. */);
+
+  RtcSam3XA_Alarm alarm;
+  alarm.setHour(3);
+  alarm.setSecond(0);
+  RtcSam3XA::clock.setAlarm(alarm);
 }
 
 // The loop function is called in an endless loop
@@ -99,26 +114,6 @@ void loop()
     Serial.println(')');
   }
 
-  if(isDaylightSavings != localTime.tm_isdst) {
-    isDaylightSavings = localTime.tm_isdst;
-    loopCountDown = 15; // Set time again after 15 loops
-  }
-
-  if(loopCountDown == 0)
-  {
-    // 15 loops expired.
-    if(isDaylightSavings) {
-      // Set time again
-      setTimeJustBeforeDstExit();
-    } else {
-      // Set time again
-      setTimeJustBeforeDstEntry();
-    }
-  }
-
-  if(loopCountDown >= 0) { // stop counter at -1
-    --loopCountDown;
-  }
-
+  alarmReceiver.checkAlarm();
   delay(1000);
 }

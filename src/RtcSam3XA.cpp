@@ -33,7 +33,11 @@
 #define MEASURE_DST_RTC_REQUEST false
 #endif
 
-#if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST
+#ifndef DEBUG_DST_REQUEST
+#define DEBUG_DST_REQUEST true
+#endif
+
+#if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST || DEBUG_DST_REQUEST
 #include <Arduino.h>
 #endif
 
@@ -111,6 +115,51 @@ void RtcSam3XA::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSC
 }
 
 /**
+ * Place the time in the mSetTimeCache, set the mSetTimeRequest
+ * to true. Set a RTC time and calendar update request.
+ * This update request will fire an interrupt, once the RTC
+ * is ready to accept a new time and date. The RTC_Handler
+ * will then pickup the time and date from the mSetTimeCache
+ * and write it to the RTC.
+ */
+bool RtcSam3XA::setTime(const std::tm &localTime) {
+  if(localTime.tm_year >= TM::make_tm_year(2000)) {
+    RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+    RTC_DisableIt(RTC, RTC_IER_ACKEN);
+
+    /**
+     * Call mktime in order to fix tm_yday, tm_isdst and the hour,
+     * depending on whether the time is within daylight saving
+     * period or not.
+     */
+     std::tm buffer = localTime;
+     const time_t localTime = mktime(&buffer);
+
+    // Fill cache with time.
+    mSetTimeCache.set(buffer);
+#if DEBUG_DST_REQUEST
+      Serial.print("setTime");
+#endif
+
+    if(not mSetTimeRequest) {
+      mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
+#if DEBUG_DST_REQUEST
+      Serial.println(", REQUEST");
+#endif
+      RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+    } else {
+#if DEBUG_DST_REQUEST
+      Serial.println();
+#endif
+    }
+
+    RTC_EnableIt(RTC, RTC_IER_ACKEN);
+    return true;
+  }
+  return false;
+}
+
+/**
  * Check daylight savings transition, and update the RTC accordingly.
  * Adjusting the RTC to local daylight saving time ensures, that
  * the RTC alarms happen at the expected time.
@@ -130,9 +179,20 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
     if(request) {
       // Fill cache with time.
       mSetTimeCache.set(tm);
+#if DEBUG_DST_REQUEST
+      Serial.print("RtcSam3XA_DstChecker");
+#endif
       if(not mSetTimeRequest) {
         mSetTimeRequest = SET_TIME_REQUEST::DST_RTC_REQUEST;
+#if DEBUG_DST_REQUEST
+        Serial.println(", DST_RTC_REQUEST");
+#endif
         RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+      } else {
+        mSetTimeRequest = SET_TIME_REQUEST::DST_RTC_REQUEST;
+#if DEBUG_DST_REQUEST
+        Serial.println(", DST_RTC_REQUEST");
+#endif
       }
     }
 #if MEASURE_DST_RTC_REQUEST
@@ -151,9 +211,12 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
  * Pick the mSetTimeCache and write it to the RTC.
  */
 void RtcSam3XA::RtcSam3XA_AckUpdHandler() {
-  if (mSetTimeRequest) {
+  if (mSetTimeRequest != SET_TIME_REQUEST::NO_REQUEST) {
     mSetTimeCache.writeToRtc();
     mSetTimeRequest = SET_TIME_REQUEST::NO_REQUEST;
+#if DEBUG_DST_REQUEST
+    Serial.println("NO_REQUEST");
+#endif
   }
 }
 
@@ -193,38 +256,6 @@ bool RtcSam3XA::setTime(std::time_t utcTimestamp) {
   tm time;
   localtime_r(&utcTimestamp, &time);
   return setTime(time);
-}
-
-/**
- * Place the time in the mSetTimeCache, set the mSetTimeRequest
- * to true. Set a RTC time and calendar update request.
- * This update request will fire an interrupt, once the RTC
- * is ready to accept a new time and date. The RTC_Handler
- * will then pickup the time and date from the mSetTimeCache
- * and write it to the RTC.
- */
-bool RtcSam3XA::setTime(const std::tm &localTime) {
-  if(localTime.tm_year >= TM::make_tm_year(2000)) {
-    RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
-    RTC_DisableIt(RTC, RTC_IER_ACKEN);
-
-    /**
-     * Call mktime in order to fix tm_yday, tm_isdst and the hour,
-     * depending on whether the time is within daylight saving
-     * period or not.
-     */
-     std::tm buffer = localTime;
-     const time_t localTime = mktime(&buffer);
-
-    // Fill cache with time.
-    mSetTimeCache.set(buffer);
-    mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
-
-    RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
-    RTC_EnableIt(RTC, RTC_IER_ACKEN);
-    return true;
-  }
-  return false;
 }
 
 std::time_t RtcSam3XA::getLocalTimeAndUTC(std::tm &time) const {
