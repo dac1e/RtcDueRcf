@@ -43,10 +43,7 @@ namespace Sam3XA {
  */
 class RtcTime {
   static inline int tmMonth(uint8_t month) {return month-1;}
-  static uint8_t tmDayOfWeek(const std::tm &time) {
-    /** Calling mktime will calculate and set tm_wday. */
-    std::tm t = time; (void)std::mktime(&t); return t.tm_wday;
-  }
+  static uint8_t tmDayOfWeek(const std::tm &time);
 
   void readFromRtc_();
   void getRaw(std::tm &time) const;

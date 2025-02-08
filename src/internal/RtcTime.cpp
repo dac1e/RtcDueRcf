@@ -47,13 +47,22 @@
 
 namespace {
 
+constexpr int SECSPERMIN = 60;
+constexpr int SECSPERHOUR = SECSPERMIN * 60;
+constexpr int32_t SECSPERDAY = SECSPERHOUR * 24;
+
 const int month_lengths[2][12] = {
   {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
-  {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+  {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
 } ;
 
-inline int isLeapYear(int rtc_year) {
-  const int result = ( !(rtc_year % 4) && ( (rtc_year % 100) || !(rtc_year % 400) ) );;
+const int month_yday[2][12] = {
+  {-1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333},
+  {-1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
+} ;
+
+inline int isLeapYear(uint16_t rtc_year) {
+  const int result = ( not (rtc_year % 4) && ( (rtc_year % 100) || not(rtc_year % 400) ) );;
   return result;
 }
 
@@ -94,11 +103,10 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct
       // difference between local standard time and daylight saving time.
       int d = tzrule->d;
       int32_t rule_s = tzrule->s + rtcAheadTime;
-      int32_t constexpr SEC_PER_DAY = 60 * 60 * 24;
       if(rule_s < 0) {
         rule_s = 0;
-      } else if (rule_s >= SEC_PER_DAY) {
-        rule_s = SEC_PER_DAY - 1;
+      } else if (rule_s >= SECSPERDAY) {
+        rule_s = SECSPERDAY - 1;
       }
 
       const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(d, rtcTime);
@@ -173,9 +181,148 @@ int stdToDstDiff() {
   return tzrule_DstEnd->offset - tzrule_DstBegin->offset;
 }
 
-} // anonymous namespace
+/**
+ * Calculate the number of leap years since 1970 for a given year.
+ * @param tm_year The offset to 1900 of the year to be used for
+ *  the calculation. This is the same format as the tm_year part
+ *  of the std::tm;
+ * @return 1 if the given year is a leap year. Otherwise 0.
+ */
+int leapYearsSince1970 (int tm_year) {
+  const int year = tm_year + 1900;
+  const int yearsDiv4count   = (year-1968 /* first year that divides by   4 without rest. */) /   4;
+  const int yearsDiv100count = (year-1900 /* first year that divides by 100 without rest. */) / 100;
+  const int yearsDiv400count = (year-1600 /* first year that divides by 400 without rest. */) / 400;
+  return yearsDiv4count - yearsDiv100count + yearsDiv400count;
+}
+
+#if 0
+inline int yday(const Sam3XA::RtcTime& rtcTime) {
+  return month_yday[rtcTime.tm_mon()] + rtcTime.day();
+}
+
+std::time_t mkgmtime(const Sam3XA::RtcTime& time) {
+  using time_t = std::time_t;
+  const bool leapYear = isLeapYear(time.year());
+  const time_t leapYearsBeforeThisYear = leapYearsSince1970(time.year()) - leapYear;
+  const time_t yearOffset = time.year() - 1970;
+  const time_t result = time.second() + (time.minute() + (time.hour() + (yday(time) +
+      leapYearsBeforeThisYear + yearOffset * 365) * 24) * 60) * 60;
+  return result;
+}
+
+
+
+/* Move epoch from 01.01.1970 to 01.03.0000 (yes, Year 0) - this is the first
+ * day of a 400-year long "era", right after additional day of leap year.
+ * This adjustment is required only for date calculation, so instead of
+ * modifying time_t value (which would require 64-bit operations to work
+ * correctly) it's enough to adjust the calculated number of days since epoch.
+ */
+constexpr int32_t EPOCH_ADJUSTMENT_DAYS = 719468L;
+/* 1st March of year 0 is Wednesday */
+constexpr int ADJUSTED_EPOCH_WDAY = 3;
+constexpr int DAYSPERWEEK = 7;
+
+inline int tmWeekday(const std::time_t& lcltime) {
+  long days = lcltime / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
+  long rem = lcltime % SECSPERDAY;
+  if (rem < 0) {
+    rem += SECSPERDAY;
+    --days;
+  }
+  int weekday = ((ADJUSTED_EPOCH_WDAY + days) % DAYSPERWEEK);
+  if (weekday < 0) {
+    weekday += DAYSPERWEEK;
+  }
+  return weekday;
+}
+
+/* year to which the adjustment was made */
+constexpr int ADJUSTED_EPOCH_YEAR = 0;
+/* there are 97 leap years in 400-year periods. ((400 - 97) * 365 + 97 * 366) */
+constexpr int32_t DAYS_PER_ERA = 146097L;
+/* there are 24 leap years in 100-year periods. ((100 - 24) * 365 + 24 * 366) */
+constexpr int32_t DAYS_PER_CENTURY = 36524L;
+/* there is one leap year every 4 years */
+constexpr int DAYS_PER_4_YEARS = 3 * 365 + 366;
+/* number of days in a non-leap year */
+constexpr int DAYS_PER_YEAR = 365;
+/* number of days in January */
+constexpr int DAYS_IN_JANUARY = 31;
+/* number of days in non-leap February */
+constexpr int DAYS_IN_FEBRUARY = 28;
+/* number of years per era */
+constexpr int YEARS_PER_ERA = 400;
+
+constexpr int32_t YEAR_BASE = 1900;
+
+
+Sam3XA::RtcTime* gmtime_r (const time_t& lcltime, Sam3XA::RtcTime* result)
+{
+  long days = lcltime / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
+  long rem = lcltime % SECSPERDAY;
+  if (rem < 0) {
+    rem += SECSPERDAY;
+    --days;
+  }
+
+  // Compute hour, min, and sec
+  result->mHour = (rem / SECSPERHOUR);
+  rem %= SECSPERHOUR;
+  result->mMinute = (rem / SECSPERMIN);
+  result->mSecond = (rem % SECSPERMIN);
+
+  // Compute day of week
+  result->mDayOfWeekDay = tmWeekday(lcltime) + 1;
+
+  // Compute year, month, day & day of year. For description of this algorithm see
+  // http://howardhinnant.github.io/date_algorithms.html#civil_from_days
+  const int era = (days >= 0 ? days : days - (DAYS_PER_ERA - 1)) / DAYS_PER_ERA;
+  const unsigned long eraday = days - era * DAYS_PER_ERA;             /* [0, 146096] */
+  const unsigned erayear = (eraday - eraday / (DAYS_PER_4_YEARS - 1) +
+    eraday / DAYS_PER_CENTURY - eraday / (DAYS_PER_ERA - 1)) / 365;   /* [0, 399] */
+
+  const unsigned yearday = eraday - (DAYS_PER_YEAR * erayear + erayear / 4 - erayear / 100); /* [0, 365] */
+  const unsigned m = (5 * yearday + 2) / 153;           /* [0, 11] */
+  result->mDayOfMonth = yearday - (153 * m + 2) / 5 + 1;   /* [1, 31] */
+
+  {
+    const unsigned month = m < 10 ? 2 : -10;
+    result->mYear = ADJUSTED_EPOCH_YEAR + erayear + era * YEARS_PER_ERA + (month <= 1);;
+    result->mMonth = month + 1;
+  }
+
+  return result;
+}
+
+/**
+ * Add seconds to an RtcTime structure.
+ *
+ * @param sec The seconds to be added.
+ *
+ * @return The sum of this time structure and the parameter 'sec'.
+ */
+tm add(const Sam3XA::RtcTime& rtcTime, const time_t sec) {
+  std::time_t t = mkgmtime(rtcTime) + sec;
+  tm result;
+  gmtime_r(&t, &result);
+  return result;
+}
+
+#endif
+
+}
+
 
 namespace Sam3XA {
+
+uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
+  /** Calling mktime will calculate and set tm_wday. */
+  std::tm t = time;
+  std::mktime(&t);
+  return t.tm_wday;
+}
 
 int RtcTime::isdst() const {return isdst_(*this);}
 
