@@ -22,6 +22,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
 
+
 #include "core-sam-GapClose.h"
 #include "RtcTime.h"
 
@@ -51,6 +52,9 @@ constexpr int DAYSPERWEEK = 7;
 constexpr int SECSPERMIN = 60;
 constexpr int SECSPERHOUR = SECSPERMIN * 60;
 constexpr int32_t SECSPERDAY = SECSPERHOUR * 24;
+
+#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
+
 
 /* Move epoch from 01.01.1970 to 01.03.0000 (yes, Year 0) - this is the first
  * day of a 400-year long "era", right after additional day of leap year.
@@ -120,17 +124,15 @@ inline int32_t expiredSecondsWithinDay(const Sam3XA::RtcTime& rtcTime) {
  * rtcAheadTime is 0 or positive when checking against dst begin rule.
  * rtcAheadTime is 0 or negative when checking against dst end rule.
  */
-int hasTransitionedDstRule(const Sam3XA::RtcTime& rtcTime, const __tzrule_struct* const tzrule) {
+int hasTransitionedDstRule(const Sam3XA::RtcTime* const rtcTime, const __tzrule_struct* const tzrule) {
   int result = 0;
-  if(rtcTime.month() >= tzrule->m) {
-    if(rtcTime.month() == tzrule->m) {
-
-      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, rtcTime);
+  if(rtcTime->month() >= tzrule->m) {
+    if(rtcTime->month() == tzrule->m) {
+      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, *rtcTime);
       const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
-        (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, rtcTime));
-
+        (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, *rtcTime));
       if(dayMatch) {
-        if(expiredSecondsWithinDay(rtcTime) >= tzrule->s) {
+        if(expiredSecondsWithinDay(*rtcTime) >= tzrule->s) {
           result = 1;
         }
       }
@@ -154,41 +156,65 @@ int stdToDstDiff() {
 
 /**
  * Calculate the number of leap years since 1970 for a given year.
- * @param tm_year The offset to 1900 of the year to be used for
- *  the calculation. This is the same format as the tm_year part
- *  of the std::tm;
- * @return 1 if the given year is a leap year. Otherwise 0.
+ * @param year The anno domini year.
  */
-int leapYearsSince1970 (int tm_year) {
-  const int year = tm_year + 1900;
+int leapYearsSince1970 (const int year) {
   const int yearsDiv4count   = (year-1968 /* first year that divides by   4 without rest. */) /   4;
   const int yearsDiv100count = (year-1900 /* first year that divides by 100 without rest. */) / 100;
   const int yearsDiv400count = (year-1600 /* first year that divides by 400 without rest. */) / 400;
   return yearsDiv4count - yearsDiv100count + yearsDiv400count;
 }
 
-
 inline int yday(const Sam3XA::RtcTime& rtcTime) {
-  return month_yday[isLeapYear(rtcTime.year())][rtcTime.tm_mon()] + rtcTime.day();
+  const int leapYear = isLeapYear(rtcTime.year());
+  const int month = rtcTime.tm_mon();
+  const int yday_ = month_yday[leapYear][month];
+  const uint8_t day = rtcTime.day();
+  return yday_ + day;
 }
 
-inline const Sam3XA::RtcTime& toStdTime(Sam3XA::RtcTime& buffer, const Sam3XA::RtcTime& rtcTime,
-    const int32_t dstTimeShift, const int32_t offset) {
-  buffer = not rtcTime.rtc12hrsMode() ? // is RTC carrying daylight savings time ?
-      rtcTime + offset : rtcTime + (offset - dstTimeShift);
-  return buffer;
 }
 
-inline const Sam3XA::RtcTime& toDstTime(Sam3XA::RtcTime& buffer, const Sam3XA::RtcTime& rtcTime,
+namespace Sam3XA {
+
+inline const Sam3XA::RtcTime* RtcTime::getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
     const int32_t dstTimeShift) {
-  if( rtcTime.rtc12hrsMode() ) { // is RTC carrying daylight savings time ?
-    return rtcTime;
+
+  if(dstTime.isValid()) {
+    stdTime = dstTime - dstTimeShift;
+    stdTime.mRtc12hrsMode = 0;
+    return &stdTime;
   }
-  buffer = rtcTime + dstTimeShift;
-  return buffer;
+
+  if(stdTime.isValid()) {
+    stdTime = stdTime + 1; // ensure that dst is recognized 1 second early
+    return &stdTime;
+  }
+
+  return nullptr;
 }
 
-inline int isdst_(const Sam3XA::RtcTime& rtcTime) {
+/**
+ * Important: Must be called before getDstBeginCompareTime() has been called,
+ *            because a valid stdTime might be tweaked by adding 1 second.
+ */
+inline const Sam3XA::RtcTime* RtcTime::getDstEndCompareTime(const Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime,
+    const int32_t dstTimeShift) {
+
+  if(dstTime.isValid()) {
+    return &dstTime;
+  }
+
+  if(stdTime.isValid()) {
+    dstTime = stdTime + dstTimeShift;
+    dstTime.mRtc12hrsMode = 1;
+    return &dstTime;
+  }
+
+  return nullptr;
+}
+
+inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
   if(_daylight) {
 #if MEASURE_Sam3XA_RtcTime_isdst
     const uint32_t s = micros();
@@ -196,28 +222,31 @@ inline int isdst_(const Sam3XA::RtcTime& rtcTime) {
     const __tzinfo_type * const tz = __gettzinfo ();
     const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[not tz->__tznorth];
     const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
+    const int32_t dstTimeShift = (tzrule_DstBegin->offset - tzrule_DstEnd->offset);
+
     int result = tzrule_DstBegin->m >= tzrule_DstEnd->m;
-    const int32_t dstTimeShift = (tzrule_DstEnd->offset - tzrule_DstBegin->offset);
-
-    Sam3XA::RtcTime buffer;
-
-    const Sam3XA::RtcTime& stdTime = toStdTime(buffer, rtcTime, dstTimeShift, 1);
-
     if(not result) {
       // North hemisphere
-      // rtcAheadTimeForDstBeginCheck may be positive or -1.
-      if(hasTransitionedDstRule(stdTime, tzrule_DstBegin)) {
-        const Sam3XA::RtcTime& dstTime = toDstTime(buffer, rtcTime, dstTimeShift);
-        result = not hasTransitionedDstRule(dstTime, tzrule_DstEnd);
+      const Sam3XA::RtcTime*const dstEndCompareTime = getDstEndCompareTime(stdTime, dstTime, dstTimeShift);
+      if(not hasTransitionedDstRule(dstEndCompareTime, tzrule_DstEnd)) {
+        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift);
+        result = hasTransitionedDstRule(dstBeginCompareTime, tzrule_DstBegin);
+      } else if (not stdTime.isValid()) {
+        stdTime = dstTime - dstTimeShift;
+        stdTime.mRtc12hrsMode = 0;
       }
     } else {
       // South hemisphere
-      // rtcAheadTimeForDstBeginCheck may be positive or -1.
-      if(not hasTransitionedDstRule(stdTime, tzrule_DstBegin)) {
-        const Sam3XA::RtcTime& dstTime = toDstTime(buffer, rtcTime, dstTimeShift);
-        result = not hasTransitionedDstRule(dstTime, tzrule_DstEnd);
+      const Sam3XA::RtcTime*const dstEndCompareTime = getDstEndCompareTime(stdTime, dstTime, dstTimeShift);
+      if(hasTransitionedDstRule(dstEndCompareTime, tzrule_DstEnd)) {
+        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift);
+        result = hasTransitionedDstRule(dstBeginCompareTime, tzrule_DstBegin);
+      } else if (not stdTime.isValid()) {
+        stdTime = dstTime - dstTimeShift;
+        stdTime.mRtc12hrsMode = 0;
       }
     }
+
 #if MEASURE_Sam3XA_RtcTime_isdst
     const uint32_t d = micros() - s;
     Serial.print("isdst duration: ");
@@ -229,73 +258,69 @@ inline int isdst_(const Sam3XA::RtcTime& rtcTime) {
   return 0;
 }
 
-}
-
-namespace Sam3XA {
-
 std::time_t RtcTime::toTimeStamp() const {
+
   using time_t = std::time_t;
   const bool leapYear = isLeapYear(year());
   const time_t leapYearsBeforeThisYear = leapYearsSince1970(year()) - leapYear;
   const time_t yearOffset = year() - 1970;
-  const time_t result = second() + (minute() + (hour() + (yday(*this) +
-      leapYearsBeforeThisYear + yearOffset * 365) * 24) * 60) * 60;
+  const time_t result = second() + (minute() + (hour() + (yday(*this) + leapYearsBeforeThisYear + yearOffset * 365) * 24) * 60) * 60;
+
   return result;
 }
 
 Sam3XA::RtcTime RtcTime::operator+(const time_t sec) const {
   std::time_t timeStamp = toTimeStamp() + sec;
   Sam3XA::RtcTime result;
-  result.set(timeStamp);
+  result.set(timeStamp, mRtc12hrsMode);
   return result;
 }
 
 Sam3XA::RtcTime RtcTime::operator-(const time_t sec) const {
   std::time_t timeStamp = toTimeStamp() - sec;
   Sam3XA::RtcTime result;
-  result.set(timeStamp);
+  result.set(timeStamp, mRtc12hrsMode);
   return result;
 }
 
-void RtcTime::set(const time_t& lcltime)
+void RtcTime::set (const std::time_t timestamp, const uint8_t isdst)
 {
-  long days = lcltime / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
-  long rem = lcltime % SECSPERDAY;
-  if (rem < 0) {
-    rem += SECSPERDAY;
-    --days;
-  }
+  long days = timestamp / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
+  long rem = timestamp % SECSPERDAY;
+  if (rem < 0)
+    {
+      rem += SECSPERDAY;
+      --days;
+    }
 
-  // Compute hour, min, and sec
+  /* compute hour, min, and sec */
   mHour = (rem / SECSPERHOUR);
   rem %= SECSPERHOUR;
   mMinute = (rem / SECSPERMIN);
   mSecond = (rem % SECSPERMIN);
 
-  // Compute day of week
-  int weekday = ((ADJUSTED_EPOCH_WDAY + days) % DAYSPERWEEK);
-  if (weekday < 0) {
-    weekday += DAYSPERWEEK;
-  }
-
-  mDayOfWeekDay = weekday + 1;
-
-  // Compute year, month, day & day of year. For description of this algorithm see
-  // http://howardhinnant.github.io/date_algorithms.html#civil_from_days
-  const int era = (days >= 0 ? days : days - (DAYS_PER_ERA - 1)) / DAYS_PER_ERA;
-  const unsigned long eraday = days - era * DAYS_PER_ERA;             /* [0, 146096] */
-  const unsigned erayear = (eraday - eraday / (DAYS_PER_4_YEARS - 1) +
-    eraday / DAYS_PER_CENTURY - eraday / (DAYS_PER_ERA - 1)) / 365;   /* [0, 399] */
-
-  const unsigned yearday = eraday - (DAYS_PER_YEAR * erayear + erayear / 4 - erayear / 100); /* [0, 365] */
-  const unsigned m = (5 * yearday + 2) / 153;           /* [0, 11] */
-  mDayOfMonth = yearday - (153 * m + 2) / 5 + 1;   /* [1, 31] */
-
+  /* compute day of week */
   {
-    const unsigned month = m < 10 ? 2 : -10;
-    mYear = ADJUSTED_EPOCH_YEAR + erayear + era * YEARS_PER_ERA + (month <= 1);;
-    mMonth = month + 1;
+    int weekday = (((ADJUSTED_EPOCH_WDAY + days) % DAYSPERWEEK));
+    if (weekday < 0)
+      weekday += DAYSPERWEEK;
+    mDayOfWeekDay = weekday + 1;
   }
+
+  /* compute year, month, day & day of year. For description of this algorithm see
+   * http://howardhinnant.github.io/date_algorithms.html#civil_from_days */
+  const int era = (days >= 0 ? days : days - (DAYS_PER_ERA - 1)) / DAYS_PER_ERA;
+  const unsigned long eraday = days - era * DAYS_PER_ERA; /* [0, 146096] */
+  const unsigned erayear = (eraday - eraday / (DAYS_PER_4_YEARS - 1) + eraday / DAYS_PER_CENTURY -
+      eraday / (DAYS_PER_ERA - 1)) / 365;         /* [0, 399] */
+  const unsigned yearday = eraday - (DAYS_PER_YEAR * erayear + erayear / 4 - erayear / 100); /* [0, 365] */
+  const unsigned m = (5 * yearday + 2) / 153;     /* [0, 11] */
+  mDayOfMonth = yearday - (153 * m + 2) / 5 + 1;  /* [1, 31] */
+  const unsigned month = m < 10 ? m+2 : m-10;
+  mMonth = month + 1;
+  mYear = ADJUSTED_EPOCH_YEAR + erayear + era * YEARS_PER_ERA + (month <= 1);
+  mRtc12hrsMode = isdst;
+  mState = VALID;
 }
 
 uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
@@ -305,10 +330,7 @@ uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
   return t.tm_wday;
 }
 
-int RtcTime::isdst() const {return isdst_(*this);}
-
 void RtcTime::set(const std::tm &time) {
-  mIsFromRTC = 0;
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
@@ -320,6 +342,7 @@ void RtcTime::set(const std::tm &time) {
   mMonth = rtcMonth(time);
   mDayOfMonth = time.tm_mday;
   mDayOfWeekDay = rtcDayOfWeek(time);
+  mState = VALID;
 }
 
 void RtcTime::getRaw(std::tm &time) const {
@@ -336,12 +359,12 @@ void RtcTime::getRaw(std::tm &time) const {
 
 std::time_t RtcTime::get(std::tm &time) const {
   getRaw(time);
-  time.tm_isdst = mIsFromRTC ? 0 : mRtc12hrsMode;
+  time.tm_isdst = mState ? 0 : mRtc12hrsMode;
 
   // Get UTC from RTC time.
   std::time_t result = mktime(&time);
 
-  if(mIsFromRTC && mRtc12hrsMode) {
+  if(mState && mRtc12hrsMode) {
     // RTC carries daylight savings time (typically 1 hour ahead).
     // That might even be the case if we are not in dst period.
     // Hence we must fix the UTC here.
@@ -362,31 +385,36 @@ std::time_t RtcTime::get(std::tm &time) const {
 
 bool RtcTime::dstRtcRequest() {
   bool result = false;
-  readFromRtc_();
-  if(isdst()) {
-    if (not mRtc12hrsMode) {
+  RtcTime rtcTime;
+  rtcTime.readFromRtc_();
+  if (rtcTime.mRtc12hrsMode) {
+    // RTC is holding daylight savings time
+    const int dst = isdst(*this, rtcTime);
+    if(not dst) {
       result = true;
-      mRtc12hrsMode = 1;
-      mHour -= stdToDstDiff() / 3600;
-#if RTC_DEBUG_HOUR_MODE
-      Serial.print(__FUNCTION__); Serial.print(", ");
-      Serial.print(mHour); Serial.print(':');
-      Serial.print(mMinute);  Serial.print(':');
-      Serial.print(mSecond);
-      Serial.println(", request to 12-hrs mode.");
-#endif
-    }
-  } else {
-    if (mRtc12hrsMode) {
-      result = true;
-      mRtc12hrsMode = 0;
-      mHour += stdToDstDiff() / 3600;
+//      this->mState = INVALID;
+//      isdst(*this, rtcTime);
+//      mRtc12hrsMode = 0;
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
       Serial.print(mMinute);  Serial.print(':');
       Serial.print(mSecond);
       Serial.println(", request to 24-hrs mode.");
+#endif
+    }
+  } else {
+    // RTC is holding standard local time
+    const int dst = isdst(rtcTime, *this);
+    if(dst) {
+      result = true;
+//      mRtc12hrsMode = 1;
+#if RTC_DEBUG_HOUR_MODE
+      Serial.print(__FUNCTION__); Serial.print(", ");
+      Serial.print(mHour); Serial.print(':');
+      Serial.print(mMinute);  Serial.print(':');
+      Serial.print(mSecond);
+      Serial.println(", request to 12-hrs mode.");
 #endif
     }
   }
@@ -413,13 +441,13 @@ void RtcTime::writeToRtc() const {
 void RtcTime::readFromRtc() {
   mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
       &mDayOfWeekDay);
-  mIsFromRTC = 1;
+  mState = FROM_RTC;
 }
 
 void RtcTime::readFromRtc_() {
   mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
       &mDayOfWeekDay);
-  mIsFromRTC = 1;
+  mState = FROM_RTC;
 #if RTC_DEBUG_HOUR_MODE
   Serial.print(__FUNCTION__);
   if(mRtc12hrsMode) {

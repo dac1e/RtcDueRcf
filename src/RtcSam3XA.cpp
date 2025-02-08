@@ -179,7 +179,6 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
     if(request) {
       // Fill cache with time.
       mSetTimeCache = dueTimeAndDate;
-      mSetTimeCache.clearFromRtcFlag();
 #if DEBUG_DST_REQUEST
       Serial.print("RtcSam3XA_DstChecker");
 #endif

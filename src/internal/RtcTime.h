@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <ctime>
+#include <utility>
 
 class Stream;
 
@@ -49,8 +50,6 @@ class RtcTime {
 
   void getRaw(std::tm &time) const;
   void readFromRtc_();
-  void set(const time_t& lcltime);
-  std::time_t toTimeStamp() const;
 
 public:
   inline uint8_t hour() const {return mHour;}
@@ -82,6 +81,17 @@ public:
 
   Sam3XA::RtcTime operator+(const time_t sec) const;
   Sam3XA::RtcTime operator-(const time_t sec) const;
+  bool operator==(const RtcTime& other)const {
+    return mHour == other.mHour &&
+    mMinute == other.mMinute &&
+    mSecond == other.mSecond &&
+    mRtc12hrsMode == other.mRtc12hrsMode &&
+    mYear == other.mYear &&
+    mMonth == other.mMonth &&
+    mDayOfMonth == other.mDayOfMonth &&
+    mDayOfWeekDay == other.mDayOfWeekDay &&
+    mState == other.mState;
+  }
 
   /**
    * Read the RTC time and date and stores the result in this object.
@@ -102,11 +112,30 @@ public:
    * period. Let it run in 24-hrs mode outside of the daylight
    * savings period (as per software design decision).
    */
+  static int isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime);
+
   bool dstRtcRequest();
-  int isdst() const;
-  void clearFromRtcFlag() {mIsFromRTC = 0;}
+
+  uint8_t isValid() const {return mState != INVALID;}
+  uint8_t isFromRtc() const {return mState == FROM_RTC;}
+//  void clearFromRtcFlag() {mState = 0;}
+  static const Sam3XA::RtcTime* getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
+      const int32_t dstTimeShift);
+  static const Sam3XA::RtcTime* getDstEndCompareTime(const Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime,
+      const int32_t dstTimeShift);
+
+  void set(const std::time_t timestamp, const uint8_t isdst);
+  std::time_t toTimeStamp() const;
 
 private:
+  enum STATE : uint8_t {
+    INVALID,
+    VALID,
+    FROM_RTC,
+  };
+
+  STATE mState = INVALID;
+
   uint8_t mHour;
   uint8_t mMinute;
   uint8_t mSecond;
@@ -119,8 +148,6 @@ private:
   uint8_t mMonth; // 1..12
   uint8_t mDayOfMonth;  // 1..31
   uint8_t mDayOfWeekDay;// 1..7
-
-  uint8_t mIsFromRTC;
 };
 
 } // namespace Sam3XA_Rtc
