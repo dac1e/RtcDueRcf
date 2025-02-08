@@ -174,11 +174,12 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
 #if MEASURE_DST_RTC_REQUEST
     const uint32_t start = micros();
 #endif
-    TM tm; Sam3XA::RtcTime dueTimeAndDate;
-    const bool request = dueTimeAndDate.dstRtcRequest(tm);
+    Sam3XA::RtcTime dueTimeAndDate;
+    const bool request = dueTimeAndDate.dstRtcRequest();
     if(request) {
       // Fill cache with time.
-      mSetTimeCache.set(tm);
+      mSetTimeCache = dueTimeAndDate;
+      mSetTimeCache.clearFromRtcFlag();
 #if DEBUG_DST_REQUEST
       Serial.print("RtcSam3XA_DstChecker");
 #endif

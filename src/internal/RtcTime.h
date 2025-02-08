@@ -42,11 +42,15 @@ namespace Sam3XA {
  * Conversion from/to 12 hrs mode will be performed if needed.
  */
 class RtcTime {
+  static constexpr int32_t TM_YEAR_BASE = 1900;
+
   static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time);
 
-  void readFromRtc_();
   void getRaw(std::tm &time) const;
+  void readFromRtc_();
+  void set(const time_t& lcltime);
+  std::time_t toTimeStamp() const;
 
 public:
   inline uint8_t hour() const {return mHour;}
@@ -58,13 +62,13 @@ public:
   inline uint8_t day_of_week() const {return mDayOfWeekDay;}
   inline uint8_t rtc12hrsMode() const {return mRtc12hrsMode > 0;}
 
-  inline int tm_hour()const {return mHour;}
-  inline int tm_min()const {return mMinute;}
-  inline int tm_sec()const {return mSecond;}
-  inline int tm_year()const {return mYear - 1900;}
-  inline int tm_mon()const {return tmMonth(mMonth);}
-  inline int tm_mday()const {return mDayOfMonth;}
-  inline int tm_wday()const {return mDayOfWeekDay-1;}
+  inline int tm_hour() const {return mHour;}
+  inline int tm_min() const {return mMinute;}
+  inline int tm_sec() const {return mSecond;}
+  inline int tm_year() const {return mYear - TM_YEAR_BASE;}
+  inline int tm_mon() const {return tmMonth(mMonth);}
+  inline int tm_mday() const {return mDayOfMonth;}
+  inline int tm_wday() const {return mDayOfWeekDay-1;}
 
   static uint16_t rtcYear(const std::tm& time) {return time.tm_year + 1900;}
   static uint8_t  rtcMonth(const std::tm& time) {return time.tm_mon + 1;}
@@ -75,6 +79,9 @@ public:
 
   /** Set RtcTime from a tm struct. */
   void set(const std::tm &time);
+
+  Sam3XA::RtcTime operator+(const time_t sec) const;
+  Sam3XA::RtcTime operator-(const time_t sec) const;
 
   /**
    * Read the RTC time and date and stores the result in this object.
@@ -95,11 +102,11 @@ public:
    * period. Let it run in 24-hrs mode outside of the daylight
    * savings period (as per software design decision).
    */
-  bool dstRtcRequest(std::tm &time);
+  bool dstRtcRequest();
   int isdst() const;
+  void clearFromRtcFlag() {mIsFromRTC = 0;}
 
 private:
-
   uint8_t mHour;
   uint8_t mMinute;
   uint8_t mSecond;
