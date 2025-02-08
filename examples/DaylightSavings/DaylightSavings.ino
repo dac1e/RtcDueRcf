@@ -26,6 +26,8 @@
 #include "RtcSam3XA.h"
 #include "TM.h"
 
+#include "test/RtcSam3XA_test.h"
+
 /**
  * Demonstrate daylight savings transition on Serial monitor for time
  * zone CET (Central European Time).
@@ -66,6 +68,9 @@ void setTimeJustBeforeDstExit() {
 void setup()
 {
   Serial.begin(9600);
+
+
+  RtcSam3XA_test::run(Serial);
 
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);

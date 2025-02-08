@@ -35,10 +35,10 @@ namespace {
 const char* const sHrsMode[] = {"24hrs mode.", "12hrs mode."};
 
 // Provide an example instance.
-void makeCETdstBeginTime(TM& time, int second, int minute, int hour) {
+void makeCETdstBeginTime(TM& time, int second, int minute, int hour, int dst = -1) {
   // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
   time.set(second, minute, hour, 27, 2,
-      TM::make_tm_year(2016), -1 /* -1: unknown */);
+      TM::make_tm_year(2016), dst);
 }
 
 // Provide an example instance.
@@ -192,8 +192,16 @@ static void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
   std::time_t localtime = mktime(&stime);
   localtime_r(&localtime, &stime);
   rtc.set(stime);
-  bool isdst = rtc.isdst();
-  assert(stime.tm_isdst == isdst);
+  if(stime.tm_isdst) {
+    Sam3XA::RtcTime buffer;
+    const int isdst =  Sam3XA::RtcTime::isdst(buffer, rtc);
+    assert(stime.tm_isdst == isdst);
+  } else {
+    Sam3XA::RtcTime buffer;
+    const int isdst =  Sam3XA::RtcTime::isdst(rtc, buffer);
+    assert(stime.tm_isdst == isdst);
+  }
+
 }
 
 static void testRTCisdst(Stream& log) {
@@ -219,36 +227,6 @@ static void testRTCisdst(Stream& log) {
   checkRTCisdst(stime, rtc);
   delay(100);
 }
-
-//static void alarmSubtractAndAdd(RtcSam3XA_Alarm& alarm, int seconds, const RtcSam3XA_Alarm& expected) {
-//  RtcSam3XA_Alarm originalAlarm = alarm;
-//  alarm.subtract(seconds, 0); // subtract  1 second.
-//  assert(alarm == expected);
-//  alarm.add(seconds, 0); // add 1 second.
-//  assert(alarm == originalAlarm);
-//}
-
-//static void testAlarmSubtractAndAdd (Stream& log) {
-//  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-//  delay(100); // @100ms
-//
-//  {
-//    RtcSam3XA_Alarm alarm(0, 0, 0, 1, 0); // Midnight first of January
-//    {
-//      const RtcSam3XA_Alarm expected(59, 59, 23, 31, 11);
-//      alarmSubtractAndAdd(alarm, 1, expected);
-//    }
-//  }
-//
-//  {
-//    RtcSam3XA_Alarm alarm(0, 0, 0, 1, RtcSam3XA_Alarm::INVALID_VALUE); // Midnight first of any month
-//    {
-//      const RtcSam3XA_Alarm expected(59, 59, 23, 31, RtcSam3XA_Alarm::INVALID_VALUE);
-//      alarmSubtractAndAdd(alarm, 1, expected);
-//    }
-//  }
-//
-//}
 
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
@@ -415,9 +393,36 @@ static void testAlarm(Stream& log, TM& stime) {
   }
 }
 
-void run(Stream& log) {
-  RtcSam3XA::clock.begin(TZ::CET);
+void test_toTimestamp(TM time) {
+  Sam3XA::RtcTime rtcTime;
+  rtcTime.set(time);
+  std::time_t timeStamp = rtcTime.toTimeStamp();
+  assert(mktime(&time) == timeStamp);
+  Sam3XA::RtcTime rtcTime2;
+  rtcTime2.set(timeStamp, true);
+  TM time2;
+  gmtime_r(&timeStamp, &time2);
+  assert(rtcTime == rtcTime2);
+}
+
+void test_toTimeStamp(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  RtcSam3XA::tzset(TZ::UTC);
+
+  TM time;
+
+  makeCETdstEndTime(time, 50, 59, 2, true);
+  test_toTimestamp(time);
+
+  makeCETdstBeginTime(time, 50, 59, 1, true);
+  test_toTimestamp(time);
+}
+
+void run(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  test_toTimeStamp(log);
+
+  RtcSam3XA::clock.begin(TZ::CET);
 
   /* --- Run RTC in 24-hrs mode --- */
   {
