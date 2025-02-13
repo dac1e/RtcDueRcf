@@ -39,7 +39,7 @@
 #endif
 
 #ifndef MEASURE_RtcTime_arithmethic_operators
-  #define MEASURE_RtcTime_arithmethic_operators true
+  #define MEASURE_RtcTime_arithmethic_operators false
 #endif
 
 #if ASSERT_Sam3XA_RtcTime_isdst
@@ -313,29 +313,23 @@ Sam3XA::RtcTime RtcTime::operator-(const time_t sec) const {
   return result;
 }
 
-void RtcTime::set (const std::time_t timestamp, const uint8_t isdst)
+void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
 {
   long days = timestamp / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
-  long rem = timestamp % SECSPERDAY;
-  if (rem < 0)
-    {
-      rem += SECSPERDAY;
-      --days;
-    }
+  long remain = timestamp % SECSPERDAY;
+  if (remain < 0) {
+    remain += SECSPERDAY;
+    --days;
+  }
 
   /* compute hour, min, and sec */
-  mHour = (rem / SECSPERHOUR);
-  rem %= SECSPERHOUR;
-  mMinute = (rem / SECSPERMIN);
-  mSecond = (rem % SECSPERMIN);
+  mHour = (remain / SECSPERHOUR);
+  remain %= SECSPERHOUR;
+  mMinute = (remain / SECSPERMIN);
+  mSecond = (remain % SECSPERMIN);
 
   /* compute day of week */
-  {
-    int weekday = (((ADJUSTED_EPOCH_WDAY + days) % DAYSPERWEEK));
-    if (weekday < 0)
-      weekday += DAYSPERWEEK;
-    mDayOfWeekDay = weekday + 1;
-  }
+  mDayOfWeekDay = ((((ADJUSTED_EPOCH_WDAY + DAYSPERWEEK) + days) % DAYSPERWEEK)) + 1;
 
   /* compute year, month, day & day of year. For description of this algorithm see
    * http://howardhinnant.github.io/date_algorithms.html#civil_from_days */
@@ -345,8 +339,9 @@ void RtcTime::set (const std::time_t timestamp, const uint8_t isdst)
       eraday / (DAYS_PER_ERA - 1)) / 365;         /* [0, 399] */
   const unsigned yearday = eraday - (DAYS_PER_YEAR * erayear + erayear / 4 - erayear / 100); /* [0, 365] */
   const unsigned m = (5 * yearday + 2) / 153;     /* [0, 11] */
+  const unsigned month = m < 10 ? m + 2 : m - 10;
+
   mDayOfMonth = yearday - (153 * m + 2) / 5 + 1;  /* [1, 31] */
-  const unsigned month = m < 10 ? m+2 : m-10;
   mMonth = month + 1;
   mYear = ADJUSTED_EPOCH_YEAR + erayear + era * YEARS_PER_ERA + (month <= 1);
   mRtc12hrsMode = isdst;
@@ -422,9 +417,6 @@ bool RtcTime::isDstRtcRequest() {
     const int dst = isdst(*this, rtcTime);
     if(not dst) {
       result = true;
-//      this->mState = INVALID;
-//      isdst(*this, rtcTime);
-//      mRtc12hrsMode = 0;
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
@@ -438,7 +430,6 @@ bool RtcTime::isDstRtcRequest() {
     const int dst = isdst(rtcTime, *this);
     if(dst) {
       result = true;
-//      mRtc12hrsMode = 1;
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
