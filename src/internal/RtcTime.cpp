@@ -34,15 +34,19 @@
   #define MEASURE_Sam3XA_RtcTime_isdst false
 #endif
 
-#ifndef MEASURE_Sam3XA_RtcTime_isdst
+#ifndef ASSERT_Sam3XA_RtcTime_isdst
   #define ASSERT_Sam3XA_RtcTime_isdst  false
+#endif
+
+#ifndef MEASURE_RtcTime_arithmethic_operators
+  #define MEASURE_RtcTime_arithmethic_operators true
 #endif
 
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
 #endif
 
-#if MEASURE_Sam3XA_RtcTime_isdst || RTC_DEBUG_HOUR_MODE
+#if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || RTC_DEBUG_HOUR_MODE
 #include "Arduino.h"
 #endif
 
@@ -258,6 +262,12 @@ inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
   return 0;
 }
 
+bool RtcTime::operator ==(const RtcTime &other) const {
+  return mHour == other.mHour && mMinute == other.mMinute && mSecond == other.mSecond
+      && mRtc12hrsMode == other.mRtc12hrsMode && mYear == other.mYear && mMonth == other.mMonth
+      && mDayOfMonth == other.mDayOfMonth && mDayOfWeekDay == other.mDayOfWeekDay && mState == other.mState;
+}
+
 std::time_t RtcTime::toTimeStamp() const {
 
   using time_t = std::time_t;
@@ -270,16 +280,36 @@ std::time_t RtcTime::toTimeStamp() const {
 }
 
 Sam3XA::RtcTime RtcTime::operator+(const time_t sec) const {
+#if  MEASURE_RtcTime_arithmethic_operators
+  const uint32_t startTime = micros();
+#endif
   std::time_t timeStamp = toTimeStamp() + sec;
   Sam3XA::RtcTime result;
   result.set(timeStamp, mRtc12hrsMode);
+#if  MEASURE_RtcTime_arithmethic_operators
+  const uint32_t execTime = micros() - startTime;
+  Serial.print(__FUNCTION__);
+  Serial.print(", execTime=");
+  Serial.print(execTime);
+  Serial.println("us.");
+#endif
   return result;
 }
 
 Sam3XA::RtcTime RtcTime::operator-(const time_t sec) const {
+#if  MEASURE_RtcTime_arithmethic_operators
+  const uint32_t startTime = micros();
+#endif
   std::time_t timeStamp = toTimeStamp() - sec;
   Sam3XA::RtcTime result;
   result.set(timeStamp, mRtc12hrsMode);
+#if  MEASURE_RtcTime_arithmethic_operators
+  const uint32_t execTime = micros() - startTime;
+  Serial.print(__FUNCTION__);
+  Serial.print(", execTime=");
+  Serial.print(execTime);
+  Serial.println("us.");
+#endif
   return result;
 }
 
@@ -383,7 +413,7 @@ std::time_t RtcTime::get(std::tm &time) const {
   return result;
 }
 
-bool RtcTime::dstRtcRequest() {
+bool RtcTime::isDstRtcRequest() {
   bool result = false;
   RtcTime rtcTime;
   rtcTime.readFromRtc_();

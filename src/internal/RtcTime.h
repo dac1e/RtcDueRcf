@@ -81,17 +81,7 @@ public:
 
   Sam3XA::RtcTime operator+(const time_t sec) const;
   Sam3XA::RtcTime operator-(const time_t sec) const;
-  bool operator==(const RtcTime& other)const {
-    return mHour == other.mHour &&
-    mMinute == other.mMinute &&
-    mSecond == other.mSecond &&
-    mRtc12hrsMode == other.mRtc12hrsMode &&
-    mYear == other.mYear &&
-    mMonth == other.mMonth &&
-    mDayOfMonth == other.mDayOfMonth &&
-    mDayOfWeekDay == other.mDayOfWeekDay &&
-    mState == other.mState;
-  }
+  bool operator ==(const RtcTime &other) const;
 
   /**
    * Read the RTC time and date and stores the result in this object.
@@ -114,11 +104,15 @@ public:
    */
   static int isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime);
 
-  bool dstRtcRequest();
+  /**
+   * Check whether the Rtc hour mode must be changed due to daylight
+   * savings transition.
+   */
+  bool isDstRtcRequest();
 
-  uint8_t isValid() const {return mState != INVALID;}
+  uint8_t isValid()   const {return mState != INVALID;}
   uint8_t isFromRtc() const {return mState == FROM_RTC;}
-//  void clearFromRtcFlag() {mState = 0;}
+
   static const Sam3XA::RtcTime* getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
       const int32_t dstTimeShift);
   static const Sam3XA::RtcTime* getDstEndCompareTime(const Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime,

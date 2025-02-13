@@ -175,7 +175,7 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
     const uint32_t start = micros();
 #endif
     Sam3XA::RtcTime dueTimeAndDate;
-    const bool request = dueTimeAndDate.dstRtcRequest();
+    const bool request = dueTimeAndDate.isDstRtcRequest();
     if(request) {
       // Fill cache with time.
       mSetTimeCache = dueTimeAndDate;
