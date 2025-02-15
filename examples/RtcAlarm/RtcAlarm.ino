@@ -34,33 +34,58 @@
  */
 
 void setTimeJustBeforeDstEntry() {
-  // Set time to 30 seconds before daylight savings starts:
+  // Set time to 10 seconds before daylight savings starts:
   // 27th of March 2016 01:59:50h.
-  Serial.println("**** Set local time to 27th of March 2016 01:59:30h ****");
+  Serial.println("**** Set local time to 27th of March 2016 01:59:50h ****");
   TM time(50, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
   RtcSam3XA::clock.setTime(time);
 }
 
-//void setTimeAtDstEntry() {
-//  // Set time to 30 seconds before daylight savings starts:
-//  // 27th of March 2016 03:00:00h.
-//  Serial.println("**** Set local time to 27th of March 2016 03:00:00h ****");
-//  TM time(00, 00, 3, 27, 2, TM::make_tm_year(2016), 1);
-//  RtcSam3XA::clock.setTime(time);
-//}
+void setTimeJustBeforeDstExit() {
+  // Set time to 70 seconds before daylight savings ends:
+  // 30th of October 2016 2:58:50h.
+  Serial.println("**** Set local time to 30th of October 2016 2:58:50h ****");
+  TM time(50, 58, 2, 30, 9, TM::make_tm_year(2016), 1);
+  RtcSam3XA::clock.setTime(time);
+}
+
+void setAlarm(uint8_t hour) {
+  RtcSam3XA_Alarm alarm;
+  alarm.setHour(hour);
+  alarm.setSecond(0);
+  RtcSam3XA::clock.setAlarm(alarm);
+}
 
 class AlarmReceiver {
-  volatile bool mAlarm;
+  volatile bool mAlarm = false;
+  int mAlarmCounter = 0;
   void onAlarm() {
     // This function runs within an interrupt context,
     // so we keep it short and just set a flag.
     mAlarm = true;
+    mAlarmCounter++;
   }
 public:
   void checkAlarm() {
     if(mAlarm) {
       mAlarm = false;
-      Serial.println("Alarm");
+
+      // Print Alarm
+      Serial.print("Alarm ");
+      Serial.println(mAlarmCounter);
+
+      // Toggle between Alarm on dst entry and alarm on dst exit
+      if((mAlarmCounter % 2) == 0) {
+        // Set time just before dst entry 1:59::50.
+        setTimeJustBeforeDstEntry();
+        // Set alarm to time 3:**:00.
+        setAlarm(3);
+      } else {
+        // Set time just before dst exit 2:58:50.
+        setTimeJustBeforeDstExit();
+        // Set alarm to time 2:**:00.
+        setAlarm(2);
+      }
     }
   }
 
@@ -80,16 +105,15 @@ void setup()
 
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
-  setTimeJustBeforeDstEntry();
-
 
   RtcSam3XA::clock.setAlarmCallback(alarmReceiver.alarmHandler,
       &alarmReceiver /* callback parameter is pointer to the alarmReceiver. */);
 
-  RtcSam3XA_Alarm alarm;
-  alarm.setHour(3);
-  alarm.setSecond(0);
-  RtcSam3XA::clock.setAlarm(alarm);
+  // Set time just before dst entry 1:59::50.
+  setTimeJustBeforeDstEntry();
+
+  // Set alarm to time 3:**:00.
+  setAlarm(3);
 }
 
 // The loop function is called in an endless loop
