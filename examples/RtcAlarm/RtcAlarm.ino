@@ -35,9 +35,9 @@
 
 void setTimeJustBeforeDstEntry() {
   // Set time to 30 seconds before daylight savings starts:
-  // 27th of March 2016 01:59:30h.
+  // 27th of March 2016 01:59:50h.
   Serial.println("**** Set local time to 27th of March 2016 01:59:30h ****");
-  TM time(30, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
+  TM time(50, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
   RtcSam3XA::clock.setTime(time);
 }
 

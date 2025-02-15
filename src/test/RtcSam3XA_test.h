@@ -30,7 +30,8 @@
 class Stream;
 
 namespace RtcSam3XA_test {
-  void run(Stream& log); // Run all tests
+  void runOfflineTests(Stream& log); // Run all tests
+  void runOnlineTests(Stream& log); // Run all tests
   void loop(Stream& log);
 }
 

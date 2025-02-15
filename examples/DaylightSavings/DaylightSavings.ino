@@ -69,9 +69,10 @@ void setup()
 {
   Serial.begin(9600);
 
+  RtcSam3XA_test::runOfflineTests(Serial);
+
   // Set time zone to Central European Time.
   RtcSam3XA::clock.begin(TZ::CET);
-
   setTimeJustBeforeDstEntry();
   isDaylightSavings = false;
 }

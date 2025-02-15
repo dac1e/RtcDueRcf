@@ -78,10 +78,22 @@ public:
 
   /** Set RtcTime from a tm struct. */
   void set(const std::tm &time);
+  void set(const std::time_t timestamp, const uint8_t isdst);
 
+  /** Just needed for test */
+  void set12HrsMode(bool mode = false) {mRtc12hrsMode = mode;}
+
+  /** Add seconds to this RtcTime. */
   Sam3XA::RtcTime operator+(const time_t sec) const;
+
+  /** Subtract seconds from this RtcTime. */
   Sam3XA::RtcTime operator-(const time_t sec) const;
-  bool operator ==(const RtcTime &other) const;
+
+  /** Check if this RtcTime is equal. */
+  bool operator==(const RtcTime &other) const;
+
+  /** Check if this RtcTime is equal to other but ignoring mRtc12hrsMode. */
+  bool valueEquals(const RtcTime &other) const;
 
   /**
    * Read the RTC time and date and stores the result in this object.
@@ -110,15 +122,30 @@ public:
    */
   bool isDstRtcRequest();
 
+  /** Query if this RtcTime is valid */
   uint8_t isValid()   const {return mState != INVALID;}
+
+  /** Query if this RtcTime contains data that was read from the RTC. */
   uint8_t isFromRtc() const {return mState == FROM_RTC;}
 
+  /** Calculate the RtcTime that is required for comparison against
+   *  begin of daylight savings transition.
+   *  Either stdTime must be valid or dstTime must be valid.
+   */
   static const Sam3XA::RtcTime* getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
-      const int32_t dstTimeShift);
+      const int32_t dstTimeShift, Sam3XA::RtcTime& buffer);
+
+  /** Calculate the RtcTime that is required for comparison against
+   *  end of daylight savings transition.
+   *  Either stdTime must be valid or dstTime must be valid.
+   */
   static const Sam3XA::RtcTime* getDstEndCompareTime(const Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime,
       const int32_t dstTimeShift);
 
-  void set(const std::time_t timestamp, const uint8_t isdst);
+  /**
+   * Convert this RtcTime to a unix timestamp. m12hoursMode which signals
+   * daylight savings time period is ignored.
+   */
   std::time_t toTimeStamp() const;
 
 private:

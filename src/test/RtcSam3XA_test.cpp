@@ -48,6 +48,24 @@ void makeCETdstEndTime(TM& time, int second, int minute, int hour, int dst = 1 /
       TM::make_tm_year(2016), dst);
 }
 
+// Provide an example instance.
+void makeCETdstBeginTime(Sam3XA::RtcTime& rtcTime, int second, int minute, int hour, bool b12hrsMode) {
+  // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
+  TM time;
+  makeCETdstBeginTime(time, second, minute, hour, 0);
+  rtcTime.set(time);
+  rtcTime.set12HrsMode(b12hrsMode);
+}
+
+// Provide an example instance.
+void makeCETdstEndTime(Sam3XA::RtcTime& rtcTime, int second, int minute, int hour, bool b12hrsMode) {
+  // 2nd of March 2016 2:00:00h is an daylight savings begin in CET time zone.
+  TM time;
+  makeCETdstEndTime(time, second, minute, hour, 0);
+  rtcTime.set(time);
+  rtcTime.set12HrsMode(b12hrsMode);
+}
+
 void logtime(Stream& stream, const TM& time, std::time_t localtime) {
   stream.print(time);
   stream.print(", "); stream.print(localtime);
@@ -420,10 +438,113 @@ void test_toTimeStamp(Stream& log) {
   test_toTimestamp(time);
 }
 
-void run(Stream& log) {
+void runOfflineTests(Stream& log) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   test_toTimeStamp(log);
 
+  RtcSam3XA::tzset(TZ::CET);
+
+  // #1 ----------------------------------------------------------
+  {
+    /**
+     * RTC carries standard time just before dst starts.
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstBeginTime(stdTime, 58, 59, 1, false);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 0);
+  }
+
+  {
+    /**
+     * RTC carries standard time when dst starts.
+     *  -> RTC must be changed to 12 hrs mode
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstBeginTime(stdTime, 59, 59, 1, false);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 1);
+    assert(dstTime.valueEquals(stdTime + 3600));
+  }
+
+  {
+    /**
+     * RTC carries dst time just before dst starts.
+     *  -> RTC must be changed to 24 hrs mode
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstBeginTime(dstTime, 58, 59, 2, true);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 0);
+    assert(stdTime.valueEquals(dstTime - 3600));
+  }
+
+  {
+    /**
+     * RTC carries dst time when dst starts.
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstBeginTime(dstTime, 59, 59, 2, true);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 1);
+  }
+
+  // #2 ---------------------------------------------------------
+  {
+    /**
+     * RTC carries standard time just before dst ends.
+     *  -> RTC must be changed to 12 hrs mode
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstEndTime(stdTime, 59, 59, 1, false);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 1);
+    assert(dstTime.valueEquals(stdTime + 3600));
+  }
+
+  {
+    /**
+     * RTC carries standard time when dst ends.
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstEndTime(stdTime, 00, 00, 2, false);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 0);
+  }
+
+  {
+    /**
+     * RTC carries dst time just before dst ends.
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstEndTime(dstTime, 59, 59, 2, true);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 1);
+  }
+
+  {
+    /**
+     * RTC carries dst time when dst ends.
+     *  -> RTC must be changed to 24 hrs mode
+     */
+    Sam3XA::RtcTime dstTime;
+    Sam3XA::RtcTime stdTime;
+    makeCETdstEndTime(dstTime, 00, 00, 3, true);
+    const int result = Sam3XA::RtcTime::isdst(stdTime, dstTime);
+    assert(result == 0);
+    assert(stdTime.valueEquals(dstTime - 3600));
+  }
+}
+
+void runOnlineTests(Stream& log) {
+  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
   RtcSam3XA::clock.begin(TZ::CET);
 
   /* --- Run RTC in 24-hrs mode --- */

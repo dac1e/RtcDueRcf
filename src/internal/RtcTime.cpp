@@ -182,26 +182,22 @@ inline int yday(const Sam3XA::RtcTime& rtcTime) {
 namespace Sam3XA {
 
 inline const Sam3XA::RtcTime* RtcTime::getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
-    const int32_t dstTimeShift) {
-
-  if(dstTime.isValid()) {
-    stdTime = dstTime - dstTimeShift;
-    stdTime.mRtc12hrsMode = 0;
-    return &stdTime;
-  }
+    const int32_t dstTimeShift, Sam3XA::RtcTime& buffer) {
 
   if(stdTime.isValid()) {
-    stdTime = stdTime + 1; // ensure that dst is recognized 1 second early
-    return &stdTime;
+    buffer = stdTime + 1; // ensure that dst is recognized 1 second early
+    return &buffer;
+  }
+
+  if(dstTime.isValid()) {
+    buffer = dstTime - (dstTimeShift - 1);
+    buffer.mRtc12hrsMode = 0;
+    return &buffer;
   }
 
   return nullptr;
 }
 
-/**
- * Important: Must be called before getDstBeginCompareTime() has been called,
- *            because a valid stdTime might be tweaked by adding 1 second.
- */
 inline const Sam3XA::RtcTime* RtcTime::getDstEndCompareTime(const Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime,
     const int32_t dstTimeShift) {
 
@@ -233,21 +229,23 @@ inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
       // North hemisphere
       const Sam3XA::RtcTime*const dstEndCompareTime = getDstEndCompareTime(stdTime, dstTime, dstTimeShift);
       if(not hasTransitionedDstRule(dstEndCompareTime, tzrule_DstEnd)) {
-        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift);
+        Sam3XA::RtcTime buffer;
+        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift, buffer);
         result = hasTransitionedDstRule(dstBeginCompareTime, tzrule_DstBegin);
-      } else if (not stdTime.isValid()) {
-        stdTime = dstTime - dstTimeShift;
-        stdTime.mRtc12hrsMode = 0;
       }
     } else {
       // South hemisphere
       const Sam3XA::RtcTime*const dstEndCompareTime = getDstEndCompareTime(stdTime, dstTime, dstTimeShift);
       if(hasTransitionedDstRule(dstEndCompareTime, tzrule_DstEnd)) {
-        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift);
+        Sam3XA::RtcTime buffer;
+        const Sam3XA::RtcTime* const dstBeginCompareTime = getDstBeginCompareTime(stdTime, dstTime, dstTimeShift, buffer);
         result = hasTransitionedDstRule(dstBeginCompareTime, tzrule_DstBegin);
-      } else if (not stdTime.isValid()) {
+      }
+    }
+
+    if(not result) {
+      if(not stdTime.isValid()) {
         stdTime = dstTime - dstTimeShift;
-        stdTime.mRtc12hrsMode = 0;
       }
     }
 
@@ -262,10 +260,19 @@ inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
   return 0;
 }
 
-bool RtcTime::operator ==(const RtcTime &other) const {
+bool RtcTime::operator==(const RtcTime &other) const {
   return mHour == other.mHour && mMinute == other.mMinute && mSecond == other.mSecond
-      && mRtc12hrsMode == other.mRtc12hrsMode && mYear == other.mYear && mMonth == other.mMonth
-      && mDayOfMonth == other.mDayOfMonth && mDayOfWeekDay == other.mDayOfWeekDay && mState == other.mState;
+      && mYear == other.mYear && mMonth == other.mMonth
+      && mDayOfMonth == other.mDayOfMonth && mDayOfWeekDay == other.mDayOfWeekDay
+      && mState == other.mState
+      && mRtc12hrsMode == other.mRtc12hrsMode;
+}
+
+bool RtcTime::valueEquals(const RtcTime &other) const {
+  return mHour == other.mHour && mMinute == other.mMinute && mSecond == other.mSecond
+      && mYear == other.mYear && mMonth == other.mMonth
+      && mDayOfMonth == other.mDayOfMonth && mDayOfWeekDay == other.mDayOfWeekDay
+      && mState == other.mState;
 }
 
 std::time_t RtcTime::toTimeStamp() const {
@@ -313,6 +320,13 @@ Sam3XA::RtcTime RtcTime::operator-(const time_t sec) const {
   return result;
 }
 
+uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
+  /** Calling mktime will calculate and set tm_wday. */
+  std::tm t = time;
+  std::mktime(&t);
+  return t.tm_wday;
+}
+
 void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
 {
   long days = timestamp / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
@@ -322,14 +336,14 @@ void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
     --days;
   }
 
+  /* compute day of week */
+  mDayOfWeekDay = ((((ADJUSTED_EPOCH_WDAY + DAYSPERWEEK) + days) % DAYSPERWEEK)) + 1;
+
   /* compute hour, min, and sec */
   mHour = (remain / SECSPERHOUR);
   remain %= SECSPERHOUR;
   mMinute = (remain / SECSPERMIN);
   mSecond = (remain % SECSPERMIN);
-
-  /* compute day of week */
-  mDayOfWeekDay = ((((ADJUSTED_EPOCH_WDAY + DAYSPERWEEK) + days) % DAYSPERWEEK)) + 1;
 
   /* compute year, month, day & day of year. For description of this algorithm see
    * http://howardhinnant.github.io/date_algorithms.html#civil_from_days */
@@ -346,13 +360,6 @@ void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
   mYear = ADJUSTED_EPOCH_YEAR + erayear + era * YEARS_PER_ERA + (month <= 1);
   mRtc12hrsMode = isdst;
   mState = VALID;
-}
-
-uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
-  /** Calling mktime will calculate and set tm_wday. */
-  std::tm t = time;
-  std::mktime(&t);
-  return t.tm_wday;
 }
 
 void RtcTime::set(const std::tm &time) {
@@ -429,6 +436,8 @@ bool RtcTime::isDstRtcRequest() {
     // RTC is holding standard local time
     const int dst = isdst(rtcTime, *this);
     if(dst) {
+      this->mState = INVALID;
+      isdst(rtcTime, *this);
       result = true;
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
