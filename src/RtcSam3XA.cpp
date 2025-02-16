@@ -258,14 +258,14 @@ bool RtcSam3XA::setTime(std::time_t utcTimestamp) {
   return setTime(time);
 }
 
-std::time_t RtcSam3XA::getLocalTimeAndUTC(std::tm &time) const {
+void RtcSam3XA::getLocalTime(std::tm &time) const {
   if (mSetTimeRequest) {
-    return mSetTimeCache.get(time);
+    mSetTimeCache.get(time);
+  } else {
+    Sam3XA::RtcTime dueTimeAndDate;
+    dueTimeAndDate.readFromRtc();
+    dueTimeAndDate.get(time);
   }
-
-  Sam3XA::RtcTime dueTimeAndDate;
-  dueTimeAndDate.readFromRtc();
-  return dueTimeAndDate.get(time);
 }
 
 void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),

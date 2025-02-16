@@ -48,7 +48,6 @@ class RtcTime {
   static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time);
 
-  void getRaw(std::tm &time) const;
   void readFromRtc_();
 
 public:
@@ -59,7 +58,7 @@ public:
   inline uint8_t month() const {return mMonth;}
   inline uint8_t day() const {return mDayOfMonth;}
   inline uint8_t day_of_week() const {return mDayOfWeekDay;}
-  inline uint8_t rtc12hrsMode() const {return mRtc12hrsMode > 0;}
+  inline uint8_t rtc12hrsMode() const {return mRtc12hrsMode > 0 ? 1 : 0;}
 
   inline int tm_hour() const {return mHour;}
   inline int tm_min() const {return mMinute;}
@@ -74,7 +73,7 @@ public:
   static uint8_t  rtcDayOfWeek(const std::tm& time) {return tmDayOfWeek(time) + 1;}
 
   /** Get a tm struct from this RtcTime. */
-  std::time_t get(std::tm &time) const;
+  void get(std::tm &time) const;
 
   /** Set RtcTime from a tm struct. */
   void set(const std::tm &time);

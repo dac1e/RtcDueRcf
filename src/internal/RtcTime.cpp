@@ -220,8 +220,8 @@ inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
     const uint32_t s = micros();
 #endif
     const __tzinfo_type * const tz = __gettzinfo ();
-    const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[not tz->__tznorth];
-    const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
+    const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[0];
+    const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[1];
     const int32_t dstTimeShift = (tzrule_DstBegin->offset - tzrule_DstEnd->offset);
 
     int result = tzrule_DstBegin->m >= tzrule_DstEnd->m;
@@ -246,6 +246,7 @@ inline int RtcTime::isdst(Sam3XA::RtcTime& stdTime, Sam3XA::RtcTime& dstTime) {
     if(not result) {
       if(not stdTime.isValid()) {
         stdTime = dstTime - dstTimeShift;
+        stdTime.mRtc12hrsMode = 0;
       }
     }
 
@@ -377,8 +378,8 @@ void RtcTime::set(const std::tm &time) {
   mState = VALID;
 }
 
-void RtcTime::getRaw(std::tm &time) const {
-  time.tm_isdst = -1;
+void RtcTime::get(std::tm &time) const {
+  time.tm_isdst = rtc12hrsMode();
   time.tm_hour = tm_hour();
   time.tm_min = tm_min();
   time.tm_sec = tm_sec();
@@ -386,33 +387,7 @@ void RtcTime::getRaw(std::tm &time) const {
   time.tm_mon = tm_mon();
   time.tm_mday = tm_mday();
   time.tm_wday = tm_wday();
-  time.tm_yday = -1;
-}
-
-std::time_t RtcTime::get(std::tm &time) const {
-  getRaw(time);
-  time.tm_isdst = mState ? 0 : mRtc12hrsMode;
-
-  // Get UTC from RTC time.
-  std::time_t result = mktime(&time);
-
-  if(mState && mRtc12hrsMode) {
-    // RTC carries daylight savings time (typically 1 hour ahead).
-    // That might even be the case if we are not in dst period.
-    // Hence we must fix the UTC here.
-    result += stdToDstDiff();
-  }
-
-  // Calculate local time from UTC. localtime_r will
-  // also fix the tm_yday as well as tm_ist and the
-  // hour, if time is within daylight savings period.
-  localtime_r(&result, &time);
-
-#if ASSERT_Sam3XA_RtcTime_isdst
-  assert(isdst() == time.tm_isdst);
-#endif
-
-  return result;
+  time.tm_yday = yday(*this);
 }
 
 bool RtcTime::isDstRtcRequest() {
@@ -436,8 +411,6 @@ bool RtcTime::isDstRtcRequest() {
     // RTC is holding standard local time
     const int dst = isdst(rtcTime, *this);
     if(dst) {
-      this->mState = INVALID;
-      isdst(rtcTime, *this);
       result = true;
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");

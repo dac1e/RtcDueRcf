@@ -65,11 +65,12 @@ void loop()
      * UTC (Greenwich meantime) and
      * print it.
      */
-    const std::time_t utc = RtcSam3XA::clock.getLocalTimeAndUTC(localTime);
+    RtcSam3XA::clock.getLocalTime(localTime);
     Serial.print("Local time: ");
     Serial.print(localTime);
     Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");
 
+    const std::time_t utc = std::mktime(&localTime);
     TM utcTime;
     gmtime_r(&utc, &utcTime);
     Serial.print(", (UTC=");

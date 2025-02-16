@@ -179,24 +179,7 @@ public:
    *
    * @param[out] time The variable that will receive the local time.
    */
-  void getLocalTime(std::tm &time) const {getLocalTimeAndUTC(time);}
-
-  /**
-   * Get the Unix time stamp from the RTC. Prerequisite: time zone
-   * is set correctly.
-   *
-   * @return The UTC time (Greenwhich meantime).
-   */
-  time_t getUTC() const {tm time; return getLocalTimeAndUTC(time);}
-
-  /**
-   * Get the local time and UTC from the RTC.
-   *
-   * @param[out] time The variable that will receive the local time.
-   *
-   * @return The UTC time (Greenwhich meantime).
-   */
-  std::time_t getLocalTimeAndUTC(std::tm &time) const;
+  void getLocalTime(std::tm &time) const;
 
   /**
    * Set alarm time and date.
@@ -291,7 +274,7 @@ namespace TZ {
 
   // Daylight savings starts at the last Sunday of September 2:00h (default time) and ends at first Sunday of April 3:00h.
   // NEW ZEALAND
-  constexpr char* NZST= "NZST-12:00:00-13:00:00,M9.5.0,M4.1.0/3";     // (New Zealand)
+  constexpr char* NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3";     // (New Zealand)
 }
 
 #endif /* RTCSAM3XA_SRC_RTCSAM3XA_H_ */
