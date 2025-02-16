@@ -222,14 +222,19 @@ public:
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 
 private:
-  RtcSam3XA();
   friend void ::RTC_Handler();
 
+  RtcSam3XA();
   inline void RtcSam3XA_Handler();
   inline void RtcSam3XA_DstChecker();
   inline void RtcSam3XA_AckUpdHandler();
 
-  enum SET_TIME_REQUEST {NO_REQUEST = 0, REQUEST, DST_RTC_REQUEST};
+  enum SET_TIME_REQUEST {
+    NO_REQUEST = 0,
+    REQUEST,
+    DST_RTC_REQUEST
+  };
+
   volatile SET_TIME_REQUEST mSetTimeRequest;
   Sam3XA::RtcTime mSetTimeCache;
 
@@ -274,7 +279,7 @@ namespace TZ {
 
   // Daylight savings starts at the last Sunday of September 2:00h (default time) and ends at first Sunday of April 3:00h.
   // NEW ZEALAND
-  constexpr char* NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3";     // (New Zealand)
+  constexpr char* NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3"; // (New Zealand)
 }
 
 #endif /* RTCSAM3XA_SRC_RTCSAM3XA_H_ */

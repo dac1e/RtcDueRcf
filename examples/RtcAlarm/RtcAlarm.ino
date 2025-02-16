@@ -49,11 +49,19 @@ static void setTimeJustBeforeDstExit() {
   RtcSam3XA::clock.setTime(time);
 }
 
-static void setAlarm(uint8_t hour) {
+static void setAlarm(Stream& log, uint8_t hour, uint8_t second = 0) {
   RtcSam3XA_Alarm alarm;
   alarm.setHour(hour);
-  alarm.setSecond(0);
+  alarm.setSecond(second);
   RtcSam3XA::clock.setAlarm(alarm);
+  log.print("Set alarm to ");
+  log.print(hour);
+  if(second < 10) {
+    log.print(":**:0");
+  } else {
+    log.print(":**:");
+  }
+  log.println(second);
 }
 
 class AlarmReceiver {
@@ -79,12 +87,12 @@ public:
         // Set time just before dst entry 1:59::50.
         setTimeJustBeforeDstEntry();
         // Set alarm to time 3:**:00.
-        setAlarm(3);
+        setAlarm(Serial, 3);
       } else {
         // Set time just before dst exit 2:58:50.
         setTimeJustBeforeDstExit();
         // Set alarm to time 2:**:00.
-        setAlarm(2);
+        setAlarm(Serial, 2);
       }
     }
   }
@@ -113,7 +121,7 @@ void setup()
   setTimeJustBeforeDstEntry();
 
   // Set alarm to time 3:**:00.
-  setAlarm(3);
+  setAlarm(Serial, 3);
 }
 
 // The loop function is called in an endless loop
@@ -126,11 +134,12 @@ void loop()
      * Read the local time and print it. Then convert the local time to UTC
      * (Greenwich meantime) and print it.
      */
-    const std::time_t utc = RtcSam3XA::clock.getLocalTimeAndUTC(localTime);
+    RtcSam3XA::clock.getLocalTime(localTime);
     Serial.print("Local time: ");
     Serial.print(localTime);
     Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");
 
+    const std::time_t utc = std::mktime(&localTime);
     TM utcTime;
     gmtime_r(&utc, &utcTime);
     Serial.print(", (UTC=");
