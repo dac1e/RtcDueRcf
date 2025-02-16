@@ -1,5 +1,5 @@
 # RtcSam3XA
-Operate Arduinio Due RTC using C++ standards. Avoid read/write race conditions.
+Operate Arduinio Due RTC using C++ standard time functions. Avoid read/write race conditions.
 
 Characteristics:
 
@@ -7,17 +7,17 @@ Characteristics:
 -Set RTC local time by the UTC time (Greenich mean time) stored in the C++ standard type std::time_t.
 -Get and set RTC alarms.
 -Adjust RTC to/from daylight savings period automatically, so that alarms will appear as expected.
--Avoid RTC/CPU race conditions that can cause in RTC read / write operations with wrong results.
--Use interrupt based setting of RTC time and date registers to avoid blocking the CPU for approximately
+-No RTC/CPU race conditions that can cause in RTC read / write operations with wrong results.
+-Use interrupt based setting of RTC time and date registers to avoid CPU blocking for approximately
 	350ms when setting time and date.
 
 Unlike some other RTC libraries this library does avoid Race Conditions between the RTC and the CPU.
 
 Here is an example of a race condition:
 
-A librariy might provide the functions getMinute() and getSecond().
+A librariy might provide the functions getMinute() and getSecond() being called by the client.
 The RTC might transition from e.g. xx:01:59 to xx:02:00 between
-the 2 subsequent calls of getMinute() and getSeconds().
+the 2 subsequent calls of getMinute() and getSecond().
 Hence getMinutes() will retrieve 01 and getSeconds() will retrieve 00.
 The combined result for minute and second will be xx::01:00 while
 the RTC contains xx:02:00.
