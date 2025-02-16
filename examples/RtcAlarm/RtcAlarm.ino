@@ -29,8 +29,12 @@
 /**
  * Demonstrate RTC alarm in combination with daylight savings transition.
  *
- * Set the local time just before daylight savings period starts.
- * Set an alarm at the hour when the daylight saving period starts (3:00h)
+ * Set the local time just before daylight savings period starts and
+ * set tje alarm at the hour when the daylight saving period starts:
+ *  3:**:00h
+ * Upon alarm, set the local time just before daylight saving period ends,
+ * and set alarm to the hour, when the daylight saving period ends:
+ *  2:**:00
  */
 
 static void setTimeJustBeforeDstEntry() {
@@ -86,12 +90,14 @@ public:
       if((mAlarmCounter % 2) == 0) {
         // Set time just before dst entry 1:59::50.
         setTimeJustBeforeDstEntry();
-        // Set alarm to time 3:**:00.
+        // Set alarm to time 3:**:00. Next expected alarm is at 3:00:00h
         setAlarm(Serial, 3);
+
+
       } else {
         // Set time just before dst exit 2:58:50.
         setTimeJustBeforeDstExit();
-        // Set alarm to time 2:**:00.
+        // Set alarm to time 2:**:00. Next expected alarm is at 2:59:00h
         setAlarm(Serial, 2);
       }
     }

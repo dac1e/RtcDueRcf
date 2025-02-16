@@ -30,7 +30,7 @@
 
 /**
  * Demonstrate daylight savings transition on Serial monitor for time
- * zone CET (Central European Time).
+ * zone NZST (New Zealand).
  *
  * 1) Set the local time just before daylight savings period starts.
  *

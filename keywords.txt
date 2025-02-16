@@ -15,8 +15,7 @@ TM				KEYWORD1
 #######################################
 
 begin				KEYWORD2
-setLocalTime		KEYWORD2
-setUTC				KEYWORD2
+setTime				KEYWORD2
 getLocalTime		KEYWORD2
 getUTC				KEYWORD2
 setAlarm			KEYWORD2
