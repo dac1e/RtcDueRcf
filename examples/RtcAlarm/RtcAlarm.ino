@@ -33,7 +33,7 @@
  * Set an alarm at the hour when the daylight saving period starts (3:00h)
  */
 
-void setTimeJustBeforeDstEntry() {
+static void setTimeJustBeforeDstEntry() {
   // Set time to 10 seconds before daylight savings starts:
   // 27th of March 2016 01:59:50h.
   Serial.println("**** Set local time to 27th of March 2016 01:59:50h ****");
@@ -41,7 +41,7 @@ void setTimeJustBeforeDstEntry() {
   RtcSam3XA::clock.setTime(time);
 }
 
-void setTimeJustBeforeDstExit() {
+static void setTimeJustBeforeDstExit() {
   // Set time to 70 seconds before daylight savings ends:
   // 30th of October 2016 2:58:50h.
   Serial.println("**** Set local time to 30th of October 2016 2:58:50h ****");
@@ -49,7 +49,7 @@ void setTimeJustBeforeDstExit() {
   RtcSam3XA::clock.setTime(time);
 }
 
-void setAlarm(uint8_t hour) {
+static void setAlarm(uint8_t hour) {
   RtcSam3XA_Alarm alarm;
   alarm.setHour(hour);
   alarm.setSecond(0);

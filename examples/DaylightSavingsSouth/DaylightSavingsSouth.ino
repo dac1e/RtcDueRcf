@@ -50,17 +50,17 @@ static int loopCountDown = -1;
 
 static void setTimeJustBeforeDstEntry() {
   // Set time to 10 seconds before daylight savings starts:
-  // 27th of March 2016 01:59:50h.
-  Serial.println("**** Set local time to 27th of March 2016 01:59:50h ****");
-  TM time(50, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
+  // 29th of September 2024 01:59:50h.
+  Serial.println("**** Set local time to 29th of September 2024 01:59:50h ****");
+  TM time(50, 59, 1, 29, 8, TM::make_tm_year(2024), -1);
   RtcSam3XA::clock.setTime(time);
 }
 
 static void setTimeJustBeforeDstExit() {
   // Set time to 10 seconds before daylight savings ends:
-  // 30th of October 2016 2:59:50h.
-  Serial.println("**** Set local time to 30th of October 2016 2:59:50h ****");
-  TM time(50, 59, 2, 30, 9, TM::make_tm_year(2016), 1);
+  // 6th of April 2025 2:59:50h.
+  Serial.println("**** Set local time to 6th of April 2025 2:59:50h ****");
+  TM time(50, 59, 2, 6, 3, TM::make_tm_year(2025), 1);
   RtcSam3XA::clock.setTime(time);
 }
 
@@ -68,8 +68,8 @@ static void setTimeJustBeforeDstExit() {
 void setup()
 {
   Serial.begin(9600);
-  // Set time zone to Central European Time.
-  RtcSam3XA::clock.begin(TZ::CET);
+  // Set time zone to New Zealand Time.
+  RtcSam3XA::clock.begin(TZ::NZST);
   setTimeJustBeforeDstEntry();
   isDaylightSavings = false;
 }
