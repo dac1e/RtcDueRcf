@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_
-#define RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_
+#ifndef RTCDUERCF_SRC_INTERNAL_SAM3XA_RTCTIME_H_
+#define RTCDUERCF_SRC_INTERNAL_SAM3XA_RTCTIME_H_
 
 #include <stdint.h>
 #include <ctime>
@@ -172,4 +172,4 @@ private:
 
 } // namespace Sam3XA_Rtc
 
-#endif /* RTCSAM3XA_SRC_INTERNAL_SAM3XA_RTCTIME_H_ */
+#endif /* RTCDUERCF_SRC_INTERNAL_SAM3XA_RTCTIME_H_ */

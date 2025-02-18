@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_RTCSAM3XA_ALARM_H_
-#define RTCSAM3XA_SRC_RTCSAM3XA_ALARM_H_
+#ifndef RTCDUERCF_SRC_RTCDUERCF_ALARM_H_
+#define RTCDUERCF_SRC_RTCDUERCF_ALARM_H_
 
 #include <stdint.h>
 #include <Printable.h>
@@ -87,4 +87,4 @@ private:
   uint8_t day;
   uint8_t month; // 1..12
 };
-#endif /* RTCSAM3XA_SRC_RTCSAM3XA_ALARM_H_ */
+#endif /* RTCDUERCF_SRC_RTCDUERCF_ALARM_H_ */

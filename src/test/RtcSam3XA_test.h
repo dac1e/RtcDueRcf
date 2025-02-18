@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_TEST_RTCSAM3XA_TEST_H_
-#define RTCSAM3XA_SRC_TEST_RTCSAM3XA_TEST_H_
+#ifndef RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_
+#define RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_
 
 class Stream;
 
@@ -35,4 +35,4 @@ namespace RtcSam3XA_test {
   void loop(Stream& log);
 }
 
-#endif /* RTCSAM3XA_SRC_TEST_RTCSAM3XA_TEST_H_ */
+#endif /* RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_ */

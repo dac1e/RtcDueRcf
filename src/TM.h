@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_TM_H_
-#define RTCSAM3XA_SRC_TM_H_
+#ifndef RTCDUERCF_SRC_TM_H_
+#define RTCDUERCF_SRC_TM_H_
 
 #include <ctime>
 #include <printable.h>
@@ -120,4 +120,4 @@ inline void TM::set(int _sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
   set(*this, _sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_isdst);
 }
 
-#endif /* RTCSAM3XA_SRC_TM_H_ */
+#endif /* RTCDUERCF_SRC_TM_H_ */

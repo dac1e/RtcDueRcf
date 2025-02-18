@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_RTCSAM3XA_H_
-#define RTCSAM3XA_SRC_RTCSAM3XA_H_
+#ifndef RTCDUERCF_SRC_RTCDUERCF_H_
+#define RTCDUERCF_SRC_RTCDUERCF_H_
 
 #include <cstdlib>
 #include <ctime>
@@ -282,4 +282,4 @@ namespace TZ {
   constexpr char* NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3"; // (New Zealand)
 }
 
-#endif /* RTCSAM3XA_SRC_RTCSAM3XA_H_ */
+#endif /* RTCDUERCF_SRC_RTCDUERCF_H_ */

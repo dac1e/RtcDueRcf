@@ -24,8 +24,8 @@
 
 #pragma once
 
-#ifndef RTCSAM3XA_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_
-#define RTCSAM3XA_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_
+#ifndef RTCDUERCF_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_
+#define RTCDUERCF_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_
 
 #include <include/rtc.h>
 
@@ -134,4 +134,4 @@ extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucM
 }
 #endif
 
-#endif /* RTCSAM3XA_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_ */
+#endif /* RTCDUERCF_SRC_INTERNAL_CORE_SAM_GAPCLOSE_H_ */
