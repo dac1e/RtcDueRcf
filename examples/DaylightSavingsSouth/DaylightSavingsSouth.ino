@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -23,7 +23,7 @@
 */
 
 #include <Arduino.h>
-#include "RtcSam3XA.h"
+#include "RtcDueRcf.h"
 #include "TM.h"
 
 /**
@@ -51,7 +51,7 @@ static void setTimeJustBeforeDstEntry() {
   // 29th of September 2024 01:59:50h.
   Serial.println("**** Set local time to 29th of September 2024 01:59:50h ****");
   TM time(50, 59, 1, 29, 8, TM::make_tm_year(2024), -1);
-  RtcSam3XA::clock.setTime(time);
+  RtcDueRcf::clock.setTime(time);
 }
 
 static void setTimeJustBeforeDstExit() {
@@ -59,7 +59,7 @@ static void setTimeJustBeforeDstExit() {
   // 6th of April 2025 2:59:50h.
   Serial.println("**** Set local time to 6th of April 2025 2:59:50h ****");
   TM time(50, 59, 2, 6, 3, TM::make_tm_year(2025), 1);
-  RtcSam3XA::clock.setTime(time);
+  RtcDueRcf::clock.setTime(time);
 }
 
 //The setup function is called once at startup of the sketch
@@ -67,7 +67,7 @@ void setup()
 {
   Serial.begin(9600);
   // Set time zone to New Zealand Time.
-  RtcSam3XA::clock.begin(TZ::NZST);
+  RtcDueRcf::clock.begin(TZ::NZST);
   setTimeJustBeforeDstEntry();
   isDaylightSavings = false;
 }
@@ -82,7 +82,7 @@ void loop()
      * Read the local time and print it. Then convert the local time to UTC
      * (Greenwich meantime) and print it.
      */
-    RtcSam3XA::clock.getLocalTime(localTime);
+    RtcDueRcf::clock.getLocalTime(localTime);
     Serial.print("Local time: ");
     Serial.print(localTime);
     Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");

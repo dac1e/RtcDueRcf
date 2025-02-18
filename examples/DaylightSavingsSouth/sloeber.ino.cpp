@@ -5,7 +5,7 @@
 //This file has been generated on 2025-01-31 10:38:42
 
 #include "Arduino.h"
-#include "RtcSam3XA.h"
+#include "RtcDueRcf.h"
 #include "TM.h"
 
 void setup() ;

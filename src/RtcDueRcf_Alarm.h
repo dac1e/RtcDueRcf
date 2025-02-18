@@ -62,7 +62,7 @@
  *  Serial.println(alarm); // Print it.
  */
 class RtcDueRcf_Alarm : public Printable {
-  friend class RtcSam3XA;
+  friend class RtcDueRcf;
 public:
   RtcDueRcf_Alarm();
   RtcDueRcf_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon /* 0..11 */);

@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -39,22 +39,22 @@
 #endif
 
 /**
- * RtcSam3XA offers functions to operate the built in Real Time Clock
+ * RtcDueRcf offers functions to operate the built in Real Time Clock
  * (RTC) and it's alarm features.
- * The RTC is represented as a single object named RtcSam3XA::clock.
+ * The RTC is represented as a single object named RtcDueRcf::clock.
  *
  * The standard structure std::tm and the standard type std::time_t
  * are used to operate the RTC.
  * There is the class TM that is derived from std::tm that enhances
  * structure std::tm with some convenience functions for std::tm.
  *
- * The class RtcSam3XA_Alarm is used to operate the alarm features
+ * The class RtcDueRcf_Alarm is used to operate the alarm features
  * of the RTC.
  */
-class RtcSam3XA {
+class RtcDueRcf {
 public:
   /**
-   * The static object RtcSam3XA::clock is the one and only clock object.
+   * The static object RtcDueRcf::clock is the one and only clock object.
    *
    * Usage examples:
    *
@@ -62,13 +62,13 @@ public:
    *
    * // Read the local time and date from RTC.
    * TM time;
-   * RtcSam3XA::clock.getLocalTime(time);
+   * RtcDueRcf::clock.getLocalTime(time);
    *
    * // Write the local time and date to the RTC.
    * const TM time {24, 59, 11, 12, TM::make_tm_month(2), TM::make_tm_year(2016), false};
-   * RtcSam3XA::clock.setLocalTime(time);
+   * RtcDueRcf::clock.setLocalTime(time);
    */
-  static RtcSam3XA clock;
+  static RtcDueRcf clock;
 
   /**
    * Set time zone.
@@ -82,7 +82,7 @@ public:
    *
    * Setting the time zone is required for the correct collaboration of
    * the standard C++ entities std::tm, std::time_t, mktime(), gmtime(),
-   * gmtime_r(), localtime(), localtime_r() along with the this RtcSam3XA class.
+   * gmtime_r(), localtime(), localtime_r() along with the this RtcDueRcf class.
    * It is also needed for determining the daylight savings (also referred
    * to as dst) begin and end.
    *
@@ -224,10 +224,10 @@ public:
 private:
   friend void ::RTC_Handler();
 
-  RtcSam3XA();
-  inline void RtcSam3XA_Handler();
-  inline void RtcSam3XA_DstChecker();
-  inline void RtcSam3XA_AckUpdHandler();
+  RtcDueRcf();
+  inline void RtcDueRcf_Handler();
+  inline void RtcDueRcf_DstChecker();
+  inline void RtcDueRcf_AckUpdHandler();
 
   enum SET_TIME_REQUEST {
     NO_REQUEST = 0,

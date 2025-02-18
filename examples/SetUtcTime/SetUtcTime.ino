@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -23,7 +23,7 @@
 */
 
 #include <Arduino.h>
-#include "RtcSam3XA.h"
+#include "RtcDueRcf.h"
 #include "TM.h"
 
 /**
@@ -42,15 +42,15 @@ void setup()
   TM tm(0, 0, 0, 1, 0 /* 0 = Jan. */, TM::make_tm_year(2000), -1);
 
   // Create UTC timestamp for 1st of January 2000 00:00:00h
-  RtcSam3XA::clock.tzset(TZ::UTC);
+  RtcDueRcf::clock.tzset(TZ::UTC);
   const std::time_t utcTimeStamp = std::mktime(&tm);
 
-  RtcSam3XA::clock.begin(TZ::CET);
+  RtcDueRcf::clock.begin(TZ::CET);
   Serial.println("**** Set UTC time to 1st of January 2000 0:00:00h ****");
 
   // Set UTC time to 1st of January 2000 00:00:00h. This results
   // to 1st of January 2000 1:00:00h CET (Central Europe Time).
-  RtcSam3XA::clock.setTime(utcTimeStamp);
+  RtcDueRcf::clock.setTime(utcTimeStamp);
 }
 
 // The loop function is called in an endless loop
@@ -65,7 +65,7 @@ void loop()
      * UTC (Greenwich meantime) and
      * print it.
      */
-    RtcSam3XA::clock.getLocalTime(localTime);
+    RtcDueRcf::clock.getLocalTime(localTime);
     Serial.print("Local time: ");
     Serial.print(localTime);
     Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");

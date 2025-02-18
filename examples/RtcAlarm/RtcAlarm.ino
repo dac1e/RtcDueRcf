@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -23,7 +23,7 @@
 */
 
 #include <Arduino.h>
-#include "RtcSam3XA.h"
+#include "RtcDueRcf.h"
 #include "TM.h"
 
 /**
@@ -42,7 +42,7 @@ static void setTimeJustBeforeDstEntry() {
   // 27th of March 2016 01:59:50h.
   Serial.println("**** Set local time to 27th of March 2016 01:59:50h ****");
   TM time(50, 59, 1, 27, 2, TM::make_tm_year(2016), -1);
-  RtcSam3XA::clock.setTime(time);
+  RtcDueRcf::clock.setTime(time);
 }
 
 static void setTimeJustBeforeDstExit() {
@@ -50,14 +50,14 @@ static void setTimeJustBeforeDstExit() {
   // 30th of October 2016 2:58:50h.
   Serial.println("**** Set local time to 30th of October 2016 2:58:50h ****");
   TM time(50, 58, 2, 30, 9, TM::make_tm_year(2016), 1);
-  RtcSam3XA::clock.setTime(time);
+  RtcDueRcf::clock.setTime(time);
 }
 
 static void setAlarm(Stream& log, uint8_t hour, uint8_t second = 0) {
   RtcDueRcf_Alarm alarm;
   alarm.setHour(hour);
   alarm.setSecond(second);
-  RtcSam3XA::clock.setAlarm(alarm);
+  RtcDueRcf::clock.setAlarm(alarm);
   log.print("Set alarm to ");
   log.print(hour);
   if(second < 10) {
@@ -118,9 +118,9 @@ void setup()
   Serial.begin(9600);
 
   // Set time zone to Central European Time.
-  RtcSam3XA::clock.begin(TZ::CET);
+  RtcDueRcf::clock.begin(TZ::CET);
 
-  RtcSam3XA::clock.setAlarmCallback(alarmReceiver.alarmHandler,
+  RtcDueRcf::clock.setAlarmCallback(alarmReceiver.alarmHandler,
       &alarmReceiver /* callback parameter is pointer to the alarmReceiver. */);
 
   // Set time just before dst entry 1:59::50.
@@ -140,7 +140,7 @@ void loop()
      * Read the local time and print it. Then convert the local time to UTC
      * (Greenwich meantime) and print it.
      */
-    RtcSam3XA::clock.getLocalTime(localTime);
+    RtcDueRcf::clock.getLocalTime(localTime);
     Serial.print("Local time: ");
     Serial.print(localTime);
     Serial.print(localTime.tm_isdst ? " Dayl. savg." : " Normal Time");

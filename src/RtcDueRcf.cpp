@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -27,7 +27,7 @@
 #include "TM.h"
 #include "internal/RtcTime.h"
 #include "internal/core-sam-GapClose.h"
-#include "RtcSam3XA.h"
+#include "RtcDueRcf.h"
 
 #ifndef MEASURE_DST_RTC_REQUEST
 #define MEASURE_DST_RTC_REQUEST false
@@ -69,20 +69,20 @@ int dstToStandardTimeDiff() {
 
 } // anonymous namespace
 
-RtcSam3XA RtcSam3XA::clock;
+RtcDueRcf RtcDueRcf::clock;
 
 /**
- * Global interrupt handler forwards to RtcSam3XA_Handler()
+ * Global interrupt handler forwards to RtcDueRcf_Handler()
  */
 void RTC_Handler (void) {
-  RtcSam3XA::clock.RtcSam3XA_Handler();
+  RtcDueRcf::clock.RtcDueRcf_Handler();
 }
 
 /**
  * Default constructor. Constructor is private, because there must
- * be only one object RtcSam3XA::clock.
+ * be only one object RtcDueRcf::clock.
  */
-RtcSam3XA::RtcSam3XA()
+RtcDueRcf::RtcDueRcf()
   : mSetTimeRequest(SET_TIME_REQUEST::NO_REQUEST)
   , mSecondCallback(nullptr)
   , mSecondCallbackPararm(nullptr)
@@ -94,7 +94,7 @@ RtcSam3XA::RtcSam3XA()
 {
 }
 
-void RtcSam3XA::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSCILLATOR source) {
+void RtcDueRcf::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSCILLATOR source) {
   RTC_DisableIt(RTC, RTC_IDR_ACKDIS | RTC_IDR_ALRDIS | RTC_IDR_SECDIS
       | RTC_IDR_TIMDIS | RTC_IDR_CALDIS);
 
@@ -122,7 +122,7 @@ void RtcSam3XA::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSC
  * will then pickup the time and date from the mSetTimeCache
  * and write it to the RTC.
  */
-bool RtcSam3XA::setTime(const std::tm &localTime) {
+bool RtcDueRcf::setTime(const std::tm &localTime) {
   if(localTime.tm_year >= TM::make_tm_year(2000)) {
     RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
     RTC_DisableIt(RTC, RTC_IER_ACKEN);
@@ -169,7 +169,7 @@ bool RtcSam3XA::setTime(const std::tm &localTime) {
  * is required (2 times in a year). These values are related to
  * compile option -Os.
  */
-void RtcSam3XA::RtcSam3XA_DstChecker() {
+void RtcDueRcf::RtcDueRcf_DstChecker() {
   if(mSetTimeRequest != SET_TIME_REQUEST::DST_RTC_REQUEST) {
 #if MEASURE_DST_RTC_REQUEST
     const uint32_t start = micros();
@@ -180,7 +180,7 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
       // Fill cache with time.
       mSetTimeCache = dueTimeAndDate;
 #if DEBUG_DST_REQUEST
-      Serial.print("RtcSam3XA_DstChecker");
+      Serial.print("RtcDueRcf_DstChecker");
 #endif
       if(not mSetTimeRequest) {
         mSetTimeRequest = SET_TIME_REQUEST::DST_RTC_REQUEST;
@@ -210,7 +210,7 @@ void RtcSam3XA::RtcSam3XA_DstChecker() {
 /**
  * Pick the mSetTimeCache and write it to the RTC.
  */
-void RtcSam3XA::RtcSam3XA_AckUpdHandler() {
+void RtcDueRcf::RtcDueRcf_AckUpdHandler() {
   if (mSetTimeRequest != SET_TIME_REQUEST::NO_REQUEST) {
     mSetTimeCache.writeToRtc();
     mSetTimeRequest = SET_TIME_REQUEST::NO_REQUEST;
@@ -221,13 +221,13 @@ void RtcSam3XA::RtcSam3XA_AckUpdHandler() {
 }
 
 /**
- * RtcSam3XA interrupt handler
+ * RtcDueRcf interrupt handler
  */
-void RtcSam3XA::RtcSam3XA_Handler() {
+void RtcDueRcf::RtcDueRcf_Handler() {
   const uint32_t status = RTC->RTC_SR;
   /* Second increment interrupt */
   if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-    RtcSam3XA_DstChecker();
+    RtcDueRcf_DstChecker();
     if (mSecondCallback) {
       (*mSecondCallback)(mSecondCallbackPararm);
     }
@@ -239,7 +239,7 @@ void RtcSam3XA::RtcSam3XA_Handler() {
 #if RTC_MEASURE_ACKUPD
     mTimestampACKUPD = millis();
 #endif
-    RtcSam3XA_AckUpdHandler();
+    RtcDueRcf_AckUpdHandler();
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
   }
 
@@ -252,13 +252,13 @@ void RtcSam3XA::RtcSam3XA_Handler() {
   }
 }
 
-bool RtcSam3XA::setTime(std::time_t utcTimestamp) {
+bool RtcDueRcf::setTime(std::time_t utcTimestamp) {
   tm time;
   localtime_r(&utcTimestamp, &time);
   return setTime(time);
 }
 
-void RtcSam3XA::getLocalTime(std::tm &time) const {
+void RtcDueRcf::getLocalTime(std::tm &time) const {
   if (mSetTimeRequest) {
     mSetTimeCache.get(time);
   } else {
@@ -268,7 +268,7 @@ void RtcSam3XA::getLocalTime(std::tm &time) const {
   }
 }
 
-void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
+void RtcDueRcf::setAlarmCallback(void (*alarmCallback)(void*),
     void *alarmCallbackParam) {
   RTC_DisableIt(RTC, RTC_IER_ALREN);
   mAlarmCallback = alarmCallback;
@@ -277,17 +277,17 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
 
 }
 
-void RtcSam3XA::setAlarm(const RtcDueRcf_Alarm& alarm) {
+void RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
   RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
 }
 
-void RtcSam3XA::getAlarm(RtcDueRcf_Alarm &alarm) {
+void RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
   RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
   RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day);
 
 }
 
-void RtcSam3XA::setSecondCallback(void (*secondCallback)(void*),
+void RtcDueRcf::setSecondCallback(void (*secondCallback)(void*),
     void *secondCallbackParam) {
   mSecondCallback = secondCallback;
   mSecondCallbackPararm = secondCallbackParam;

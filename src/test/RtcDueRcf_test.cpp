@@ -1,5 +1,5 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for RtcDueRcf - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
@@ -26,7 +26,7 @@
 
 #include <assert.h>
 #include "../TM.h"
-#include "../RtcSam3XA.h"
+#include "../RtcDueRcf.h"
 #include "../internal/core-sam-GapClose.h"
 #include "Arduino.h"
 
@@ -93,10 +93,10 @@ uint32_t getHourMode( Rtc* pRtc )
 
 } // anonymous namespace
 
-namespace RtcSam3XA_test {
+namespace RtcDueRcf_test {
 
 static void testBasicSetGet(Stream &log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
   // Default contstructor: 1st of January 2000  00:00:00h
   TM stime;
@@ -106,11 +106,11 @@ static void testBasicSetGet(Stream &log) {
   uint32_t timestamp_setClock = millis();
 #endif
 
-  RtcSam3XA::clock.setTime(stime);
+  RtcDueRcf::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -119,7 +119,7 @@ static void testBasicSetGet(Stream &log) {
 
   // After 1600 (100 + 1600) the time should be set and should be increased by one second.
   delay(1500);// @1600ms
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   const std::time_t localtime = mktime(&rtime);
   logtime(log, rtime);
   delay(100); // @1700ms
@@ -129,7 +129,7 @@ static void testBasicSetGet(Stream &log) {
 
 #if RTC_MEASURE_ACKUPD
   // Measure the set clock - latency an print.
-  uint32_t setClockLatency = RtcSam3XA::clock.getTimestampACKUPD() - timestamp_setClock;
+  uint32_t setClockLatency = RtcDueRcf::clock.getTimestampACKUPD() - timestamp_setClock;
   log.print("--- set clock latency: ");
   log.print(setClockLatency);
   log.println("ms");
@@ -137,7 +137,7 @@ static void testBasicSetGet(Stream &log) {
 }
 
 static void testDstEntry(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   constexpr int HOUR_START = 1;
@@ -147,11 +147,11 @@ static void testDstEntry(Stream& log) {
   makeCETdstBeginTime(stime, 57, 59, HOUR_START);
 
   std::mktime(&stime);
-  RtcSam3XA::clock.setTime(stime);
+  RtcDueRcf::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -160,20 +160,20 @@ static void testDstEntry(Stream& log) {
 
   // After 1600 (100 + 1400) the time should be set and should be increased by one second.
   delay(1500); // @1600ms
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
   delay(1900);  // @3600ms
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @3700ms
   assert(rtime.tm_hour == HOUR_START + 2);
 }
 
 static void testDstExit(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   constexpr int HOUR_START = 2;
@@ -183,11 +183,11 @@ static void testDstExit(Stream& log) {
   makeCETdstEndTime(stime, 57, 59, HOUR_START);
 
   std::mktime(&stime);
-  RtcSam3XA::clock.setTime(stime);
+  RtcDueRcf::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -196,13 +196,13 @@ static void testDstExit(Stream& log) {
 
   // After 1600 (100 + 1500) the time should be set and should be increased by one second.
   delay(1500); // @1500ms
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
   delay(1900);  // @3600ms
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @3700ms
   assert(rtime.tm_hour == HOUR_START);
@@ -225,7 +225,7 @@ static void checkRTCisdst(TM stime, Sam3XA::RtcTime rtc) {
 }
 
 static void testRTCisdst(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   delay(100); // @100ms
 
   Sam3XA::RtcTime rtc;
@@ -251,11 +251,11 @@ static void testRTCisdst(Stream& log) {
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
 
-  RtcSam3XA::clock.setTime(stime);
+  RtcDueRcf::clock.setTime(stime);
   log.println(stime);
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -280,7 +280,7 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
 }
 
 static void test12hourRepresentation(Stream& log, TM& tm) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
   // Check midnight
   check12hourRepresentation(log, tm, 0, 12);
@@ -304,36 +304,36 @@ static void test12hourRepresentation(Stream& log, TM& tm) {
 
 static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
     uint32_t runtimeAfterSetByLocalTime) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
   // Default constructor: 1st of January 2000  00:00:00h
   std::mktime(&stime);
-  RtcSam3XA::clock.setTime(stime);
+  RtcDueRcf::clock.setTime(stime);
   // After 500 the time should be set and should be increased by one second.
   delay(500);// @500ms
   runtimeAfterSetByLocalTime -= 500;
 
   TM rtime;
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   log.println(rtime);
   delay(500);// @1000ms
   runtimeAfterSetByLocalTime -= 500;
 
-  RtcSam3XA::clock.setAlarm(salarm);
+  RtcDueRcf::clock.setAlarm(salarm);
 
   RtcDueRcf_Alarm ralarm;
-  RtcSam3XA::clock.getAlarm(ralarm);
+  RtcDueRcf::clock.getAlarm(ralarm);
   log.print("getAlarm() returned: ");
   log.println(ralarm);
 
   delay(runtimeAfterSetByLocalTime);
 
   log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
-  RtcSam3XA::clock.getLocalTime(rtime);
+  RtcDueRcf::clock.getLocalTime(rtime);
   log.println(rtime);
   delay(100); // Additional delay just for log.print().
 
-  RtcSam3XA::clock.clearAlarm();
+  RtcDueRcf::clock.clearAlarm();
 }
 
 class AlarmReceiver {
@@ -348,13 +348,13 @@ class AlarmReceiver {
   }
 public:
   AlarmReceiver(Stream& log) : mLog(log), mExpectedAlarmsCount(0), mExpectedAlarms(nullptr), mExpectedAlarmIndex(0) {
-    RtcSam3XA::clock.setAlarmCallback(alarmCallback, this);
+    RtcDueRcf::clock.setAlarmCallback(alarmCallback, this);
   }
 
   /* Called within interrupt context */
   void onAlarm() {
     TM rtime;
-    RtcSam3XA::clock.getLocalTime(rtime);
+    RtcDueRcf::clock.getLocalTime(rtime);
     mLog.print(__FUNCTION__);
     mLog.print(" @ ");
     mLog.println(rtime);
@@ -376,7 +376,7 @@ public:
   ~AlarmReceiver() {
     // All expected alarms must have appeared;
     assert(mExpectedAlarmIndex == mExpectedAlarmsCount);
-    RtcSam3XA::clock.setAlarmCallback(nullptr, nullptr);
+    RtcDueRcf::clock.setAlarmCallback(nullptr, nullptr);
   }
 };
 
@@ -426,8 +426,8 @@ void test_toTimestamp(TM time) {
 }
 
 void test_toTimeStamp(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  RtcSam3XA::tzset(TZ::UTC);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+  RtcDueRcf::tzset(TZ::UTC);
 
   TM time;
 
@@ -439,10 +439,10 @@ void test_toTimeStamp(Stream& log) {
 }
 
 void runOfflineTests(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   test_toTimeStamp(log);
 
-  RtcSam3XA::tzset(TZ::CET);
+  RtcDueRcf::tzset(TZ::CET);
 
   // #1 ----------------------------------------------------------
   {
@@ -544,8 +544,8 @@ void runOfflineTests(Stream& log) {
 }
 
 void runOnlineTests(Stream& log) {
-  log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
-  RtcSam3XA::clock.begin(TZ::CET);
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+  RtcDueRcf::clock.begin(TZ::CET);
 
   /* --- Run RTC in 24-hrs mode --- */
   {
@@ -601,7 +601,7 @@ void loop(Stream& log) {
       TM stime;
       makeCETdstBeginTime(stime, 00, 59, HOUR_START);
       std::mktime(&stime);
-      RtcSam3XA::clock.setTime(stime);
+      RtcDueRcf::clock.setTime(stime);
       log.print("Setting clock to dst time ");
       log.println(stime);
     }
@@ -613,14 +613,14 @@ void loop(Stream& log) {
       makeCETdstEndTime(stime, 00, 59, HOUR_START);
 
       std::mktime(&stime);
-      RtcSam3XA::clock.setTime(stime);
+      RtcDueRcf::clock.setTime(stime);
       log.print("Setting clock to std time ");
       log.println(stime);
     }
 
     {
       TM rtime;
-      RtcSam3XA::clock.getLocalTime(rtime);
+      RtcDueRcf::clock.getLocalTime(rtime);
       logtime(log, rtime);
     }
 
@@ -633,4 +633,4 @@ void loop(Stream& log) {
   }
 }
 
-} // namespace RtcSam3XA_test
+} // namespace RtcDueRcf_test
