@@ -22,12 +22,12 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
 
+#include "RtcDueRcf_test.h"
+
 #include <assert.h>
 #include "../TM.h"
 #include "../RtcSam3XA.h"
 #include "../internal/core-sam-GapClose.h"
-#include "RtcSam3XA_test.h"
-
 #include "Arduino.h"
 
 namespace {

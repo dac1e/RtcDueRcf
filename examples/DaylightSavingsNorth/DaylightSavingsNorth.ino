@@ -26,8 +26,6 @@
 #include "RtcSam3XA.h"
 #include "TM.h"
 
-#include "test/RtcSam3XA_test.h"
-
 /**
  * Demonstrate daylight savings transition on Serial monitor for time
  * zone CET (Central European Time).
