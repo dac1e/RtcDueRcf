@@ -54,7 +54,7 @@ static void setTimeJustBeforeDstExit() {
 }
 
 static void setAlarm(Stream& log, uint8_t hour, uint8_t second = 0) {
-  RtcSam3XA_Alarm alarm;
+  RtcDueRcf_Alarm alarm;
   alarm.setHour(hour);
   alarm.setSecond(second);
   RtcSam3XA::clock.setAlarm(alarm);

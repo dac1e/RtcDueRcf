@@ -302,7 +302,7 @@ static void test12hourRepresentation(Stream& log, TM& tm) {
   }
 }
 
-static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
+static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
     uint32_t runtimeAfterSetByLocalTime) {
   log.print("--- RtcSam3XA_test::"); log.println(__FUNCTION__);
 
@@ -321,7 +321,7 @@ static void testAlarm(Stream& log, TM& stime, const RtcSam3XA_Alarm& salarm,
 
   RtcSam3XA::clock.setAlarm(salarm);
 
-  RtcSam3XA_Alarm ralarm;
+  RtcDueRcf_Alarm ralarm;
   RtcSam3XA::clock.getAlarm(ralarm);
   log.print("getAlarm() returned: ");
   log.println(ralarm);
@@ -381,7 +381,7 @@ public:
 };
 
 static void testAlarm(Stream& log, TM& stime) {
-  RtcSam3XA_Alarm salarm;
+  RtcDueRcf_Alarm salarm;
   salarm.setHour(0);
   salarm.setSecond(10);
 

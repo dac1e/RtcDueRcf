@@ -32,7 +32,7 @@
 #include <include/rtc.h>
 
 #include "internal/RtcTime.h"
-#include "RtcSam3XA_Alarm.h"
+#include "RtcDueRcf_Alarm.h"
 
 #ifndef RTC_MEASURE_ACKUPD
   #define RTC_MEASURE_ACKUPD false
@@ -186,7 +186,7 @@ public:
    *
    * @param alarm The alarm time and alarm date, to be set.
    */
-  void setAlarm(const RtcSam3XA_Alarm& alarm);
+  void setAlarm(const RtcDueRcf_Alarm& alarm);
 
   /**
    * Get the current RTC alarm time and date.
@@ -194,12 +194,12 @@ public:
    * @param alarm Reference to the variable receiving the alarm time
    *              and date.
    */
-  void getAlarm(RtcSam3XA_Alarm &alarm);
+  void getAlarm(RtcDueRcf_Alarm &alarm);
 
   /**
    * Delete alarm settings.
    */
-  void clearAlarm(){setAlarm(RtcSam3XA_Alarm());}
+  void clearAlarm(){setAlarm(RtcDueRcf_Alarm());}
 
   /**
    * Set the callback to be called upon RTC alarm.

@@ -277,11 +277,11 @@ void RtcSam3XA::setAlarmCallback(void (*alarmCallback)(void*),
 
 }
 
-void RtcSam3XA::setAlarm(const RtcSam3XA_Alarm& alarm) {
+void RtcSam3XA::setAlarm(const RtcDueRcf_Alarm& alarm) {
   RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
 }
 
-void RtcSam3XA::getAlarm(RtcSam3XA_Alarm &alarm) {
+void RtcSam3XA::getAlarm(RtcDueRcf_Alarm &alarm) {
   RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
   RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day);
 

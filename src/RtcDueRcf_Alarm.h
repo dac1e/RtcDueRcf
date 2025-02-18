@@ -61,11 +61,11 @@
  *  RtcSam3XA_Alarm alarm;// Create an alarm structure with defaults.
  *  Serial.println(alarm); // Print it.
  */
-class RtcSam3XA_Alarm : public Printable {
+class RtcDueRcf_Alarm : public Printable {
   friend class RtcSam3XA;
 public:
-  RtcSam3XA_Alarm();
-  RtcSam3XA_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon /* 0..11 */);
+  RtcDueRcf_Alarm();
+  RtcDueRcf_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mday, int tm_mon /* 0..11 */);
 
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
 
@@ -75,7 +75,7 @@ public:
   void setDay(int tm_mday) {day = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
   void setMonth(int tm_mon) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
 
-  bool operator ==(const RtcSam3XA_Alarm &other) const;
+  bool operator ==(const RtcDueRcf_Alarm &other) const;
 
 private:
   static size_t printMember(Print &p, const uint8_t m);
