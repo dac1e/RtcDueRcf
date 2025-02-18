@@ -1,11 +1,11 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for Arduino Due - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
   - Wolfgang Schmieder
 
-  Project home: https://github.com/dac1e/RtcSam3XA
+  Project home: https://github.com/dac1e/RtcDueRcf
 
   This library is free software; you can redistribute it and/or modify it
   the terms of the GNU Lesser General Public License as under published

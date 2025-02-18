@@ -1,11 +1,11 @@
 /*
-  RtcSam3XA - Arduino libary for RtcSam3XA - builtin RTC Copyright (c)
+  RtcDueRcf - Arduino libary for Arduino Due - builtin RTC Copyright (c)
   2024 Wolfgang Schmieder.  All right reserved.
 
   Contributors:
   - Wolfgang Schmieder
 
-  Project home: https://github.com/dac1e/RcSwitchReceiver/
+  Project home: https://github.com/dac1e/RtcDueRcf
 
   This library is free software; you can redistribute it and/or modify it
   the terms of the GNU Lesser General Public License as under published
@@ -31,7 +31,7 @@
 #include <Printable.h>
 
 /**
- * The class RtcSam3XA_Alarm is used to operate the alarm features of
+ * The class RtcDueRcf_Alarm is used to operate the alarm features of
  *  the RTC.
  *
  * An alarm consist the following specifiers second, minute, hour,
@@ -44,21 +44,21 @@
  *
  *  // Default constructor creates an alarm with all fields set to
  *  // INVALID_VALUE.
- *  RtcSam3XA_Alarm alarm;
+ *  RtcDueRcf_Alarm alarm;
  *
  *  // Let an alarm appear whenever the hour is 13 and the second
  *  // is 40. I.e. the alarm appears every day between
  *  // [13:00 to 13:59], whenever the second transitions to 40.
  *  alarm.setHour(13)
  *  alarm.setSecond(40)
- *  RtcSam3XA::clock.setAlarm(alarm);
+ *  RtcDueRcf::clock.setAlarm(alarm);
  *
  *
- * RtcSam3XA_Alarm implements the interface Printable. This allows
+ * RtcDueRcf_Alarm implements the interface Printable. This allows
  *  to print this class.
  *
  * Print example:
- *  RtcSam3XA_Alarm alarm;// Create an alarm structure with defaults.
+ *  RtcDueRcf_Alarm alarm;// Create an alarm structure with defaults.
  *  Serial.println(alarm); // Print it.
  */
 class RtcDueRcf_Alarm : public Printable {
