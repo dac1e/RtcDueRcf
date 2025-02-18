@@ -1,13 +1,13 @@
 #######################################
-# Syntax Coloring Map For RtcSam3XA
+# Syntax Coloring Map For RtcDueRcf
 #######################################
 
 #######################################
 # Datatypes
 #######################################
 
-RtcSam3XA		KEYWORD1
-RtcSam3XA_Alarm	KEYWORD1
+RtcDueRcf		KEYWORD1
+RtcDueRcf_Alarm	KEYWORD1
 TM				KEYWORD1
 
 #######################################
