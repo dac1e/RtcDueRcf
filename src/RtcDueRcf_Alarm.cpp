@@ -38,11 +38,6 @@ size_t RtcDueRcf_Alarm::printTo(Print &p) const {
   return result;
 }
 
-bool RtcDueRcf_Alarm::operator ==(const RtcDueRcf_Alarm &other) const {
-  return second == other.second && minute == other.minute && hour == other.hour && day == other.day
-      && month == other.month;
-}
-
 size_t RtcDueRcf_Alarm::printMember(Print &p, const uint8_t m) {
   if (m != INVALID_VALUE) {
     return p.print(m);

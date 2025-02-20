@@ -98,8 +98,8 @@ public:
    *  for the explanation of the timezone string format.
    *
    * RTC alarms will be adjusted according to actual daylight savings
-   * condition. That means that the RTC must hold the local daylight saving
-   * time during the daylight saving time period. It must hold the
+   * condition. That means that the RTC holds the local daylight saving
+   * time during the daylight saving time period. It holds the
    * local standard time outside of the daylight savings period.
    * Hence the RTC will jump X hours forward when entering the
    * daylight savings period and X hours backward when leaving the daylight
@@ -114,8 +114,8 @@ public:
    * Hence, the jump information isn't lost upon a CPU power fail, while
    * the RTC is powered by a backup battery.
    * There is also no problem reading a 24-hrs format from the RTC that
-   * is running in a 12-hrs mode and vice versa, because it will be converted
-   * via software. The same is valid for writing to the RTC.
+   * is running in a 12-hrs mode and vice versa, because it will be converted.
+   * The same is valid for writing to the RTC.
    */
   static void tzset(const char* timezone) {
     setenv("TZ", timezone, true);
@@ -141,11 +141,12 @@ public:
    * 1900 must be greater than 100.
    *
    * @param localTime The local time.
-   *    Note: time.tm_yday and time.wday fields may be random and
-   *    tm_isdst (the daylight savings flag) can be set to -1. This is
-   *    because all these fields will anyway be fixed before time is
-   *    used to set the RTC. Fixing is performed by calling
-   *    mktime(). This function uses the time zone information for
+   *    Note: time.tm_yday and time.tm_wday fields may be random and
+   *    tm_isdst (the daylight savings flag) can be set to -1. Setting
+   *    tm_isdst to -1 means, that daylight savings is unknown.
+   *    The fields time.tm_wday will and time.tm_isdst be fixed before
+   *    the  RTC is set by calling std::mktime() up front.
+   *    This function uses the time zone information for
    *    the tm_isdst calculation. However, there is one situation
    *    when mktime() has to solve an ambiguity. This is when
    *    setting the time to the day and the hour, when time switches
@@ -192,7 +193,7 @@ public:
    * Get the current RTC alarm time and date.
    *
    * @param alarm Reference to the variable receiving the alarm time
-   *              and date.
+   *  and date.
    */
   void getAlarm(RtcDueRcf_Alarm &alarm);
 
@@ -206,7 +207,7 @@ public:
    *
    * @param alarmCallback The function to be called upon alarm.
    * @param alarmCallbackParam This parameter will be passed
-   *  to the alarmCallback function.
+   *  to the alarmCallback function when called.
    */
   void setAlarmCallback(void (*alarmCallback)(void* alarmCallbackParam),
       void *alarmCallbackParam = nullptr);
@@ -217,7 +218,7 @@ public:
    * @param secondCallback The function to be called upon second
    *  transition.
    * @param alarmCallbackParam This parameter will be passed
-   *  to the secondCallback function.
+   *  to the secondCallback function when called.
    */
   void setSecondCallback(void (*secondCallback)(void*), void *secondCallbackParam = nullptr);
 

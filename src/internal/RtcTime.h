@@ -36,10 +36,10 @@ class Stream;
 namespace Sam3XA {
 
 /**
- * A class to read RTC registers from and write RTC registers
+ * A class to read RTC registers from, and write RTC registers
  * to the Sam3X RTC.
  * This class will always hold a 24-hrs representation of the
- * time independent of what the current RTC hrs mode is.
+ * time, independent of what the current RTC hrs mode is.
  * Conversion from/to 12 hrs mode will be performed if needed.
  */
 class RtcTime {
@@ -88,15 +88,16 @@ public:
   /** Subtract seconds from this RtcTime. */
   Sam3XA::RtcTime operator-(const time_t sec) const;
 
-  /** Check if this RtcTime is equal. */
+  /** Check if this RtcTime is equal to another one. */
   bool operator==(const RtcTime &other) const;
 
-  /** Check if this RtcTime is equal to other but ignoring mRtc12hrsMode. */
+  /** Check if this RtcTime is equal to another one
+   *  but ignoring mRtc12hrsMode. */
   bool valueEquals(const RtcTime &other) const;
 
   /**
-   * Read the RTC time and date and stores the result in this object.
-   * Convert the result to 24 hrs mode if RTC runs in 12 hrs mode.
+   * Read the RTC time and date and store the result in this object.
+   * Convert the result to 24 hrs mode if RTC runs in 12-hrs mode.
    */
   void readFromRtc();
 

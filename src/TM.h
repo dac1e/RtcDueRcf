@@ -40,7 +40,6 @@
  */
 class TM : public std::tm, public Printable {
 public:
-
   /**
    * Constructor initializing the std::tm structure fields without
    * the tm_yday and tm_wday component. Calling std::mktime() with

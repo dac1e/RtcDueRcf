@@ -44,27 +44,12 @@
 namespace {
 
 /**
- * Substitute for the original api function  RTC_GetHourMode()
- * from rtc.h which has a bug.
+ * Substitute for the original api function RTC_GetHourMode()
+ * from rtc.h, which has a bug.
  */
 uint32_t RTC_GetHourMode_()
 {
     return RTC->RTC_MR & 0x00000001;
-}
-
-/**
- * Calculate the seconds that will be switched forward, when daylight
- * savings starts.
- * This is identical to the seconds that will be switched backward,
- * when daylight saving ends.
- */
-int dstToStandardTimeDiff() {
-  const __tzinfo_type* const tz = __gettzinfo();
-  const __tzrule_struct* const tzrule_DstBegin = &tz->__tzrule[!tz->__tznorth];
-  const __tzrule_struct* const tzrule_DstEnd = &tz->__tzrule[tz->__tznorth];
-  // Note: Unit of the offsets is seconds. The offsets become negative in
-  // west direction. Result will become positive.
-  return tzrule_DstBegin->offset - tzrule_DstEnd->offset;
 }
 
 } // anonymous namespace
@@ -116,7 +101,7 @@ void RtcDueRcf::begin(const char* timezone, const uint8_t irqPrio, const RTC_OSC
 
 /**
  * Place the time in the mSetTimeCache, set the mSetTimeRequest
- * to true. Set a RTC time and calendar update request.
+ * to SET_TIME_REQUEST::REQUEST.
  * This update request will fire an interrupt, once the RTC
  * is ready to accept a new time and date. The RTC_Handler
  * will then pickup the time and date from the mSetTimeCache
@@ -162,12 +147,9 @@ bool RtcDueRcf::setTime(const std::tm &localTime) {
 /**
  * Check daylight savings transition, and update the RTC accordingly.
  * Adjusting the RTC to local daylight saving time ensures, that
- * the RTC alarms happen at the expected time.
- *
- * When compiled with option -Os, the function takes 10us to execute,
- * in case RTC update is not required. It takes 80us when transition
- * is required (2 times in a year). These values are related to
- * compile option -Os.
+ * the RTC alarm happens at the expected time.
+ * When compiled with option -Os, the function takes up to 20us to
+ * execute. This function is called once a second.
  */
 void RtcDueRcf::RtcDueRcf_DstChecker() {
   if(mSetTimeRequest != SET_TIME_REQUEST::DST_RTC_REQUEST) {

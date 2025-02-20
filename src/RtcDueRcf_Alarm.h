@@ -36,9 +36,8 @@
  *
  * An alarm consist the following specifiers second, minute, hour,
  *  day, year that determines when the alarm shall appear.
- * Any of those fields may be set to INVALID_VALUE. If a
- *  field is set to INVALID_VALUE, only other fields no set to
- *  INVALID_VALUE will determine when the alarm shall appear.
+ * Any of those fields may be set to INVALID_VALUE. Only fields
+ *  not set to INVALID_VALUE will determine when the alarm appears.
  *
  * Set alarm example:
  *
@@ -53,12 +52,11 @@
  *  alarm.setSecond(40)
  *  RtcDueRcf::clock.setAlarm(alarm);
  *
- *
  * RtcDueRcf_Alarm implements the interface Printable. This allows
  *  to print this class.
  *
  * Print example:
- *  RtcDueRcf_Alarm alarm;// Create an alarm structure with defaults.
+ *  RtcDueRcf_Alarm alarm; // Create an alarm structure with defaults.
  *  Serial.println(alarm); // Print it.
  */
 class RtcDueRcf_Alarm : public Printable {
@@ -74,8 +72,6 @@ public:
   void setHour(int tm_hour) {hour = tm_hour < 24 ? tm_hour : INVALID_VALUE;}
   void setDay(int tm_mday) {day = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
   void setMonth(int tm_mon) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
-
-  bool operator ==(const RtcDueRcf_Alarm &other) const;
 
 private:
   static size_t printMember(Print &p, const uint8_t m);
