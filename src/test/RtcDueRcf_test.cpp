@@ -68,7 +68,8 @@ void makeCETdstEndTime(Sam3XA::RtcTime& rtcTime, int second, int minute, int hou
 
 void logtime(Stream& stream, const TM& time) {
   stream.print(time);
-  stream.print(", "); stream.println(time.tm_isdst);
+  stream.print(", tm_isdst=");
+  stream.println(time.tm_isdst);
 }
 
 void dumpTzInfo(Stream& stream) {
@@ -231,7 +232,7 @@ static void testRTCisdst(Stream& log) {
   Sam3XA::RtcTime rtc;
   TM stime;
 
-  makeCETdstBeginTime(stime, 59, 59, 1);
+  makeCETdstBeginTime(stime, 58, 59, 1);
   checkRTCisdst(stime, rtc);
   delay(100);
 
@@ -239,7 +240,7 @@ static void testRTCisdst(Stream& log) {
   checkRTCisdst(stime, rtc);
   delay(100);
 
-  makeCETdstEndTime(stime, 59, 59, 1);
+  makeCETdstEndTime(stime, 58, 59, 1);
   checkRTCisdst(stime, rtc);
   delay(100);
 
@@ -303,7 +304,7 @@ static void test12hourRepresentation(Stream& log, TM& tm) {
 }
 
 static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
-    uint32_t runtimeAfterSetByLocalTime) {
+    uint32_t msecRuntimeAfterSetByLocalTime) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
   // Default constructor: 1st of January 2000  00:00:00h
@@ -311,13 +312,13 @@ static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
   RtcDueRcf::clock.setTime(stime);
   // After 500 the time should be set and should be increased by one second.
   delay(500);// @500ms
-  runtimeAfterSetByLocalTime -= 500;
+  msecRuntimeAfterSetByLocalTime -= 500;
 
   TM rtime;
   RtcDueRcf::clock.getLocalTime(rtime);
   log.println(rtime);
   delay(500);// @1000ms
-  runtimeAfterSetByLocalTime -= 500;
+  msecRuntimeAfterSetByLocalTime -= 500;
 
   RtcDueRcf::clock.setAlarm(salarm);
 
@@ -326,7 +327,7 @@ static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
   log.print("getAlarm() returned: ");
   log.println(ralarm);
 
-  delay(runtimeAfterSetByLocalTime);
+  delay(msecRuntimeAfterSetByLocalTime);
 
   log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
   RtcDueRcf::clock.getLocalTime(rtime);
@@ -401,7 +402,7 @@ static void testAlarm(Stream& log, TM& stime) {
 
     alarmReceiver.setExpectedAlarms(2, expectedAlarms);
 
-    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the alarms to appear. */);
+    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the 2 alarms to appear. */);
   }
 
   // Test alarm starting at 12:00h
@@ -409,7 +410,7 @@ static void testAlarm(Stream& log, TM& stime) {
   {
     AlarmReceiver alarmReceiver(log);
     alarmReceiver.setExpectedAlarms(0, nullptr);
-    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the alarms to appear. */);
+    testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the 2 alarms not to appear. */);
   }
 }
 
