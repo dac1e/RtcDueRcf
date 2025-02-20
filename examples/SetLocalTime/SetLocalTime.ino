@@ -25,6 +25,7 @@
 #include <Arduino.h>
 #include "RtcDueRcf.h"
 #include "TM.h"
+#include "test/RtcDueRcf_test.h"
 
 /*
  * Set time zone to CET (Central European Time). Set
@@ -37,6 +38,9 @@
 void setup()
 {
   Serial.begin(9600);
+
+  RtcDueRcf_test::runOfflineTests(Serial);
+  RtcDueRcf_test::runOnlineTests(Serial);
 
   // Set time zone to Central European Time.
   RtcDueRcf::clock.begin(TZ::CET);

@@ -67,11 +67,27 @@ public:
 
   static constexpr uint8_t INVALID_VALUE = UINT8_MAX;
 
+  /** @param tm_sec [0..59]  | INVALID_VALUE */
   void setSecond(int tm_sec) {second = tm_sec < 60 ? tm_sec : INVALID_VALUE;}
+  /** @param tm_min [0..59]  | INVALID_VALUE */
   void setMinute(int tm_min) {minute = tm_min < 60 ? tm_min : INVALID_VALUE;}
+  /** @param tm_hour [0..23] | INVALID_VALUE */
   void setHour(int tm_hour) {hour = tm_hour < 24 ? tm_hour : INVALID_VALUE;}
+  /** @param tm_mday [1..31] | INVALID_VALUE */
   void setDay(int tm_mday) {day = tm_mday < 32 ? tm_mday : INVALID_VALUE;}
+  /** @param tm_mon [0..11]  | INVALID_VALUE */
   void setMonth(int tm_mon) {month = tm_mon < 12 ? tm_mon+1 : INVALID_VALUE;}
+
+  /** @return [0..59] | INVALID_VALUE */
+  uint8_t getTmSecond() const {return second;}
+  /** @return [0..59] | INVALID_VALUE */
+  uint8_t getTmMinute() const {return minute;}
+  /** @return [0..23] | INVALID_VALUE */
+  uint8_t getTmHour() const {return hour;}
+  /** @return [1..31] | INVALID_VALUE */
+  uint8_t getTmDay() const {return day;}
+  /** @return [0..11] | INVALID_VALUE */
+  uint8_t getTmMonth() const {return month-1;}
 
 private:
   static size_t printMember(Print &p, const uint8_t m);
