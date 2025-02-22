@@ -260,27 +260,27 @@ namespace TZ {
   /**
    * Some predefined time zone strings for convenience.
    */
-  constexpr char* UTC = "UTC+0:00:00"; // (Coordinated Universal Time)
+  const char* const UTC = "UTC+0:00:00"; // (Coordinated Universal Time)
 
   // Daylight savings starts at the last Sunday of march 2:00h and ends at the last Sunday of October 3:00h
   // EUROPE
-  constexpr char* UK  = "UK+0:00:00UKDST-1:00:00,M3.5.0/2,M10.5.0/3";   // (United Kingdom)
-  constexpr char* CET = "CET-1:00:00CETDST-2:00:00,M3.5.0/2,M10.5.0/3"; // (Central Europe)
+  const char* const UK  = "UK+0:00:00UKDST-1:00:00,M3.5.0/2,M10.5.0/3";   // (United Kingdom)
+  const char* const CET = "CET-1:00:00CETDST-2:00:00,M3.5.0/2,M10.5.0/3"; // (Central Europe)
 
   // Daylight savings starts at the second Sunday of march 2:00h and ends at the first Sunday of November 3:00h
   // USA
-  constexpr char* EST = "EST+5:00:00";                                // (Eastern Standard Time)
-  constexpr char* ET  = "ET+5:00:00ETDST+4:00:00,M3.2.0/2,M11.1.0/3"; // (Eastern Time)
-  constexpr char* CST = "CST+6:00:00";                                // (Central Standard Time)
-  constexpr char* CT  = "CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3";      // (Central Time)
-  constexpr char* MST = "MST+7:00:00";                                // (Mountain Standard Time)
-  constexpr char* MT  = "MST+7:00:00+6:00:00,M3.2.0/2,M11.1.0/3";     // (Mountain Time)
-  constexpr char* PST = "PST+8:00:00";                                // (Pacific Standard Time)
-  constexpr char* PT  = "PST+8:00:00+7:00:00,M3.2.0/2,M11.1.0/3";     // (Pacific Time)
+  const char* const EST = "EST+5:00:00";                                // (Eastern Standard Time)
+  const char* const ET  = "ET+5:00:00ETDST+4:00:00,M3.2.0/2,M11.1.0/3"; // (Eastern Time)
+  const char* const CST = "CST+6:00:00";                                // (Central Standard Time)
+  const char* const CT  = "CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3";      // (Central Time)
+  const char* const MST = "MST+7:00:00";                                // (Mountain Standard Time)
+  const char* const MT  = "MST+7:00:00+6:00:00,M3.2.0/2,M11.1.0/3";     // (Mountain Time)
+  const char* const PST = "PST+8:00:00";                                // (Pacific Standard Time)
+  const char* const PT  = "PST+8:00:00+7:00:00,M3.2.0/2,M11.1.0/3";     // (Pacific Time)
 
   // Daylight savings starts at the last Sunday of September 2:00h (default time) and ends at first Sunday of April 3:00h.
   // NEW ZEALAND
-  constexpr char* NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3"; // (New Zealand)
+  const char* const NZST= "NZST-12:00:00NZDT-13:00:00,M9.5.0,M4.1.0/3"; // (New Zealand)
 }
 
 #endif /* RTCDUERCF_SRC_RTCDUERCF_H_ */
