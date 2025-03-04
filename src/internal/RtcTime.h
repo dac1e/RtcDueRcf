@@ -168,7 +168,7 @@ private:
   uint16_t mYear; // 4 digits ad year
   uint8_t mMonth; // 1..12
   uint8_t mDayOfMonth;  // 1..31
-  uint8_t mDayOfWeekDay;// 1..7
+  uint8_t mDayOfWeekDay;// 1=SUN ..7=SAT
 };
 
 } // namespace Sam3XA_Rtc

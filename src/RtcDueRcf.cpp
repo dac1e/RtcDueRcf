@@ -144,6 +144,35 @@ bool RtcDueRcf::setTime(const std::tm &localTime) {
   return false;
 }
 
+bool RtcDueRcf::setTime_(const std::tm &localTime) {
+  if(localTime.tm_year >= TM::make_tm_year(2000)) {
+    RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+    RTC_DisableIt(RTC, RTC_IER_ACKEN);
+
+    // Fill cache with time.
+    mSetTimeCache.set(localTime);
+#if DEBUG_DST_REQUEST
+      Serial.print("setTime");
+#endif
+
+    if(not mSetTimeRequest) {
+      mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
+#if DEBUG_DST_REQUEST
+      Serial.println(", REQUEST");
+#endif
+      RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+    } else {
+#if DEBUG_DST_REQUEST
+      Serial.println();
+#endif
+    }
+
+    RTC_EnableIt(RTC, RTC_IER_ACKEN);
+    return true;
+  }
+  return false;
+}
+
 /**
  * Check daylight savings transition, and update the RTC accordingly.
  * Adjusting the RTC to local daylight saving time ensures, that

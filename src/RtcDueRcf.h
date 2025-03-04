@@ -176,6 +176,19 @@ public:
   bool setTime(std::time_t utcTimestamp);
 
   /**
+   * local time is transparently transferred to the RTC.
+   *
+   * localTime.tm_yday and may be random. But localTime.tm_wday field must
+   * be set correctly. localTime.tm_isdst must be seto correctly. Either 0
+   * (standard time) or 1 (daylight savings). But not -1 (unknown). It is
+   * assumed, that the localTime.tm_hour fits to localTime.tm_isdst. That
+   * means that there is no check whether localTime.tm_hour must be
+   * shifted because the daylight saving settings given by the time zone
+   * information are in contrast to the localTime.tm_isdst.
+   */
+  bool setTime_(const std::tm& localTime);
+
+  /**
    * Get the local time. Prerequisite: time zone is set correctly.
    *
    * @param[out] time The variable that will receive the local time.

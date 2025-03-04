@@ -54,7 +54,7 @@ namespace {
 
 constexpr int DAYSPERWEEK = 7;
 constexpr int SECSPERMIN = 60;
-constexpr int SECSPERHOUR = SECSPERMIN * 60;
+constexpr int32_t SECSPERHOUR = SECSPERMIN * 60;
 constexpr int32_t SECSPERDAY = SECSPERHOUR * 24;
 
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
