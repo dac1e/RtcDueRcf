@@ -118,7 +118,7 @@ bool RtcDueRcf::setTime(const std::tm &localTime) {
      * period or not.
      */
      std::tm buffer = localTime;
-     const time_t localTime = mktime(&buffer);
+     mktime(&buffer);
 
     // Fill cache with time.
     mSetTimeCache.set(buffer);
