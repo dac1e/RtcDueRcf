@@ -739,3 +739,5 @@ void loop(Stream& log) {
 }
 
 } // namespace RtcDueRcf_test
+
+#endif // #ifdef TEST_RtcDueRcf
