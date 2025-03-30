@@ -147,14 +147,12 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime* const rtcTime, const __tzrule_
   int result = 0;
   if(rtcTime->month() >= tzrule->m) {
     if(rtcTime->month() == tzrule->m) {
-      if(tzrule->d == rtcTime->tm_wday()) {
-        const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, *rtcTime);
-        const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
-          (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, *rtcTime));
-        if(dayMatch) {
-          if(expiredSecondsWithinDay(*rtcTime) >= tzrule->s) {
-            result = 1;
-          }
+      const int occuranceOfTzRuleWdayWithinMonthOfRtcTime = calcWdayOccurranceInMonth(tzrule->d, *rtcTime);
+      const bool dayMatch = (occuranceOfTzRuleWdayWithinMonthOfRtcTime >= tzrule->n) ||
+        (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, *rtcTime));
+      if(dayMatch) {
+        if(expiredSecondsWithinDay(*rtcTime) >= tzrule->s) {
+          result = 1;
         }
       }
     } else {
@@ -436,10 +434,6 @@ bool RtcTime::isDstRtcRequest() {
     if(not dst) {
       result = true;
 
-#if DEBUG_SET_RtcTime
-      isdst(thisClone, rtcTimeClone);
-#endif
-
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
@@ -447,16 +441,17 @@ bool RtcTime::isDstRtcRequest() {
       Serial.print(mSecond);
       Serial.println(", request to 24-hrs mode.");
 #endif
+
+#if DEBUG_SET_RtcTime
+      isdst(thisClone, rtcTimeClone);
+#endif
+
     }
   } else {
     // RTC is holding standard local time
     const int dst = isdst(rtcTime, *this);
     if(dst) {
       result = true;
-
-#if DEBUG_SET_RtcTime
-      isdst(rtcTimeClone, thisClone);
-#endif
 
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
@@ -465,6 +460,11 @@ bool RtcTime::isDstRtcRequest() {
       Serial.print(mSecond);
       Serial.println(", request to 12-hrs mode.");
 #endif
+
+#if DEBUG_SET_RtcTime
+      isdst(rtcTimeClone, thisClone);
+#endif
+
     }
   }
   return result;

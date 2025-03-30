@@ -291,21 +291,23 @@ static void test12hourRepresentation(Stream& log, TM& tm) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
   // Check midnight
+  const int tm_mon = tm.tm_mon;
+
   check12hourRepresentation(log, tm, 0, 12);
 
   // Check hours from 1:00AM..11:00 AM
   for(int hour = 1; hour < 12; hour++) {
-    tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
+    tm.set(0, 0, hour, 1, tm_mon, TM::make_tm_year(2000), -1);
     check12hourRepresentation(log, tm, 0, hour);
   }
 
   // Check Noon
-  tm.set(0, 0, 12, 1, 0, TM::make_tm_year(2000), -1);
+  tm.set(0, 0, 12, 1, tm_mon, TM::make_tm_year(2000), -1);
   check12hourRepresentation(log, tm, 1, 12);
 
   // Check hours from 1:00PM..11:00 PM
   for(int hour = 13; hour < 24; hour++) {
-    tm.set(0, 0, hour, 1, 0, TM::make_tm_year(2000), -1);
+    tm.set(0, 0, hour, 1, tm_mon, TM::make_tm_year(2000), -1);
     check12hourRepresentation(log, tm, 1, hour-12);
   }
 }
@@ -447,7 +449,7 @@ void test_toTimeStamp(Stream& log) {
   test_toTimestamp(time);
 }
 
-#ifdef TEST_RtcTimeInternal // To be set as command line compile option
+#ifdef TEST_RtcDueRcf // To be set as command line compile option
 
 void test_weekdayOccuranceWithinMonth(Stream &log, const TM &time, const size_t* expectedResults, bool verbosity) {
   Sam3XA::RtcTime rtcTime;
@@ -652,17 +654,17 @@ void runOnlineTests(Stream& log) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   RtcDueRcf::clock.begin(TZ::CET);
 
+  dumpTzInfo(log);
+  delay(200);
+
+  testRTCisdst(log);
+
+  testBasicSetGet(log);
+  testDstEntry(log);
+  testDstExit(log);
+
   /* --- Run RTC in 24-hrs mode --- */
   {
-    dumpTzInfo(log);
-    delay(200);
-
-    testRTCisdst(log);
-
-    testBasicSetGet(log);
-    testDstEntry(log);
-    testDstExit(log);
-
     // Test 12 hour representation in RTC 24 hour mode.
     {
       TM tm;// Default constructor initializes Midnight 1.January 2000 that will put RTC into 24-hrs mode
