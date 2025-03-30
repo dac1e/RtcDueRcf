@@ -39,10 +39,22 @@ bool TM::operator ==(const std::tm &other) const {
       && tm_year == other.tm_year && tm_isdst == other.tm_isdst;
 }
 
-size_t TM::printTo(Print& p) const {
-  char buffer[26];
-  asctime_r(this, buffer);
+size_t print_tm(Print& p, const std::tm& time, bool withIsdst) {
+	char buffer[26];
+	asctime_r(&time, buffer);
+	const size_t n = strlen(buffer);
+	if(n > 0) {
+	  buffer[strlen(buffer)-1] = '\0'; // remove /n
+	}
+	size_t result = 0;
+	result += p.print(buffer);
+	if( withIsdst ) {
+		result += p.print(", isdst=");
+		result += p.print(time.tm_isdst);
+	}
+	return result;
+}
 
-  buffer[24] = '\0'; // remove /n
-  return p.print(buffer);
+size_t TM::printTo(Print& p) const {
+	return print_tm(p, *this, false);
 }

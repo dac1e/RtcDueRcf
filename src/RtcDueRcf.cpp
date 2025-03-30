@@ -23,7 +23,7 @@
 */
 
 #include <assert.h>
-
+#include <Arduino.h>
 #include "TM.h"
 #include "internal/RtcTime.h"
 #include "internal/core-sam-GapClose.h"
@@ -37,11 +37,25 @@
 #define DEBUG_DST_REQUEST false
 #endif
 
+#ifndef DEBUG_SET_TIME
+#define DEBUG_SET_TIME false
+#endif
+
 #if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST || DEBUG_DST_REQUEST
 #include <Arduino.h>
 #endif
 
 namespace {
+
+#if DEBUG_SET_TIME
+
+const char* const szSET_TIME_REQUEST[] = {
+    "NO_REQUEST",
+    "REQUEST",
+    "DST_RTC_REQUEST"
+};
+
+#endif
 
 /**
  * Substitute for the original api function RTC_GetHourMode()
@@ -112,13 +126,21 @@ bool RtcDueRcf::setTime(const std::tm &localTime) {
     RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
     RTC_DisableIt(RTC, RTC_IER_ACKEN);
 
+#if DEBUG_SET_TIME
+  	Serial.print("RtcDueRcf::");
+		Serial.print(__FUNCTION__);
+		Serial.print(' ');
+		print_tm(Serial, localTime, true);
+		Serial.println();
+#endif
+
     /**
      * Call mktime in order to fix tm_yday, tm_isdst and the hour,
      * depending on whether the time is within daylight saving
      * period or not.
      */
      std::tm buffer = localTime;
-     mktime(&buffer);
+     const time_t localTime = mktime(&buffer);
 
     // Fill cache with time.
     mSetTimeCache.set(buffer);
@@ -148,6 +170,14 @@ bool RtcDueRcf::setTime_(const std::tm &localTime) {
   if(localTime.tm_year >= TM::make_tm_year(2000)) {
     RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
     RTC_DisableIt(RTC, RTC_IER_ACKEN);
+
+#if DEBUG_SET_TIME
+  	Serial.print("RtcDueRcf::");
+		Serial.print(__FUNCTION__);
+		Serial.print(' ');
+		print_tm(Serial, localTime, true);
+		Serial.println();
+#endif
 
     // Fill cache with time.
     mSetTimeCache.set(localTime);
@@ -191,7 +221,7 @@ void RtcDueRcf::RtcDueRcf_DstChecker() {
       // Fill cache with time.
       mSetTimeCache = dueTimeAndDate;
 #if DEBUG_DST_REQUEST
-      Serial.print("RtcDueRcf_DstChecker");
+      Serial.print(__FUNCTION__);
 #endif
       if(not mSetTimeRequest) {
         mSetTimeRequest = SET_TIME_REQUEST::DST_RTC_REQUEST;
@@ -223,6 +253,12 @@ void RtcDueRcf::RtcDueRcf_DstChecker() {
  */
 void RtcDueRcf::RtcDueRcf_AckUpdHandler() {
   if (mSetTimeRequest != SET_TIME_REQUEST::NO_REQUEST) {
+#if DEBUG_SET_TIME
+  	Serial.print("RtcDueRcf::");
+  	Serial.print(__FUNCTION__);
+  	Serial.print(' ');
+  	Serial.println(szSET_TIME_REQUEST[mSetTimeRequest]);
+#endif
     mSetTimeCache.writeToRtc();
     mSetTimeRequest = SET_TIME_REQUEST::NO_REQUEST;
 #if DEBUG_DST_REQUEST
@@ -264,6 +300,12 @@ void RtcDueRcf::RtcDueRcf_Handler() {
 }
 
 bool RtcDueRcf::setTime(std::time_t utcTimestamp) {
+#if DEBUG_SET_TIME
+	Serial.print("RtcDueRcf::");
+	Serial.print(__FUNCTION__);
+	Serial.print(' ');
+	Serial.println(utcTimestamp);
+#endif
   tm time;
   localtime_r(&utcTimestamp, &time);
   return setTime(time);

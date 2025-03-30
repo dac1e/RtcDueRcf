@@ -42,15 +42,27 @@
   #define MEASURE_RtcTime_arithmethic_operators false
 #endif
 
+#ifndef DEBUG_SET_RtcTime
+	#include "TM.h"
+  #define DEBUG_SET_RtcTime false
+#endif
+
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
 #endif
 
-#if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || RTC_DEBUG_HOUR_MODE
+#if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || RTC_DEBUG_HOUR_MODE || DEBUG_SET_RtcTime
 #include "Arduino.h"
 #endif
 
-namespace {
+
+#ifdef TEST_RtcTimeInternal
+#define ANONYMOUS_NAMESPACE Sam3XA
+#else
+#define ANONYMOUS_NAMESPACE
+#endif
+
+namespace ANONYMOUS_NAMESPACE {
 
 constexpr int DAYSPERWEEK = 7;
 constexpr int SECSPERMIN = 60;
@@ -103,8 +115,11 @@ inline int isLeapYear(uint16_t rtc_year) {
 }
 
 int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
-  const int wdayOffset = tm_wday - rtcTime.tm_wday();
-  return (rtcTime.tm_mday() - 1 - wdayOffset) / 7 + 1;
+  int offsetToNextWdayOccurance = tm_wday - rtcTime.tm_wday();
+  if(offsetToNextWdayOccurance <= 0) {
+    offsetToNextWdayOccurance += 7;
+  }
+  return (rtcTime.tm_mday() - 1 + offsetToNextWdayOccurance) / 7;
 }
 
 inline int calcMdayOfNextWdayOccurance(int tm_wday, const Sam3XA::RtcTime& rtcTime) {
@@ -132,12 +147,14 @@ int hasTransitionedDstRule(const Sam3XA::RtcTime* const rtcTime, const __tzrule_
   int result = 0;
   if(rtcTime->month() >= tzrule->m) {
     if(rtcTime->month() == tzrule->m) {
-      const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, *rtcTime);
-      const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
-        (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, *rtcTime));
-      if(dayMatch) {
-        if(expiredSecondsWithinDay(*rtcTime) >= tzrule->s) {
-          result = 1;
+      if(tzrule->d == rtcTime->tm_wday()) {
+        const int wdayOccuranceInMonth = calcWdayOccurranceInMonth(tzrule->d, *rtcTime);
+        const bool dayMatch = (wdayOccuranceInMonth >= tzrule->n) ||
+          (tzrule->n >= 5 && isLastWdayWithinMonth(tzrule->d, *rtcTime));
+        if(dayMatch) {
+          if(expiredSecondsWithinDay(*rtcTime) >= tzrule->s) {
+            result = 1;
+          }
         }
       }
     } else {
@@ -330,6 +347,12 @@ uint8_t RtcTime::tmDayOfWeek(const std::tm &time) {
 
 void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
 {
+//#if DEBUG_SET_RtcTime
+//	Serial.print("RtcTime::");
+//	Serial.print(__FUNCTION__);
+//	Serial.print(' ');
+//	Serial.println(timestamp);
+//#endif
   long days = timestamp / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
   long remain = timestamp % SECSPERDAY;
   if (remain < 0) {
@@ -364,6 +387,13 @@ void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
 }
 
 void RtcTime::set(const std::tm &time) {
+#if DEBUG_SET_RtcTime
+	Serial.print("RtcTime::");
+	Serial.print(__FUNCTION__);
+	Serial.print(' ');
+	print_tm(Serial, time, true);
+	Serial.println();
+#endif
   mHour = time.tm_hour;
   mMinute = time.tm_min;
   mSecond = time.tm_sec;
@@ -394,11 +424,22 @@ bool RtcTime::isDstRtcRequest() {
   bool result = false;
   RtcTime rtcTime;
   rtcTime.readFromRtc_();
+
+#if DEBUG_SET_RtcTime
+  RtcTime rtcTimeClone = rtcTime;
+  RtcTime thisClone = *this;
+#endif
+
   if (rtcTime.mRtc12hrsMode) {
     // RTC is holding daylight savings time
     const int dst = isdst(*this, rtcTime);
     if(not dst) {
       result = true;
+
+#if DEBUG_SET_RtcTime
+      isdst(thisClone, rtcTimeClone);
+#endif
+
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
@@ -412,6 +453,11 @@ bool RtcTime::isDstRtcRequest() {
     const int dst = isdst(rtcTime, *this);
     if(dst) {
       result = true;
+
+#if DEBUG_SET_RtcTime
+      isdst(rtcTimeClone, thisClone);
+#endif
+
 #if RTC_DEBUG_HOUR_MODE
       Serial.print(__FUNCTION__); Serial.print(", ");
       Serial.print(mHour); Serial.print(':');
@@ -425,6 +471,22 @@ bool RtcTime::isDstRtcRequest() {
 }
 
 void RtcTime::writeToRtc() const {
+#if DEBUG_SET_RtcTime
+	Serial.print("RtcTime::");
+	Serial.print(__FUNCTION__);
+	Serial.print(' ');
+	Serial.print(hour());
+	Serial.print(':');
+	Serial.print(minute());
+	Serial.print(':');
+	Serial.print(second());
+	if(mRtc12hrsMode) {
+		Serial.print(" 12hrs");
+	} else {
+		Serial.print(" 24hrs");
+	}
+	Serial.println();
+#endif
   ::RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
       month(), day(), day_of_week());
   // In order to detect whether RTC carries daylight savings time or

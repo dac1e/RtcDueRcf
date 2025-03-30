@@ -30,9 +30,16 @@
 #include "../internal/core-sam-GapClose.h"
 #include "Arduino.h"
 
+#ifdef TEST_RtcTimeInternal // To be set as command line compile option
+namespace Sam3XA {
+  int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime);
+}
+#endif
+
 namespace {
 
 const char* const sHrsMode[] = {"24hrs mode.", "12hrs mode."};
+const char* const sWeekday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 // Provide an example instance.
 void makeCETdstBeginTime(TM& time, int second, int minute, int hour, int dst = -1) {
@@ -428,6 +435,7 @@ void test_toTimestamp(TM time) {
 
 void test_toTimeStamp(Stream& log) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+  delay(100);
   RtcDueRcf::tzset(TZ::UTC);
 
   TM time;
@@ -439,9 +447,105 @@ void test_toTimeStamp(Stream& log) {
   test_toTimestamp(time);
 }
 
+#ifdef TEST_RtcTimeInternal // To be set as command line compile option
+
+void test_weekdayOccuranceWithinMonth(Stream &log, const TM &time, const size_t* expectedResults, bool verbosity) {
+  Sam3XA::RtcTime rtcTime;
+  rtcTime.set(time);
+
+  size_t results[7];
+  for (int weekday = 0; weekday < 7; weekday++) {
+    const int occurance = Sam3XA::calcWdayOccurranceInMonth(weekday, rtcTime);
+    results[weekday] = occurance;
+  }
+
+  if(verbosity) {
+    log.print("Weekday appearance on");
+    log.print(time);
+    log.println(":");
+
+    log.print(' ');
+    for(size_t i=0; i<7; i++) {
+      log.print(sWeekday[i]);
+      if(i < 6) {
+        log.print(',');
+      }
+    }
+    log.println();
+  }
+
+  log.print('{');
+  for(size_t i=0; i<7; i++) {
+    if(verbosity) {
+      log.print("  ");
+    }
+    log.print(results[i]);
+    if(i < 6) {
+      log.print(',');
+    }
+  }
+  log.println("},");
+  delay(100);
+
+  for(size_t i=0; i<7; i++) {
+    assert(results[i] == expectedResults[i]);
+  }
+}
+
+void test_weekdayOcurranceWithinMonth(Stream& log, int verbosity = 0)  {
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+  delay(100);
+  const size_t expectedResults[][7] = {
+    {0,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1},
+    {1,1,0,0,0,0,1},
+    {1,1,1,0,0,0,1},
+    {1,1,1,1,0,0,1},
+    {1,1,1,1,1,0,1},
+    {1,1,1,1,1,1,1},
+    {1,1,1,1,1,1,2},
+    {2,1,1,1,1,1,2},
+    {2,2,1,1,1,1,2},
+    {2,2,2,1,1,1,2},
+    {2,2,2,2,1,1,2},
+    {2,2,2,2,2,1,2},
+    {2,2,2,2,2,2,2},
+    {2,2,2,2,2,2,3},
+    {3,2,2,2,2,2,3},
+    {3,3,2,2,2,2,3},
+    {3,3,3,2,2,2,3},
+    {3,3,3,3,2,2,3},
+    {3,3,3,3,3,2,3},
+    {3,3,3,3,3,3,3},
+    {3,3,3,3,3,3,4},
+    {4,3,3,3,3,3,4},
+    {4,4,3,3,3,3,4},
+    {4,4,4,3,3,3,4},
+    {4,4,4,4,3,3,4},
+    {4,4,4,4,4,3,4},
+    {4,4,4,4,4,4,4},
+    {4,4,4,4,4,4,5},
+    {5,4,4,4,4,4,5},
+    {5,5,4,4,4,4,5},
+  };
+
+  int mday = 1;
+
+  for(;mday < 32; mday++) {
+    const TM time(0, 20, 16, mday, 2, TM::make_tm_year(2025), 0);
+    test_weekdayOccuranceWithinMonth(log, time, expectedResults[mday-1], verbosity);
+  }
+}
+
+#endif
+
 void runOfflineTests(Stream& log) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   test_toTimeStamp(log);
+
+#ifdef TEST_RtcTimeInternal  // To be set as command line compile option
+  test_weekdayOcurranceWithinMonth(log, 1);
+#endif
 
   RtcDueRcf::tzset(TZ::CET);
 

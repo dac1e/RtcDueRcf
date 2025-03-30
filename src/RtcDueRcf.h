@@ -78,7 +78,7 @@ public:
    *
    * Example 2 using custom time zone string:
    *  (refer to https://man7.org/linux/man-pages/man3/tzset.3.html)
-   *  RtcSam3X´::clock.tzset("CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3");
+   *  RtcSam3X�::clock.tzset("CT+6:00:00+5:00:00,M3.2.0/2,M11.1.0/3");
    *
    * Setting the time zone is required for the correct collaboration of
    * the standard C++ entities std::tm, std::time_t, mktime(), gmtime(),

@@ -119,4 +119,6 @@ inline void TM::set(int _sec, int tm_min, int tm_hour, int tm_mday, int tm_mon,
   set(*this, _sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_isdst);
 }
 
+size_t print_tm(Print& p, const std::tm& time, bool withIsdst);
+
 #endif /* RTCDUERCF_SRC_TM_H_ */
