@@ -24,17 +24,17 @@
 
 #include "RtcDueRcf_test.h"
 
+#ifdef TEST_RtcDueRcf
+
 #include <assert.h>
 #include "../TM.h"
 #include "../RtcDueRcf.h"
 #include "../internal/core-sam-GapClose.h"
 #include "Arduino.h"
 
-#ifdef TEST_RtcTimeInternal // To be set as command line compile option
 namespace Sam3XA {
   int calcWdayOccurranceInMonth(int tm_wday, const Sam3XA::RtcTime& rtcTime);
 }
-#endif
 
 namespace {
 

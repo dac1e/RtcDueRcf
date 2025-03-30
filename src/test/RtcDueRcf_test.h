@@ -27,6 +27,8 @@
 #ifndef RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_
 #define RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_
 
+#ifdef TEST_RtcDueRcf
+
 class Stream;
 
 namespace RtcDueRcf_test {
@@ -35,4 +37,7 @@ namespace RtcDueRcf_test {
   void loop(Stream& log);
 }
 
+#endif // #ifdef TEST_RtcDueRcf
+
 #endif /* RTCDUERCF_SRC_TEST_RTCDUERCF_TEST_H_ */
+

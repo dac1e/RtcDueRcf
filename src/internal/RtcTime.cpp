@@ -56,7 +56,7 @@
 #endif
 
 
-#ifdef TEST_RtcTimeInternal
+#ifdef TEST_RtcDueRcf
 #define ANONYMOUS_NAMESPACE Sam3XA
 #else
 #define ANONYMOUS_NAMESPACE
