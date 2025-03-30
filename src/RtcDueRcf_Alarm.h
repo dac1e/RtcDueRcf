@@ -89,6 +89,14 @@ public:
   /** @return [0..11] | INVALID_VALUE */
   uint8_t getTmMonth() const {return month-1;}
 
+  bool operator==(const RtcDueRcf_Alarm& other) {
+    return
+        second==other.second &&
+        minute==other.minute &&
+        hour==other.hour &&
+        day==other.day &&
+        month==other.month;
+  }
 private:
   static size_t printMember(Print &p, const uint8_t m);
   size_t printTo(Print& p) const override;

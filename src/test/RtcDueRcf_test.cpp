@@ -256,6 +256,48 @@ static void testRTCisdst(Stream& log) {
   delay(100);
 }
 
+static void testAlarmReadWrite(Stream& log) {
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+
+  // Set alarm hour to 0
+  RtcDueRcf_Alarm salarm;
+  salarm.setHour(0);
+  RtcDueRcf_Alarm ralarm;
+
+  TM stime;
+
+  // Set time to non daylight savings period.
+  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  RtcDueRcf::clock.setTime(stime);
+  delay(1000);
+  RtcDueRcf::clock.setAlarm(salarm);
+
+  // Set time to daylight savings period.
+  stime.set(0, 0, 0, 1, 3, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  RtcDueRcf::clock.setTime(stime);
+  delay(1000);
+
+  // Read alarm in daylight savings period
+  RtcDueRcf::clock.getAlarm(ralarm);
+  assert(salarm == ralarm);
+
+  // Set alarm in daylight savings period
+  salarm.setHour(13);
+  RtcDueRcf::clock.setAlarm(salarm);
+
+  // Set time to non daylight savings period.
+  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  RtcDueRcf::clock.setTime(stime);
+  delay(1000);
+
+  // Read alarm in non daylight savings period
+  RtcDueRcf::clock.getAlarm(ralarm);
+  assert(salarm == ralarm);
+}
+
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
 
@@ -270,8 +312,8 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   // The latency is about 350msec.
   assert(rtime == stime);
 
-  // After 1000 (100 + 900) the time should be set.
-  delay(900);// @1000ms
+  // After 1000 (100 + 1000) the time should be set.
+  delay(1000);// @1100ms
 
 
   uint8_t hour; uint8_t AMPM;
@@ -284,7 +326,7 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   assert(hour == expectedHour);
   assert(AMPM == expectedAMPM);
 
-  delay(100); // @700ms
+  delay(100);
 }
 
 static void test12hourRepresentation(Stream& log, TM& tm) {
@@ -316,7 +358,6 @@ static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
     uint32_t msecRuntimeAfterSetByLocalTime) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
 
-  // Default constructor: 1st of January 2000  00:00:00h
   std::mktime(&stime);
   RtcDueRcf::clock.setTime(stime);
   // After 500 the time should be set and should be increased by one second.
@@ -662,6 +703,8 @@ void runOnlineTests(Stream& log) {
   testBasicSetGet(log);
   testDstEntry(log);
   testDstExit(log);
+
+  testAlarmReadWrite(log);
 
   /* --- Run RTC in 24-hrs mode --- */
   {
