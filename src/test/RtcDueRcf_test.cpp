@@ -173,10 +173,10 @@ static void testDstEntry(Stream& log) {
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
-  delay(1900);  // @3600ms
+  delay(2900);  // @4600ms
   RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
-  delay(100); // @3700ms
+  delay(100); // @4700ms
   assert(rtime.tm_hour == HOUR_START + 2);
 }
 
@@ -209,10 +209,10 @@ static void testDstExit(Stream& log) {
   delay(100);  // @1700ms
   assert(rtime.tm_hour == HOUR_START);
 
-  delay(1900);  // @3600ms
+  delay(2900);  // @4600ms
   RtcDueRcf::clock.getLocalTime(rtime);
   logtime(log, rtime);
-  delay(100); // @3700ms
+  delay(100); // @4700ms
   assert(rtime.tm_hour == HOUR_START);
 }
 
@@ -314,7 +314,6 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
 
   // After 1000 (100 + 1000) the time should be set.
   delay(1000);// @1100ms
-
 
   uint8_t hour; uint8_t AMPM;
   RTC_GetTimeAndDate(RTC, &AMPM, &hour,

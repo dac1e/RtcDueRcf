@@ -150,6 +150,7 @@ void dwTime2Hour( Rtc* const pRtc, uint32_t dwTime, uint8_t* const pucAMPM, uint
 {
     *pucHour = ((dwTime & 0x00300000) >> 20) * 10 + ((dwTime & 0x000F0000) >> 16);
     const int n12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD;
+
     if ( n12HourMode )
     {
         // RTC is running in 12-hrs mode
