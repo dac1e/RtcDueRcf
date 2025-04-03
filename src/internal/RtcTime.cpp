@@ -488,7 +488,7 @@ void RtcTime::writeToRtc() const {
 	Serial.println();
 #endif
   ::RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
-      month(), day(), day_of_week());
+      month(), day(), day_of_week(), mRtc12hrsMode ? RTC_HOUR_MODE_12 : RTC_HOUR_MODE_24);
   // In order to detect whether RTC carries daylight savings time or
   // standard time, 12-hrs mode of RTC is applied, when RTC carries
   // daylight savings time.
@@ -500,7 +500,6 @@ void RtcTime::writeToRtc() const {
     Serial.println(", set to 24-hrs mode.");
   }
 #endif
-  RTC_SetHourMode(RTC, mRtc12hrsMode);
 }
 
 void RtcTime::readFromRtc() {

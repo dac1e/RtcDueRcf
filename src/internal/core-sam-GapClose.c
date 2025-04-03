@@ -79,7 +79,7 @@ static uint32_t time2dwTime(uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond, 
         }
       }
     }
-    const uint8_t ucHour_bcd = (ucHour%10)   | ((ucHour/10)<<4) ;
+    const uint8_t ucHour_bcd =  (ucHour%10)  |  ((ucHour/10)<<4) ;
     const uint8_t ucMin_bcd  = (ucMinute%10) | ((ucMinute/10)<<4) ;
     const uint8_t ucSec_bcd  = (ucSecond%10) | ((ucSecond/10)<<4) ;
 
@@ -308,33 +308,94 @@ extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
 }
 
 extern int RTC_SetTimeAndDate( Rtc* const pRtc,  uint8_t ucHour, uint8_t ucMinute,
-    uint8_t ucSecond, uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek )
+    uint8_t ucSecond, uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek,
+    enum RTC_HOUR_MODE hourMode)
 {
-  const int isRTCin12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD ;
-  const uint32_t dwTime = time2dwTime(ucHour, ucMinute, ucSecond, isRTCin12HourMode) ;
+  const uint32_t currentHourMode = (pRtc->RTC_MR & RTC_MR_HRMOD);
+  const uint32_t newHourMode =
+      hourMode == RTC_HOUR_MODE_UNCHANGED ? currentHourMode :
+      hourMode == RTC_HOUR_MODE_12 ? RTC_MR_HRMOD : 0;
+
+  const uint32_t HOUR_MASK = RTC_TIMALR_HOUREN | RTC_TIMALR_AMPM | RTC_TIMALR_HOUR_Msk;
+  const uint32_t dwTimAlarmHour = newHourMode != currentHourMode ?
+      (pRtc->RTC_TIMALR & HOUR_MASK) : 0;
+
+  const int rtc12HourMode = currentHourMode == RTC_MR_HRMOD;
+  const uint32_t dwTime = time2dwTime(ucHour, ucMinute, ucSecond, rtc12HourMode) ;
+  const uint32_t dwDate = date2dwDate(wYear, ucMonth, ucDay, ucWeek);
+
+  uint32_t invalidTimeOrDate = 0;
+
   if ( dwTime == 0xFFFFFFFF )
   {
-      return 1 ;
+    invalidTimeOrDate |= (RTC_VER_NVTIM << 4);
   }
 
-  const uint32_t dwDate = date2dwDate(wYear, ucMonth, ucDay, ucWeek);
   /* value over flow */
   if ( dwDate == 0xFFFFFFFF)
   {
-      return 1 ;
+    invalidTimeOrDate |= (RTC_VER_NVCAL << 4);
   }
 
-  /* Update calendar and time register together */
-  pRtc->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
-  while ((pRtc->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD) ;
+  if(!invalidTimeOrDate) {
 
-  pRtc->RTC_SCCR = RTC_SCCR_ACKCLR;
-  pRtc->RTC_TIMR = dwTime ;
-  pRtc->RTC_CALR = dwDate ;
-  pRtc->RTC_CR &= ~((uint32_t)RTC_CR_UPDTIM | (uint32_t)RTC_CR_UPDCAL) ;
-  pRtc->RTC_SCCR |= RTC_SCCR_SECCLR; /* clear SECENV in SCCR */
+    /* Update calendar and time register together */
+    pRtc->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+    while ((pRtc->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD) ;
 
-  return (pRtc->RTC_VER & RTC_VER_NVCAL) ;
+    pRtc->RTC_SCCR = RTC_SCCR_ACKCLR;
+    pRtc->RTC_TIMR = dwTime ;
+    pRtc->RTC_CALR = dwDate ;
+    pRtc->RTC_CR &= ~((uint32_t)RTC_CR_UPDTIM | (uint32_t)RTC_CR_UPDCAL) ;
+    pRtc->RTC_SCCR |= RTC_SCCR_SECCLR; /* clear SECENV in SCCR */
+
+    if (newHourMode != currentHourMode) {
+      pRtc->RTC_MR = newHourMode;
+
+      if(dwTimAlarmHour & RTC_TIMALR_HOUREN) {
+        uint32_t hour = RTC_TIMALR_HOUR(dwTimAlarmHour);
+        uint32_t AMPM = 0;
+
+        // Fix alarm hour
+        if(rtc12HourMode) {
+          if ( dwTimAlarmHour & RTC_TIMALR_AMPM )
+          {
+              // PM Time
+              if ( hour < 12 )
+              {
+                hour += 12; // convert PM time to 24-hrs representation.
+              }
+          }
+          else
+          {
+              // AM Time
+              if ( hour == 12 ) // midnight ?
+              {
+                hour = 0; // midnight is 0:00h in 24-hrs representation.
+              }
+          }
+        } else {
+            // RTC is running in 24-hrs mode
+            AMPM = (hour > 11) ? RTC_TIMALR_AMPM : 0;
+
+            if( hour > 12 )
+            {
+              hour -= 12; // convert PM to 12-hrs representation.
+            }
+            else if( hour == 0 )
+            {
+              hour = 12; // midnight is 12:00 in 12-hrs representation.
+            }
+        }
+
+        pRtc->RTC_TIMALR = (pRtc->RTC_TIMALR & ~HOUR_MASK) | RTC_TIMALR_HOUREN
+            | AMPM | (hour << RTC_TIMALR_HOUR_Pos);
+      }
+    }
+  }
+
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+      | invalidTimeOrDate;
 }
 
 extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
@@ -386,12 +447,10 @@ extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
     pRtc->RTC_CALALR = dwAlarmDate;
   }
 
-  const int result = (pRtc->RTC_VER & RTC_VER_NVTIMALR) || (pRtc->RTC_VER & RTC_VER_NVCALALR);
+  RTC_ClearSCCR(pRtc, RTC_SCCR_ALRCLR);
+  RTC_EnableIt(pRtc, RTC_IER_ALREN);
 
-  RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR | RTC_SCCR_TIMCLR | RTC_SCCR_CALCLR);
-  RTC_EnableIt(RTC, RTC_IER_ALREN);
-
-  return result;
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
 }
 
 extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond )
@@ -419,7 +478,7 @@ extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* c
       *pucSecond = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & RTC_VER_NVTIMALR);
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
 }
 
 extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay )
@@ -441,6 +500,6 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
       *pucDay = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & RTC_VER_NVCALALR);
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
 }
 

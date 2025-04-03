@@ -57,6 +57,12 @@ extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay,
     uint8_t* const pucWeek );
 
+enum RTC_HOUR_MODE {
+  RTC_HOUR_MODE_UNCHANGED = -1,
+  RTC_HOUR_MODE_24 = 0,
+  RTC_HOUR_MODE_12 = 1,
+};
+
 /**
  * \brief Sets the current time and date in the RTC.
  * Month, day and week values must be numbered starting from 1. The passed hour
@@ -75,11 +81,14 @@ extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
  * \param ucMonth   Current month.
  * \param ucDay     Current day.
  * \param ucWeek    Day number in current week.
+ * \param dwHourMode Hour Mode: 0 -> 24hrs mode, 1 -> 12hrs mode.
  *
- * \return 0 sucess, 1 fail to set
+ * \return Contents of RTC Valid Entry Register in bit[0..3].
+ *    bit[4] is set if the given time was invalid.
+ *    bit[5] is set if the given date was invalid.
  */
 extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
-    uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek );
+    uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek, enum RTC_HOUR_MODE hourMode);
 
 /**
  * \brief Retrieves the alarm time as stored in the RTC.
@@ -94,7 +103,7 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute
  * \param pucSecond  If not null, alarm second is stored in this variable.
  *                      If second alarm is not enabled this variable will be UINT8_MAX.
  *
- * \return 0 if time alarm is valid. Otherwise 1.
+ * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
 extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute,
     uint8_t* const pucSecond );
@@ -108,7 +117,7 @@ extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* c
  * \param pucDay     If not null, alarm day is stored in this variable.
  *                      If day alarm is not enabled this variable will be UINT8_MAX.
  *
- * \return 0 if date alarm is valid. Otherwise 1.
+ * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
 extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
 
@@ -125,7 +134,7 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
  * \param ucMonth   If not UINT8_MAX, the RTC alarm will month-match this value.
  * \param ucDay     If not UINT8_MAX, the RTC alarm will day-match this value.
  *
- * \return 0 success, 1 fail to set
+ * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
 extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute,
     uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay) ;

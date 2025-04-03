@@ -281,6 +281,14 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
   }
 
+  /* RTC alarm */
+  if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+    if(mAlarmCallback) {
+      (*mAlarmCallback)(mAlarmCallbackPararm);
+    }
+    RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
+  }
+
   /* Acknowledge for Update interrupt */
   if ((status & RTC_SR_ACKUPD) == RTC_SR_ACKUPD) {
 #if RTC_MEASURE_ACKUPD
@@ -290,13 +298,6 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
   }
 
-  /* RTC alarm */
-  if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-    if(mAlarmCallback) {
-      (*mAlarmCallback)(mAlarmCallbackPararm);
-    }
-    RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
-  }
 }
 
 bool RtcDueRcf::setTime(std::time_t utcTimestamp) {
