@@ -207,8 +207,11 @@ public:
    *
    * @param alarm Reference to the variable receiving the alarm time
    *  and date.
+   *
+   * @return A class of type RtcDueRcf_AlarmValidation that provides
+   *   information about validity of RTC alarm entries.
    */
-  void getAlarm(RtcDueRcf_Alarm &alarm);
+  RtcDueRcf_AlarmValidation getAlarm(RtcDueRcf_Alarm &alarm);
 
   /**
    * Delete alarm settings.

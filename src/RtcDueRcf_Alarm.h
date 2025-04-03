@@ -107,4 +107,21 @@ private:
   uint8_t day;
   uint8_t month; // 1..12
 };
+
+/**
+ * A class that provides information about validity of alarm entries.
+ */
+class RtcDueRcf_AlarmValidation {
+  RtcDueRcf_AlarmValidation(int rtcValidEntryRegister);
+public:
+  bool isCalendarAlarmValid() const;
+  bool isTimeAlarmValid() const;
+  /**
+   * @ return true, if calendar alarm and time alarm is valid
+   */
+  bool isValid() const;
+private:
+  friend class RtcDueRcf;
+  int mRtcValidEntryRegister;
+};
 #endif /* RTCDUERCF_SRC_RTCDUERCF_ALARM_H_ */

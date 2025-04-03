@@ -266,21 +266,21 @@ static void testAlarmReadWrite(Stream& log) {
 
   TM stime;
 
-  // Set time to non daylight savings period.
+  // Set time to non daylight savings period-> 24 hrs mode.
   stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
   std::mktime(&stime);
   RtcDueRcf::clock.setTime(stime);
   delay(1000);
   RtcDueRcf::clock.setAlarm(salarm);
 
-  // Set time to daylight savings period.
+  // Set time to daylight savings period -> 12 hrs mode.
   stime.set(0, 0, 0, 1, 3, TM::make_tm_year(2000), -1);
   std::mktime(&stime);
   RtcDueRcf::clock.setTime(stime);
   delay(1000);
 
   // Read alarm in daylight savings period
-  RtcDueRcf::clock.getAlarm(ralarm);
+  assert(RtcDueRcf::clock.getAlarm(ralarm).isValid());
   assert(salarm == ralarm);
 
   // Set alarm in daylight savings period

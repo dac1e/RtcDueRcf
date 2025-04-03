@@ -334,10 +334,10 @@ void RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
   RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
 }
 
-void RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
-  RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
-  RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day);
-
+RtcDueRcf_AlarmValidation RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
+  const int calendarAlarmValidFlag = RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day);
+  const int timeAlarmValidFlag = RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
+  return RtcDueRcf_AlarmValidation(calendarAlarmValidFlag | timeAlarmValidFlag);
 }
 
 void RtcDueRcf::setSecondCallback(void (*secondCallback)(void*),

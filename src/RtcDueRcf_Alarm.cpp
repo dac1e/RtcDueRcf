@@ -23,6 +23,7 @@
 */
 
 #include "RtcDueRcf_Alarm.h"
+#include "internal/core-sam-GapClose.h"
 
 #include <assert.h>
 #include <print.h>
@@ -55,3 +56,19 @@ RtcDueRcf_Alarm::RtcDueRcf_Alarm(int tm_sec, int tm_min, int tm_hour, int tm_mda
   , month(tm_mon < 12 ? tm_mon+1 : INVALID_VALUE) {
 }
 
+
+RtcDueRcf_AlarmValidation::RtcDueRcf_AlarmValidation(int rtcValidEntryRegister) :
+    mRtcValidEntryRegister(rtcValidEntryRegister) {
+}
+
+bool RtcDueRcf_AlarmValidation::isCalendarAlarmValid() const {
+  return not (mRtcValidEntryRegister & RTC_VER_NVCALALR);
+}
+
+bool RtcDueRcf_AlarmValidation::isTimeAlarmValid() const {
+  return !(mRtcValidEntryRegister & RTC_VER_NVTIMALR);
+}
+
+bool RtcDueRcf_AlarmValidation::isValid() const {
+  return !(mRtcValidEntryRegister & (RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+}
