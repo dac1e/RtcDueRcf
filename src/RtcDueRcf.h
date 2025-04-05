@@ -32,6 +32,7 @@
 #include <include/rtc.h>
 
 #include "internal/RtcTime.h"
+#include "RtcDueRcf_Validation.h"
 #include "RtcDueRcf_Alarm.h"
 
 #ifndef RTC_MEASURE_ACKUPD
@@ -211,7 +212,7 @@ public:
    * @return A class of type RtcDueRcf_AlarmValidation that provides
    *   information about validity of RTC alarm entries.
    */
-  RtcDueRcf_AlarmValidation getAlarm(RtcDueRcf_Alarm &alarm);
+  RtcDueRcf_Validation getAlarm(RtcDueRcf_Alarm &alarm);
 
   /**
    * Delete alarm settings.
