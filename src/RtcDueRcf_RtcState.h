@@ -27,19 +27,29 @@
 #ifndef SRC_RTCDUERCFVALIDATION_H_
 #define SRC_RTCDUERCFVALIDATION_H_
 
+#include <Printable.h>
+
+namespace Sam3XA{
+  class RtcSetTimeCache;
+}
+
 /**
  * A class that provides information about validity of alarm entries.
  */
-class RtcDueRcf_Validation {
-  RtcDueRcf_Validation(int rtcValidEntryRegister);
+class RtcDueRcf_RtcState : public Printable {
+  RtcDueRcf_RtcState(int rtcValidEntryRegister);
+
 public:
   bool isCalendarAlarmValid() const;
   bool isTimeAlarmValid() const;
-  /**
-   * @ return true, if calendar alarm and time alarm is valid
-   */
-  bool isValid() const;
+  bool isAlarmValid() const;
+
+  bool isCalendarValid() const;
+  bool isTimeValid() const;
+
+  size_t printTo(Print& p) const override;
 private:
+  friend class Sam3XA::RtcSetTimeCache;
   friend class RtcDueRcf;
   int mRtcValidEntryRegister;
 };

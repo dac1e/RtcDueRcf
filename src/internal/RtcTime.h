@@ -48,7 +48,13 @@ class RtcTime {
   static inline int tmMonth(uint8_t month) {return month-1;}
   static uint8_t tmDayOfWeek(const std::tm &time);
 
-  void readFromRtc_();
+  /**
+   * Read the RTC time and date and store the result in this object.
+   * Convert the result to 24 hrs mode if RTC runs in 12-hrs mode.
+   *
+   * @return validEntryRegister of RTC
+   */
+  unsigned readFromRtc_();
 
 public:
   inline uint8_t hour() const {return mHour;}
@@ -98,15 +104,10 @@ public:
   /**
    * Read the RTC time and date and store the result in this object.
    * Convert the result to 24 hrs mode if RTC runs in 12-hrs mode.
+   *
+   * @return validEntryRegister of RTC
    */
-  void readFromRtc();
-
-  /**
-   * Write the time and date of this object to the RTC. If RTC runs
-   * in 12-hrs mode, RTC registers will be set with a 12-hrs mode
-   * time format. I.e. hours mode of the RTC isn't changed.
-   */
-  void writeToRtc() const;
+  unsigned readFromRtc();
 
   /**
    * Determine whether this time is within daylight savings period.
@@ -149,6 +150,8 @@ public:
   std::time_t toTimeStamp() const;
 
 private:
+  friend class RtcSetTimeCache;
+
   enum STATE : uint8_t {
     INVALID,
     VALID,
@@ -169,6 +172,35 @@ private:
   uint8_t mMonth; // 1..12
   uint8_t mDayOfMonth;  // 1..31
   uint8_t mDayOfWeekDay;// 1=SUN ..7=SAT
+};
+
+class RtcSetTimeCache {
+  uint32_t mTimeReg;
+  uint32_t mCalReg;
+
+  //  0: RTC runs in 24-hrs mode.
+  //  1: RTC runs in 12-hrs mode.
+  uint32_t mRtc12HrsMode;
+
+public:
+  RtcSetTimeCache();
+
+  bool isValid() const;
+
+  bool set(const RtcTime &rtcTime);
+  bool set(const std::tm &tm);
+
+  /**
+   * Convert to RtcTime format.
+   */
+  RtcTime toRtcTime() const;
+
+  /**
+   * Write the time and date of this object to the RTC. If RTC runs
+   * in 12-hrs mode, RTC registers will be set with a 12-hrs mode
+   * time format. I.e. hours mode of the RTC isn't changed.
+   */
+  void writeToRtc() const;
 };
 
 } // namespace Sam3XA_Rtc

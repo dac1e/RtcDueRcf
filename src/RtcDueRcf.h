@@ -32,7 +32,7 @@
 #include <include/rtc.h>
 
 #include "internal/RtcTime.h"
-#include "RtcDueRcf_Validation.h"
+#include "RtcDueRcf_RtcState.h"
 #include "RtcDueRcf_Alarm.h"
 
 #ifndef RTC_MEASURE_ACKUPD
@@ -193,15 +193,17 @@ public:
    * Get the local time. Prerequisite: time zone is set correctly.
    *
    * @param[out] time The variable that will receive the local time.
+   *
+   * @return true, if the local time is valid. Otherwise false.
    */
-  void getLocalTime(std::tm &time) const;
+  bool getLocalTime(std::tm &time) const;
 
   /**
    * Set alarm time and date.
    *
-   * @param alarm The alarm time and alarm date, to be set.
+   * @return true, if the set alarm is valid. Otherwise false.
    */
-  void setAlarm(const RtcDueRcf_Alarm& alarm);
+  bool setAlarm(const RtcDueRcf_Alarm& alarm);
 
   /**
    * Get the current RTC alarm time and date.
@@ -209,10 +211,9 @@ public:
    * @param alarm Reference to the variable receiving the alarm time
    *  and date.
    *
-   * @return A class of type RtcDueRcf_AlarmValidation that provides
-   *   information about validity of RTC alarm entries.
+   * @return true, if the alarm is valid. Otherwise false.
    */
-  RtcDueRcf_Validation getAlarm(RtcDueRcf_Alarm &alarm);
+  bool getAlarm(RtcDueRcf_Alarm &alarm);
 
   /**
    * Delete alarm settings.
@@ -254,7 +255,7 @@ private:
   };
 
   volatile SET_TIME_REQUEST mSetTimeRequest;
-  Sam3XA::RtcTime mSetTimeCache;
+  Sam3XA::RtcSetTimeCache mSetTimeCache;
 
   void(*mSecondCallback)(void*);
   void* mSecondCallbackPararm;

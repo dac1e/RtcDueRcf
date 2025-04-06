@@ -114,11 +114,11 @@ static void testBasicSetGet(Stream &log) {
   uint32_t timestamp_setClock = millis();
 #endif
 
-  RtcDueRcf::clock.setTime(stime);
+  assert(RtcDueRcf::clock.setTime(stime));
   log.println(stime);
 
   TM rtime;
-  RtcDueRcf::clock.getLocalTime(rtime);
+  assert(RtcDueRcf::clock.getLocalTime(rtime));
   logtime(log, rtime);
   delay(100); // @100ms
   // Time hasn't immediately set. The RTC is set within RTC_SR_ACKUPD interrupt.
@@ -127,7 +127,7 @@ static void testBasicSetGet(Stream &log) {
 
   // After 1600 (100 + 1600) the time should be set and should be increased by one second.
   delay(1500);// @1600ms
-  RtcDueRcf::clock.getLocalTime(rtime);
+  assert(RtcDueRcf::clock.getLocalTime(rtime));
   const std::time_t localtime = mktime(&rtime);
   logtime(log, rtime);
   delay(100); // @1700ms
@@ -269,9 +269,9 @@ static void testAlarmReadWrite(Stream& log) {
   // Set time to non daylight savings period-> 24 hrs mode.
   stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
   std::mktime(&stime);
-  RtcDueRcf::clock.setTime(stime);
+  assert(RtcDueRcf::clock.setTime(stime));
   delay(1000);
-  RtcDueRcf::clock.setAlarm(salarm);
+  assert(RtcDueRcf::clock.setAlarm(salarm));
 
   // Set time to daylight savings period -> 12 hrs mode.
   stime.set(0, 0, 0, 1, 3, TM::make_tm_year(2000), -1);
@@ -280,21 +280,21 @@ static void testAlarmReadWrite(Stream& log) {
   delay(1000);
 
   // Read alarm in daylight savings period
-  assert(RtcDueRcf::clock.getAlarm(ralarm).isValid());
+  assert(RtcDueRcf::clock.getAlarm(ralarm));
   assert(salarm == ralarm);
 
   // Set alarm in daylight savings period
   salarm.setHour(13);
-  RtcDueRcf::clock.setAlarm(salarm);
+  assert(RtcDueRcf::clock.setAlarm(salarm));
 
   // Set time to non daylight savings period.
   stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
   std::mktime(&stime);
-  RtcDueRcf::clock.setTime(stime);
+  assert(RtcDueRcf::clock.setTime(stime));
   delay(1000);
 
   // Read alarm in non daylight savings period
-  RtcDueRcf::clock.getAlarm(ralarm);
+  assert(RtcDueRcf::clock.getAlarm(ralarm));
   assert(salarm == ralarm);
 }
 
@@ -318,7 +318,7 @@ static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAM
   uint8_t hour; uint8_t AMPM;
   RTC_GetTimeAndDate(RTC, &AMPM, &hour,
       nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr);
+      nullptr, nullptr, nullptr,  nullptr);
 
   log.print("Hour: "); log.print(hour);
   log.println( (AMPM ? "PM" : "AM") );

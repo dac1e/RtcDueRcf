@@ -49,19 +49,18 @@ extern "C" {
  * \param pucMonth   If not null, current month is stored in this variable.
  * \param pucDay     If not null, current day is stored in this variable.
  * \param pucWeek    If not null, current week is stored in this variable.
+ * \param pucRtc12HrsMode
+ *                   If not null, hour mode that the RTC is running in, is stored in this variable.
+ *                       0: RTC runs in 24-hrs mode.
+ *                       1: RTC runs in 12-hrs mode.
  *
- * \return           0 if RTC is running in 24-hrs mode. 1 if RTC is running in 12-hrs mode.
+ *
+ * \return Contents of RTC Valid Entry Register in bit[0..3].
  */
 extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
     uint16_t* const pwYear, uint8_t* const pucMonth, uint8_t* const pucDay,
-    uint8_t* const pucWeek );
-
-enum RTC_HOUR_MODE {
-  RTC_HOUR_MODE_UNCHANGED = -1,
-  RTC_HOUR_MODE_24 = 0,
-  RTC_HOUR_MODE_12 = 1,
-};
+    uint8_t* const pucWeek, uint8_t* const pucRtc12HrsMode );
 
 /**
  * \brief Sets the current time and date in the RTC.
@@ -74,21 +73,16 @@ enum RTC_HOUR_MODE {
  * after resetting the UPDTIM/UPDCAL bit in the RTC_CR before setting these
  * bits again. Please look at the RTC section of the data sheet for detail.
  *
- * \param ucHour    Current hour in 24-hrs representation.
- * \param ucMinute  Current minute.
- * \param ucSecond  Current second.
- * \param wYear     Current year.
- * \param ucMonth   Current month.
- * \param ucDay     Current day.
- * \param ucWeek    Day number in current week.
- * \param dwHourMode Hour Mode: 0 -> 24hrs mode, 1 -> 12hrs mode.
+ * \param timeReg      The contents of the RTC_TIMR register.
+ * \param calReg       The contents of the RTC_CALR register.
+ * \param rtc12hrsMode The hour mode in which the RTC should run:
+ *                   0: 24-hrs mode.
+ *                   1: 12-hrs mode.
  *
  * \return Contents of RTC Valid Entry Register in bit[0..3].
- *    bit[4] is set if the given time was invalid.
- *    bit[5] is set if the given date was invalid.
  */
-extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute, uint8_t ucSecond,
-    uint16_t wYear, uint8_t ucMonth, uint8_t ucDay, uint8_t ucWeek, enum RTC_HOUR_MODE hourMode);
+extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, const uint32_t calReg,
+    const uint32_t rtc12hrsMode);
 
 /**
  * \brief Retrieves the alarm time as stored in the RTC.
@@ -105,7 +99,7 @@ extern int RTC_SetTimeAndDate( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute
  *
  * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
-extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute,
+extern unsigned RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute,
     uint8_t* const pucSecond );
 
 /**
@@ -119,7 +113,7 @@ extern int RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* c
  *
  * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
-extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
+extern unsigned RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
 
 /**
  * \brief Sets a time alarm and date on the RTC.
@@ -136,8 +130,70 @@ extern int RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* 
  *
  * \return Contents of RTC Valid Entry Register in bit[0..3]
  */
-extern int RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute,
+extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute,
     uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay) ;
+
+
+/**
+ * \brief calculate the RTC_TIMR bcd format.
+ *
+ * \param ucHour      Current hour in 24-hrs mode [0..23].
+ * \param ucMinute    Current minute.
+ * \param ucSecond    Current second.
+ * \param timeReg12HrsMode
+ *                    0: The returned value will be for RTC_TIMR 24-hrs mode.
+ *                    1: The returned value will be for RTC_TIMR 12-hrs mode.
+ *
+ * \return time in 32 bit RTC_TIMR bcd format on success, 0xFFFFFFFF on fail
+ */
+#define RTC_INVALID_TIME_REG 0xFFFFFFFF
+extern uint32_t RTC_TimeToTimeReg(uint8_t ucHour, const uint8_t ucMinute, const uint8_t ucSecond,
+    const uint32_t timeReg12HrsMode);
+
+/**
+ * \brief Convert the RTC_TIMR bcd format to hour, minute and second
+ *
+ * \param timeReg    The contents of the RTC_TIMR register.
+ * \param pucAMPM    If not null, the variable will be set to 1 if time is PM. The variable will
+ *                   be set to 0 if time is AM.
+ * \param pucHour    If not null, current hour is stored in this variable. The hour representation
+ *                   is as follows:
+ *                     In case pucAMPM is not null, the hour will be in the interval of [1 .. 12].
+ *                     In case pucAMPM is null, the hour will be in the interval of [0 .. 23].
+ * \param pucMinute  If not null, current minute is stored in this variable.
+ * \param pucSecond  If not null, current second is stored in this variable.
+ * \param timeReg12HrsMode
+ *                   0: Contents of the timer register is 24-hrs mode.
+ *                   1: Contents of the timer register is 12-hrs mode.
+ */
+extern void RTC_TimeRegToTime(uint32_t timeReg, uint8_t* const pucAMPM, uint8_t* const pucHour,
+    uint8_t* const pucMinute, uint8_t* const pucSecond, const uint32_t timeReg12HrsMode );
+
+/**
+ * \brief calculate the RTC_CALR bcd format.
+ *
+ * \param wYear   Current year.
+ * \param ucMonth Current month.
+ * \param ucDay   Current day.
+ * \param ucWeek  Day number in current week.
+ *
+ * \return date in 32 bit RTC_CALR bcd format on success, 0xFFFFFFFF on fail
+ */
+#define RTC_INVALID_CAL_REG 0xFFFFFFFF
+extern uint32_t RTC_DateToCalReg(const uint16_t wYear, const uint8_t ucMonth, const uint8_t ucDay, const uint8_t ucWeek );
+
+
+/**
+ * \brief Convert the RTC_CALR bcd format to year, month, day, week.
+ *
+ * \param calReg    Contents of the RTC_CALR register
+ * \param pYwear    Current year (optional).
+ * \param pucMonth  Current month (optional).
+ * \param pucDay    Current day (optional).
+ * \param pucWeek   Current day in current week (optional).
+ */
+extern void RTC_CalRegToDate( uint32_t calReg, uint16_t* const pwYear, uint8_t* const pucMonth,
+    uint8_t* const pucDay, uint8_t* const pucWeek );
 
 #ifdef __cplusplus
 }

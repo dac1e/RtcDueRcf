@@ -41,7 +41,15 @@
 #define DEBUG_SET_TIME false
 #endif
 
-#if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST || DEBUG_DST_REQUEST
+#ifndef DEBUG_GET_TIME
+#define DEBUG_GET_TIME false
+#endif
+
+#ifndef DEBUG_RTC_ALARM
+#define DEBUG_RTC_ALARM false
+#endif
+
+#if RTC_MEASURE_ACKUPD || MEASURE_DST_RTC_REQUEST || DEBUG_DST_REQUEST || DEBUG_GET_TIME
 #include <Arduino.h>
 #endif
 
@@ -143,25 +151,27 @@ bool RtcDueRcf::setTime(const std::tm &localTime) {
      const time_t localTime = mktime(&buffer);
 
     // Fill cache with time.
-    mSetTimeCache.set(buffer);
-#if DEBUG_DST_REQUEST
-      Serial.print("setTime");
-#endif
+    if(mSetTimeCache.set(buffer)) {
+  #if DEBUG_DST_REQUEST
+        Serial.print("setTime");
+  #endif
 
-    if(not mSetTimeRequest) {
-      mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
-#if DEBUG_DST_REQUEST
-      Serial.println(", REQUEST");
-#endif
-      RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
-    } else {
-#if DEBUG_DST_REQUEST
-      Serial.println();
-#endif
+      if(not mSetTimeRequest) {
+        mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
+  #if DEBUG_DST_REQUEST
+        Serial.println(", REQUEST");
+  #endif
+        RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+      } else {
+  #if DEBUG_DST_REQUEST
+        Serial.println();
+  #endif
+      }
+
+      RTC_EnableIt(RTC, RTC_IER_ACKEN);
+      return true;
     }
-
     RTC_EnableIt(RTC, RTC_IER_ACKEN);
-    return true;
   }
   return false;
 }
@@ -180,25 +190,26 @@ bool RtcDueRcf::setTime_(const std::tm &localTime) {
 #endif
 
     // Fill cache with time.
-    mSetTimeCache.set(localTime);
-#if DEBUG_DST_REQUEST
-      Serial.print("setTime");
-#endif
+    if(mSetTimeCache.set(localTime)) {
+  #if DEBUG_DST_REQUEST
+        Serial.print("setTime");
+  #endif
 
-    if(not mSetTimeRequest) {
-      mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
-#if DEBUG_DST_REQUEST
-      Serial.println(", REQUEST");
-#endif
-      RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
-    } else {
-#if DEBUG_DST_REQUEST
-      Serial.println();
-#endif
+      if(not mSetTimeRequest) {
+        mSetTimeRequest = SET_TIME_REQUEST::REQUEST;
+  #if DEBUG_DST_REQUEST
+        Serial.println(", REQUEST");
+  #endif
+        RTC->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
+      } else {
+  #if DEBUG_DST_REQUEST
+        Serial.println();
+  #endif
+      }
+      RTC_EnableIt(RTC, RTC_IER_ACKEN);
+      return true;
     }
-
     RTC_EnableIt(RTC, RTC_IER_ACKEN);
-    return true;
   }
   return false;
 }
@@ -219,7 +230,7 @@ void RtcDueRcf::RtcDueRcf_DstChecker() {
     const bool request = dueTimeAndDate.isDstRtcRequest();
     if(request) {
       // Fill cache with time.
-      mSetTimeCache = dueTimeAndDate;
+      mSetTimeCache.set(dueTimeAndDate);
 #if DEBUG_DST_REQUEST
       Serial.print(__FUNCTION__);
 #endif
@@ -281,14 +292,6 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_SECCLR);
   }
 
-  /* RTC alarm */
-  if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-    if(mAlarmCallback) {
-      (*mAlarmCallback)(mAlarmCallbackPararm);
-    }
-    RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
-  }
-
   /* Acknowledge for Update interrupt */
   if ((status & RTC_SR_ACKUPD) == RTC_SR_ACKUPD) {
 #if RTC_MEASURE_ACKUPD
@@ -298,6 +301,13 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
   }
 
+  /* RTC alarm */
+  if ((status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+    if(mAlarmCallback) {
+      (*mAlarmCallback)(mAlarmCallbackPararm);
+    }
+    RTC_ClearSCCR(RTC, RTC_SCCR_ALRCLR);
+  }
 }
 
 bool RtcDueRcf::setTime(std::time_t utcTimestamp) {
@@ -312,14 +322,30 @@ bool RtcDueRcf::setTime(std::time_t utcTimestamp) {
   return setTime(time);
 }
 
-void RtcDueRcf::getLocalTime(std::tm &time) const {
+bool RtcDueRcf::getLocalTime(std::tm &time) const {
   if (mSetTimeRequest) {
-    mSetTimeCache.get(time);
-  } else {
-    Sam3XA::RtcTime dueTimeAndDate;
-    dueTimeAndDate.readFromRtc();
-    dueTimeAndDate.get(time);
+    const bool result = mSetTimeCache.isValid();
+    if(result) {
+      mSetTimeCache.toRtcTime().get(time);
+    }
+    return result;
   }
+
+  {
+    Sam3XA::RtcTime dueTimeAndDate;
+    const RtcDueRcf_RtcState state(dueTimeAndDate.readFromRtc());
+#if DEBUG_GET_TIME
+    Serial.print("RtcDueRcf::");
+    Serial.print(__FUNCTION__);
+    Serial.print(' ');
+    Serial.println(state);
+#endif
+    if(state.isTimeValid() && state.isCalendarValid()) {
+      dueTimeAndDate.get(time);
+      return true;
+    }
+  }
+  return false;
 }
 
 void RtcDueRcf::setAlarmCallback(void (*alarmCallback)(void*),
@@ -331,15 +357,30 @@ void RtcDueRcf::setAlarmCallback(void (*alarmCallback)(void*),
 
 }
 
-void RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
-  RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day);
+bool RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
+  const RtcDueRcf_RtcState state (
+      RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day));
+#if DEBUG_RTC_ALARM
+  Serial.print("RtcDueRcf::");
+  Serial.print(__FUNCTION__);
+  Serial.print(' ');
+  Serial.print(state);
+#endif
+  return state.isTimeAlarmValid() && state.isCalendarAlarmValid();
 }
 
-RtcDueRcf_Validation RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
-  const int validEntryRegister =
-      RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day) |
-      RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second);
-  return RtcDueRcf_Validation(validEntryRegister);
+bool RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
+  const RtcDueRcf_RtcState stateTime( RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second));
+  const RtcDueRcf_RtcState stateCal( RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day));
+#if DEBUG_RTC_ALARM
+  Serial.print("RtcDueRcf::");
+  Serial.print(__FUNCTION__);
+  Serial.print("T:");
+  Serial.print(stateTime);
+  Serial.print("C:");
+  Serial.println(stateCal);
+#endif
+  return stateTime.isTimeAlarmValid() && stateCal.isCalendarAlarmValid();
 }
 
 void RtcDueRcf::setSecondCallback(void (*secondCallback)(void*),

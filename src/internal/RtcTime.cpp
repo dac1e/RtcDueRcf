@@ -47,12 +47,18 @@
   #define DEBUG_SET_RtcTime false
 #endif
 
+#ifndef  DEBUG_writeToRtc
+  #define DEBUG_writeToRtc false
+#endif
+
 #if ASSERT_Sam3XA_RtcTime_isdst
 #include <assert.h>
 #endif
 
-#if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || RTC_DEBUG_HOUR_MODE || DEBUG_SET_RtcTime
-#include "Arduino.h"
+#if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || \
+             RTC_DEBUG_HOUR_MODE || DEBUG_SET_RtcTime || DEBUG_writeToRtc
+  #include "RtcDueRcf_RtcState.h"
+  #include "Arduino.h"
 #endif
 
 
@@ -192,9 +198,44 @@ inline int yday(const Sam3XA::RtcTime& rtcTime) {
   return yday_ + day;
 }
 
-}
+} // ANONYMOUS_NAMESPACE
 
 namespace Sam3XA {
+RtcSetTimeCache::RtcSetTimeCache() :
+    mTimeReg(RTC_INVALID_TIME_REG), mCalReg(RTC_INVALID_CAL_REG), mRtc12HrsMode(0) {
+}
+
+
+bool RtcSetTimeCache::isValid() const {
+  return mTimeReg != RTC_INVALID_TIME_REG && mCalReg != RTC_INVALID_CAL_REG;
+}
+
+bool RtcSetTimeCache::set(const RtcTime &rtcTime) {
+  mTimeReg = RTC_TimeToTimeReg(rtcTime.hour(), rtcTime.mMinute, rtcTime.mSecond, rtcTime.mRtc12hrsMode);
+  mCalReg = RTC_DateToCalReg(rtcTime.mYear, rtcTime.mMonth, rtcTime.mDayOfMonth, rtcTime.mDayOfWeekDay);
+  mRtc12HrsMode = rtcTime.mRtc12hrsMode;
+  return isValid();
+}
+
+bool RtcSetTimeCache::set(const std::tm &tm) {
+  RtcTime rtcTime;
+  rtcTime.set(tm);
+  return set(rtcTime);
+}
+
+RtcTime RtcSetTimeCache::toRtcTime() const {
+  RtcTime result;
+
+  if(isValid()) {
+    RTC_TimeRegToTime(mTimeReg, nullptr, &result.mHour, &result.mMinute, &result.mSecond, 0);
+    RTC_CalRegToDate(mCalReg, &result.mYear, &result.mMonth, &result.mDayOfMonth, &result.mDayOfWeekDay);
+    result.mState = RtcTime::VALID;
+    result.mRtc12hrsMode = mRtc12HrsMode;
+  } else {
+    result.mState = RtcTime::INVALID;
+  }
+  return result;
+}
 
 inline const Sam3XA::RtcTime* RtcTime::getDstBeginCompareTime(Sam3XA::RtcTime& stdTime, const Sam3XA::RtcTime& dstTime,
     const int32_t dstTimeShift, Sam3XA::RtcTime& buffer) {
@@ -351,6 +392,7 @@ void RtcTime::set(const std::time_t timestamp, const uint8_t isdst)
 //	Serial.print(' ');
 //	Serial.println(timestamp);
 //#endif
+
   long days = timestamp / SECSPERDAY + EPOCH_ADJUSTMENT_DAYS;
   long remain = timestamp % SECSPERDAY;
   if (remain < 0) {
@@ -423,58 +465,62 @@ bool RtcTime::isDstRtcRequest() {
   RtcTime rtcTime;
   rtcTime.readFromRtc_();
 
-#if DEBUG_SET_RtcTime
-  RtcTime rtcTimeClone = rtcTime;
-  RtcTime thisClone = *this;
-#endif
+  if(rtcTime.isValid()) {
+  #if DEBUG_SET_RtcTime
+    RtcTime rtcTimeClone = rtcTime;
+    RtcTime thisClone = *this;
+  #endif
 
-  if (rtcTime.mRtc12hrsMode) {
-    // RTC is holding daylight savings time
-    const int dst = isdst(*this, rtcTime);
-    if(not dst) {
-      result = true;
+    if (rtcTime.mRtc12hrsMode) {
+      // RTC is holding daylight savings time
+      const int dst = isdst(*this, rtcTime);
+      if(not dst) {
+        result = true;
 
-#if RTC_DEBUG_HOUR_MODE
-      Serial.print(__FUNCTION__); Serial.print(", ");
-      Serial.print(mHour); Serial.print(':');
-      Serial.print(mMinute);  Serial.print(':');
-      Serial.print(mSecond);
-      Serial.println(", request to 24-hrs mode.");
-#endif
+  #if RTC_DEBUG_HOUR_MODE
+        Serial.print(__FUNCTION__); Serial.print(", ");
+        Serial.print(mHour); Serial.print(':');
+        Serial.print(mMinute);  Serial.print(':');
+        Serial.print(mSecond);
+        Serial.println(", request to 24-hrs mode.");
+  #endif
 
-#if DEBUG_SET_RtcTime
-      isdst(thisClone, rtcTimeClone);
-#endif
+  #if DEBUG_SET_RtcTime
+        isdst(thisClone, rtcTimeClone);
+  #endif
 
-    }
-  } else {
-    // RTC is holding standard local time
-    const int dst = isdst(rtcTime, *this);
-    if(dst) {
-      result = true;
+      }
+    } else {
+      // RTC is holding standard local time
+      const int dst = isdst(rtcTime, *this);
+      if(dst) {
+        result = true;
 
-#if RTC_DEBUG_HOUR_MODE
-      Serial.print(__FUNCTION__); Serial.print(", ");
-      Serial.print(mHour); Serial.print(':');
-      Serial.print(mMinute);  Serial.print(':');
-      Serial.print(mSecond);
-      Serial.println(", request to 12-hrs mode.");
-#endif
+  #if RTC_DEBUG_HOUR_MODE
+        Serial.print(__FUNCTION__); Serial.print(", ");
+        Serial.print(mHour); Serial.print(':');
+        Serial.print(mMinute);  Serial.print(':');
+        Serial.print(mSecond);
+        Serial.println(", request to 12-hrs mode.");
+  #endif
 
-#if DEBUG_SET_RtcTime
-      isdst(rtcTimeClone, thisClone);
-#endif
+  #if DEBUG_SET_RtcTime
+        isdst(rtcTimeClone, thisClone);
+  #endif
 
+      }
     }
   }
   return result;
 }
 
-void RtcTime::writeToRtc() const {
-#if DEBUG_SET_RtcTime
+void RtcSetTimeCache::writeToRtc() const {
+#if DEBUG_SET_RtcTime || DEBUG_writeToRtc || RTC_DEBUG_HOUR_MODE
 	Serial.print("RtcTime::");
 	Serial.print(__FUNCTION__);
 	Serial.print(' ');
+#endif
+#if DEBUG_SET_RtcTime
 	Serial.print(hour());
 	Serial.print(':');
 	Serial.print(minute());
@@ -487,11 +533,16 @@ void RtcTime::writeToRtc() const {
 	}
 	Serial.println();
 #endif
-  ::RTC_SetTimeAndDate(RTC, hour(), minute(), second(), year(),
-      month(), day(), day_of_week(), mRtc12hrsMode ? RTC_HOUR_MODE_12 : RTC_HOUR_MODE_24);
+  const unsigned rtcValidEntryRegister = RTC_SetTimeAndDate(RTC, mTimeReg, mCalReg, mRtc12HrsMode);
   // In order to detect whether RTC carries daylight savings time or
   // standard time, 12-hrs mode of RTC is applied, when RTC carries
   // daylight savings time.
+
+#ifdef  DEBUG_writeToRtc
+  const RtcDueRcf_RtcState rtcState(rtcValidEntryRegister);
+  Serial.println(rtcState);
+#endif
+
 #if RTC_DEBUG_HOUR_MODE
   Serial.print(__FUNCTION__);
   if(mRtc12hrsMode) {
@@ -502,16 +553,18 @@ void RtcTime::writeToRtc() const {
 #endif
 }
 
-void RtcTime::readFromRtc() {
-  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
-      &mDayOfWeekDay);
+unsigned RtcTime::readFromRtc() {
+  const unsigned validEntryRegister = RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
+      &mDayOfWeekDay, &mRtc12hrsMode);
   mState = FROM_RTC;
+  return validEntryRegister;
 }
 
-void RtcTime::readFromRtc_() {
-  mRtc12hrsMode = ::RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
-      &mDayOfWeekDay);
+unsigned RtcTime::readFromRtc_() {
+  const unsigned validEntryRegister = RTC_GetTimeAndDate(RTC, nullptr, &mHour, &mMinute, &mSecond, &mYear, &mMonth, &mDayOfMonth,
+      &mDayOfWeekDay, &mRtc12hrsMode);
   mState = FROM_RTC;
+  return validEntryRegister;
 #if RTC_DEBUG_HOUR_MODE
   Serial.print(__FUNCTION__);
   if(mRtc12hrsMode) {
