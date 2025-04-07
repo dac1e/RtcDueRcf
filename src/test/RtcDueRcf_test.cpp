@@ -256,48 +256,6 @@ static void testRTCisdst(Stream& log) {
   delay(100);
 }
 
-static void testAlarmReadWrite(Stream& log) {
-  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
-
-  // Set alarm hour to 0
-  RtcDueRcf_Alarm salarm;
-  salarm.setHour(0);
-  RtcDueRcf_Alarm ralarm;
-
-  TM stime;
-
-  // Set time to non daylight savings period-> 24 hrs mode.
-  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
-  std::mktime(&stime);
-  assert(RtcDueRcf::clock.setTime(stime));
-  delay(1000);
-  assert(RtcDueRcf::clock.setAlarm(salarm));
-
-  // Set time to daylight savings period -> 12 hrs mode.
-  stime.set(0, 0, 0, 1, 3, TM::make_tm_year(2000), -1);
-  std::mktime(&stime);
-  RtcDueRcf::clock.setTime(stime);
-  delay(1000);
-
-  // Read alarm in daylight savings period
-  assert(RtcDueRcf::clock.getAlarm(ralarm));
-  assert(salarm == ralarm);
-
-  // Set alarm in daylight savings period
-  salarm.setHour(13);
-  assert(RtcDueRcf::clock.setAlarm(salarm));
-
-  // Set time to non daylight savings period.
-  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
-  std::mktime(&stime);
-  assert(RtcDueRcf::clock.setTime(stime));
-  delay(1000);
-
-  // Read alarm in non daylight savings period
-  assert(RtcDueRcf::clock.getAlarm(ralarm));
-  assert(salarm == ralarm);
-}
-
 static void check12hourRepresentation(Stream& log, TM& stime, uint8_t expectedAMPM, uint8_t expectedHour) {
   std::mktime(&stime);
 
@@ -353,39 +311,6 @@ static void test12hourRepresentation(Stream& log, TM& tm) {
   }
 }
 
-static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
-    uint32_t msecRuntimeAfterSetByLocalTime) {
-  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
-
-  std::mktime(&stime);
-  RtcDueRcf::clock.setTime(stime);
-  // After 500 the time should be set and should be increased by one second.
-  delay(500);// @500ms
-  msecRuntimeAfterSetByLocalTime -= 500;
-
-  TM rtime;
-  RtcDueRcf::clock.getLocalTime(rtime);
-  log.println(rtime);
-  delay(500);// @1000ms
-  msecRuntimeAfterSetByLocalTime -= 500;
-
-  RtcDueRcf::clock.setAlarm(salarm);
-
-  RtcDueRcf_Alarm ralarm;
-  RtcDueRcf::clock.getAlarm(ralarm);
-  log.print("getAlarm() returned: ");
-  log.println(ralarm);
-
-  delay(msecRuntimeAfterSetByLocalTime);
-
-  log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
-  RtcDueRcf::clock.getLocalTime(rtime);
-  log.println(rtime);
-  delay(100); // Additional delay just for log.print().
-
-  RtcDueRcf::clock.clearAlarm();
-}
-
 class AlarmReceiver {
   Stream& mLog;
 
@@ -434,7 +359,82 @@ public:
   }
 };
 
-static void testAlarmHourMode(Stream& log) {
+static void testAlarm(Stream& log, TM& stime, const RtcDueRcf_Alarm& salarm,
+    uint32_t msecRuntimeAfterSetByLocalTime) {
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+
+  std::mktime(&stime);
+  RtcDueRcf::clock.setTime(stime);
+  // After 500 the time should be set and should be increased by one second.
+  delay(500);// @500ms
+  msecRuntimeAfterSetByLocalTime -= 500;
+
+  TM rtime;
+  RtcDueRcf::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(500);// @1000ms
+  msecRuntimeAfterSetByLocalTime -= 500;
+
+  RtcDueRcf::clock.setAlarm(salarm);
+
+  RtcDueRcf_Alarm ralarm;
+  RtcDueRcf::clock.getAlarm(ralarm);
+  log.print("getAlarm() returned: ");
+  log.println(ralarm);
+
+  delay(msecRuntimeAfterSetByLocalTime);
+
+  log.print("Exiting "); log.print(__FUNCTION__); log.print(" @ ");
+  RtcDueRcf::clock.getLocalTime(rtime);
+  log.println(rtime);
+  delay(100); // Additional delay just for log.print().
+
+  RtcDueRcf::clock.clearAlarm();
+}
+
+static void testAlarmReadWrite(Stream& log) {
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+
+  // Set alarm hour to 0
+  RtcDueRcf_Alarm salarm;
+  salarm.setHour(0);
+  RtcDueRcf_Alarm ralarm;
+
+  TM stime;
+
+  // Set time to non daylight savings period-> 24 hrs mode.
+  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  assert(RtcDueRcf::clock.setTime(stime));
+  delay(1000);
+  assert(RtcDueRcf::clock.setAlarm(salarm));
+
+  // Set time to daylight savings period -> 12 hrs mode.
+  stime.set(0, 0, 0, 1, 3, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  RtcDueRcf::clock.setTime(stime);
+  delay(1000);
+
+  // Read alarm in daylight savings period
+  assert(RtcDueRcf::clock.getAlarm(ralarm));
+  assert(salarm == ralarm);
+
+  // Set alarm in daylight savings period
+  salarm.setHour(13);
+  assert(RtcDueRcf::clock.setAlarm(salarm));
+
+  // Set time to non daylight savings period.
+  stime.set(0, 0, 0, 1, 0, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+  assert(RtcDueRcf::clock.setTime(stime));
+  delay(1000);
+
+  // Read alarm in non daylight savings period
+  assert(RtcDueRcf::clock.getAlarm(ralarm));
+  assert(salarm == ralarm);
+}
+
+static void testAlarmHourMode(Stream& log, const int (&tm_mon)[2]) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   TM stime;
 
@@ -446,12 +446,11 @@ static void testAlarmHourMode(Stream& log) {
   AlarmReceiver alarmReceiver(log);
 
   // Set time to non daylight savings period-> 24 hrs mode.
-  int tm_mon = 0;
-  stime.set(58, 59, 23, 1, tm_mon, TM::make_tm_year(2000), -1);
+  stime.set(58, 59, 23, 1, tm_mon[0], TM::make_tm_year(2000), -1);
   std::mktime(&stime);
 
   TM expectedAlarms[1];
-  expectedAlarms[0].set(0, 0, 0, 2, tm_mon, TM::make_tm_year(2000), -1);
+  expectedAlarms[0].set(0, 0, 0, 2, tm_mon[0], TM::make_tm_year(2000), -1);
   std::mktime(&expectedAlarms[0]);
   alarmReceiver.setExpectedAlarms(1, expectedAlarms);
 
@@ -465,11 +464,10 @@ static void testAlarmHourMode(Stream& log) {
   // Keep alarm
 
   // Set time to daylight savings period -> 12 hrs mode.
-  tm_mon = 3;
-  stime.set(58, 59, 23, 1, tm_mon, TM::make_tm_year(2000), -1);
+  stime.set(58, 59, 23, 1, tm_mon[1], TM::make_tm_year(2000), -1);
   std::mktime(&stime);
 
-  expectedAlarms[0].set(0, 0, 0, 2, tm_mon, TM::make_tm_year(2000), -1);
+  expectedAlarms[0].set(0, 0, 0, 2, tm_mon[1], TM::make_tm_year(2000), -1);
   std::mktime(&expectedAlarms[0]);
 
   RtcDueRcf::clock.setTime(stime);
@@ -741,6 +739,17 @@ void runOfflineTests(Stream& log) {
   }
 }
 
+void testAlarmHourModes(Stream &log) {
+  {
+    const int tm_mon[2] = { 0, 3 };
+    testAlarmHourMode(log, tm_mon);
+  }
+  {
+    const int tm_mon[2] = { 3, 0 };
+    testAlarmHourMode(log, tm_mon);
+  }
+}
+
 void runOnlineTests(Stream& log) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
   RtcDueRcf::clock.begin(TZ::CET);
@@ -754,7 +763,7 @@ void runOnlineTests(Stream& log) {
   testDstEntry(log);
   testDstExit(log);
 
-  testAlarmHourMode(log);
+  testAlarmHourModes(log);
   testAlarmReadWrite(log);
 
   /* --- Run RTC in 24-hrs mode --- */

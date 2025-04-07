@@ -278,6 +278,8 @@ void RtcDueRcf::RtcDueRcf_AckUpdHandler() {
   }
 }
 
+// bool RtcDueRcf_DisableDstChecker = false;
+
 /**
  * RtcDueRcf interrupt handler
  */
@@ -285,7 +287,9 @@ void RtcDueRcf::RtcDueRcf_Handler() {
   const uint32_t status = RTC->RTC_SR;
   /* Second increment interrupt */
   if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-    RtcDueRcf_DstChecker();
+//    if(not RtcDueRcf_DisableDstChecker) {
+      RtcDueRcf_DstChecker();
+//    }
     if (mSecondCallback) {
       (*mSecondCallback)(mSecondCallbackPararm);
     }
@@ -298,7 +302,7 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     mTimestampACKUPD = millis();
 #endif
     RtcDueRcf_AckUpdHandler();
-//    RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
+//    RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR); // Already done by indirectly called RTC_SetTimeAndDate()
   }
 
   /* RTC alarm */

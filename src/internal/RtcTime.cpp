@@ -227,7 +227,7 @@ RtcTime RtcSetTimeCache::toRtcTime() const {
   RtcTime result;
 
   if(isValid()) {
-    RTC_TimeRegToTime(mTimeReg, nullptr, &result.mHour, &result.mMinute, &result.mSecond, 0);
+    RTC_TimeRegToTime(mTimeReg, nullptr, &result.mHour, &result.mMinute, &result.mSecond, mRtc12HrsMode);
     RTC_CalRegToDate(mCalReg, &result.mYear, &result.mMonth, &result.mDayOfMonth, &result.mDayOfWeekDay);
     result.mState = RtcTime::VALID;
     result.mRtc12hrsMode = mRtc12HrsMode;
@@ -538,7 +538,7 @@ void RtcSetTimeCache::writeToRtc() const {
   // standard time, 12-hrs mode of RTC is applied, when RTC carries
   // daylight savings time.
 
-#ifdef  DEBUG_writeToRtc
+#if DEBUG_writeToRtc
   const RtcDueRcf_RtcState rtcState(rtcValidEntryRegister);
   Serial.println(rtcState);
 #endif
