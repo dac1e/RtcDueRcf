@@ -33,6 +33,15 @@
 extern "C" {
 #endif
 
+// Calendar alarm enabled
+#define RTC_RET_BITPOS_CALALR_MTHEN   9
+#define RTC_RET_BITPOS_CALALR_DATEEN  8
+
+// Time alarm enabled
+#define RTC_RET_BITPOS_TIMALR_HOUREN  6
+#define RTC_RET_BITPOS_TIMALR_MINEN   5
+#define RTC_RET_BITPOS_TIMALR_SECEN   4
+
 /**
  * \brief Retrieves the current time and current date as stored in the RTC.
  * Month, day and week values are numbered starting at 1.
@@ -55,7 +64,8 @@ extern "C" {
  *                       1: RTC runs in 12-hrs mode.
  *
  *
- * \return Contents of RTC Valid Entry Register in bit[0..3].
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled flags
+ *    in bit[4..6], cal alarm enabled flags in bit[8..9]..
  */
 extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
     uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond,
@@ -79,7 +89,8 @@ extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
  *                   0: 24-hrs mode.
  *                   1: 12-hrs mode.
  *
- * \return Contents of RTC Valid Entry Register in bit[0..3].
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled flags
+ *    in bit[4..6], cal alarm enabled flags in bit[8..9]..
  */
 extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, const uint32_t calReg,
     const uint32_t rtc12hrsMode);
@@ -97,7 +108,8 @@ extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, cons
  * \param pucSecond  If not null, alarm second is stored in this variable.
  *                      If second alarm is not enabled this variable will be UINT8_MAX.
  *
- * \return Contents of RTC Valid Entry Register in bit[0..3]
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled flags
+ *    in bit[4..6], cal alarm enabled flags in bit[8..9]..
  */
 extern unsigned RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute,
     uint8_t* const pucSecond );
@@ -111,7 +123,8 @@ extern unsigned RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8
  * \param pucDay     If not null, alarm day is stored in this variable.
  *                      If day alarm is not enabled this variable will be UINT8_MAX.
  *
- * \return Contents of RTC Valid Entry Register in bit[0..3]
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled flags
+ *    in bit[4..6], cal alarm enabled flags in bit[8..9]..
  */
 extern unsigned RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay );
 
@@ -128,7 +141,8 @@ extern unsigned RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint
  * \param ucMonth   If not UINT8_MAX, the RTC alarm will month-match this value.
  * \param ucDay     If not UINT8_MAX, the RTC alarm will day-match this value.
  *
- * \return Contents of RTC Valid Entry Register in bit[0..3]
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled flags
+ *    in bit[4..6], cal alarm enabled flags in bit[8..9].
  */
 extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_t ucMinute,
     uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay) ;
@@ -144,7 +158,8 @@ extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour, uint8_
  *                    0: The returned value will be for RTC_TIMR 24-hrs mode.
  *                    1: The returned value will be for RTC_TIMR 12-hrs mode.
  *
- * \return time in 32 bit RTC_TIMR bcd format on success, 0xFFFFFFFF on fail
+ * \return Contents of RTC Valid Entry Register in bit[0..3], time alarm enabled
+ *    in bit[4..6], cal alarm enabled in bit[8..9].
  */
 #define RTC_INVALID_TIME_REG 0xFFFFFFFF
 extern uint32_t RTC_TimeToTimeReg(uint8_t ucHour, const uint8_t ucMinute, const uint8_t ucSecond,

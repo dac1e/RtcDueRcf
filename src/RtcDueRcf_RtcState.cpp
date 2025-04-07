@@ -30,16 +30,42 @@
 size_t RtcDueRcf_RtcState::printTo(Print& p) const {
   size_t result = 0;
 
-  static const char szText[] = {'i', 'v'};
+  static const char szValidText[]  = {'i', 'v'};
 
+  // Date and time
   result += p.print("cal:");
-  result += p.print(szText[isCalendarValid()]);
+  result += p.print(szValidText[isCalendarValid()]);
   result += p.print(", tim:");
-  result += p.print(szText[isTimeValid()]);
+  result += p.print(szValidText[isTimeValid()]);
+
+  // Calendar alarm
   result += p.print(", calalr:");
-  result += p.print(szText[isCalendarAlarmValid()]);
+  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_MTHEN) ) {
+    result += p.print('m');
+  }
+  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_DATEEN) ) {
+    result += p.print('d');
+  }
+  result += p.print(':');
+  result += p.print(szValidText[isCalendarAlarmValid()]);
+
+  // Time alarm
   result += p.print(", timalr:");
-  result += p.print(szText[isTimeAlarmValid()]);
+  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_HOUREN) ) {
+    result += p.print('h');
+  }
+
+  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_MINEN) ) {
+    result += p.print('m');
+  }
+
+  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_SECEN) ) {
+    result += p.print('s');
+  }
+
+  result += p.print(':');
+  result += p.print(szValidText[isTimeAlarmValid()]);
+
   return result;
 }
 
@@ -51,8 +77,19 @@ bool RtcDueRcf_RtcState::isCalendarAlarmValid() const {
   return not (mRtcValidEntryRegister & RTC_VER_NVCALALR);
 }
 
+bool RtcDueRcf_RtcState::isCalendarAlarmEnabled() const {
+  return (mRtcValidEntryRegister & RTC_RET_BITPOS_CALALR_DATEEN)
+      || (mRtcValidEntryRegister & RTC_RET_BITPOS_CALALR_MTHEN);
+}
+
 bool RtcDueRcf_RtcState::isTimeAlarmValid() const {
-  return !(mRtcValidEntryRegister & RTC_VER_NVTIMALR);
+  return not (mRtcValidEntryRegister & RTC_VER_NVTIMALR);
+}
+
+bool RtcDueRcf_RtcState::isTimeAlarmEnabled() const {
+  return (mRtcValidEntryRegister & RTC_RET_BITPOS_TIMALR_SECEN)
+      || (mRtcValidEntryRegister & RTC_RET_BITPOS_TIMALR_MINEN)
+      || (mRtcValidEntryRegister & RTC_RET_BITPOS_TIMALR_HOUREN);
 }
 
 bool RtcDueRcf_RtcState::isAlarmValid() const {

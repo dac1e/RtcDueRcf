@@ -40,14 +40,35 @@ class RtcDueRcf_RtcState : public Printable {
   RtcDueRcf_RtcState(int rtcValidEntryRegister);
 
 public:
+  bool isCalendarAlarmEnabled() const;
   bool isCalendarAlarmValid() const;
+  bool isEnabledCalendarAlarmValid() const {
+    if( isCalendarAlarmEnabled() ) {
+      return isCalendarAlarmValid();
+    }
+    return true;
+  }
+
+  bool isTimeAlarmEnabled() const;
   bool isTimeAlarmValid() const;
+  bool isEnabledTimeAlarmValid() const {
+    if( isTimeAlarmEnabled() ) {
+      return isTimeAlarmValid();
+    }
+    return true;
+  }
+
   bool isAlarmValid() const;
+  bool isEnabledAlarmValid() const {
+    return isEnabledCalendarAlarmValid()
+        && isEnabledTimeAlarmValid();
+  }
 
   bool isCalendarValid() const;
   bool isTimeValid() const;
 
   size_t printTo(Print& p) const override;
+
 private:
   friend class Sam3XA::RtcSetTimeCache;
   friend class RtcDueRcf;

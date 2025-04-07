@@ -364,9 +364,9 @@ bool RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
   Serial.print("RtcDueRcf::");
   Serial.print(__FUNCTION__);
   Serial.print(' ');
-  Serial.print(state);
+  Serial.println(state);
 #endif
-  return state.isTimeAlarmValid() && state.isCalendarAlarmValid();
+  return state.isEnabledAlarmValid();
 }
 
 bool RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
@@ -380,7 +380,7 @@ bool RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
   Serial.print("C:");
   Serial.println(stateCal);
 #endif
-  return stateTime.isTimeAlarmValid() && stateCal.isCalendarAlarmValid();
+  return stateTime.isEnabledTimeAlarmValid() && stateCal.isEnabledCalendarAlarmValid();
 }
 
 void RtcDueRcf::setSecondCallback(void (*secondCallback)(void*),

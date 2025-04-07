@@ -39,9 +39,34 @@
 #define RTC_DATE_BIT_LEN_MASK   0x3F
 #define RTC_WEEK_BIT_LEN_MASK   0x07
 
+#define RTC_CALALR_MTHEN_BITPOS  23
+#define RTC_CALALR_DATEEN_BITPOS 31
+
+#define RTC_TIMALR_HOUREN_BITPOS 23
+#define RTC_TIMALR_MINEN_BITPOS  15
+#define RTC_TIMALR_SECEN_BITPOS   7
+
 /*----------------------------------------------------------------------------
  *        Internal functions
  *----------------------------------------------------------------------------*/
+
+static unsigned getCalAlrEnRetFlags(const Rtc* const pRtc) {
+  const unsigned result =
+    // Place alarm enable bits in bits[4..9]
+      (pRtc->RTC_CALALR & RTC_CALALR_MTHEN)  >> (RTC_CALALR_MTHEN_BITPOS  - RTC_RET_BITPOS_CALALR_MTHEN )
+    | (pRtc->RTC_CALALR & RTC_CALALR_DATEEN) >> (RTC_CALALR_DATEEN_BITPOS - RTC_RET_BITPOS_CALALR_DATEEN)
+  ;
+  return result;
+}
+
+static unsigned getTimeAlrEnRetFlags(const Rtc* const pRtc) {
+  const unsigned result =
+      (pRtc->RTC_TIMALR & RTC_TIMALR_HOUREN) >> (RTC_TIMALR_HOUREN_BITPOS - RTC_RET_BITPOS_TIMALR_HOUREN)
+    | (pRtc->RTC_TIMALR & RTC_TIMALR_MINEN)  >> (RTC_TIMALR_MINEN_BITPOS  - RTC_RET_BITPOS_TIMALR_MINEN )
+    | (pRtc->RTC_TIMALR & RTC_TIMALR_SECEN)  >> (RTC_TIMALR_SECEN_BITPOS  - RTC_RET_BITPOS_TIMALR_SECEN )
+  ;
+  return result;
+}
 
 /**
  * \brief Convert the RTC_TIMR bcd format to hour
@@ -194,7 +219,7 @@ extern uint32_t RTC_TimeToTimeReg(uint8_t ucHour, const uint8_t ucMinute, const 
         }
       }
     }
-    const uint8_t ucHour_bcd =  (ucHour%10)  |  ((ucHour/10)<<4) ;
+    const uint8_t ucHour_bcd =   (ucHour%10) |  ((ucHour/10)<<4) ;
     const uint8_t ucMin_bcd  = (ucMinute%10) | ((ucMinute/10)<<4) ;
     const uint8_t ucSec_bcd  = (ucSecond%10) | ((ucSecond/10)<<4) ;
 
@@ -267,15 +292,14 @@ extern unsigned RTC_GetTimeAndDate( Rtc* const pRtc, uint8_t* const pucAMPM,
       *pucRtc12HrsMode = pRtc->RTC_MR & RTC_MR_HRMOD;
     }
 
-    return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+    return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+        | getTimeAlrEnRetFlags(pRtc) | getCalAlrEnRetFlags(pRtc);
 }
 
 extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, const uint32_t calReg,
     const uint32_t rtc12hrsMode)
 {
-  const uint32_t HOUR_MASK = RTC_TIMALR_HOUREN | RTC_TIMALR_AMPM | RTC_TIMALR_HOUR_Msk;
   const uint32_t current12HrsMode = (pRtc->RTC_MR & RTC_MR_HRMOD);
-  const uint32_t dwTimAlarmHour = rtc12hrsMode != current12HrsMode ? (pRtc->RTC_TIMALR & HOUR_MASK) : 0;
 
   /* Update calendar and time register together */
   pRtc->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
@@ -289,50 +313,54 @@ extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, cons
   pRtc->RTC_MR = rtc12hrsMode & RTC_MR_HRMOD;
 
   if(rtc12hrsMode != current12HrsMode) {
-    if (dwTimAlarmHour & RTC_TIMALR_HOUREN) {
-      uint32_t hour = RTC_TIMALR_HOUR(dwTimAlarmHour);
-      uint32_t AMPM = 0;
+    if (pRtc->RTC_TIMALR & RTC_TIMALR_HOUREN) {
+      uint32_t hour = ((pRtc->RTC_TIMALR & 0x00300000) >> 20) * 10 + ((pRtc->RTC_TIMALR & 0x000F0000) >> 16);;
+      uint32_t AMPM_flag = 0;
       // Fix alarm hour
-      if (rtc12hrsMode) {
-        if (dwTimAlarmHour & RTC_TIMALR_AMPM) {
+      if (current12HrsMode) {
+        if (pRtc->RTC_TIMALR & RTC_TIMALR_AMPM) {
           // PM Time
           if (hour < 12) {
             hour += 12; // convert PM time to 24-hrs representation.
           }
         } else {
           // AM Time
-          if (hour == 12) // midnight ?
-              {
+          if (hour == 12) { // midnight ?
             hour = 0; // midnight is 0:00h in 24-hrs representation.
           }
         }
       } else {
         // RTC is running in 24-hrs mode
-        AMPM = (hour > 11) ? RTC_TIMALR_AMPM : 0;
+        AMPM_flag = (hour > 11) ? RTC_TIMALR_AMPM : 0;
         if (hour > 12) {
           hour -= 12; // convert PM to 12-hrs representation.
         } else if (hour == 0) {
           hour = 12; // midnight is 12:00 in 12-hrs representation.
         }
       }
-      pRtc->RTC_TIMALR = (pRtc->RTC_TIMALR & ~HOUR_MASK) | RTC_TIMALR_HOUREN | AMPM | (hour << RTC_TIMALR_HOUR_Pos);
+
+      const uint32_t maskedTimeAlr = pRtc->RTC_TIMALR & ~(RTC_TIMALR_HOUREN | RTC_TIMALR_AMPM | RTC_TIMALR_HOUR_Msk);
+      const uint32_t hour_bcd = (((hour%10) | ((hour/10)<<4)) << RTC_TIMALR_HOUR_Pos);
+      pRtc->RTC_TIMALR = maskedTimeAlr | RTC_TIMALR_HOUREN | AMPM_flag | hour_bcd;
     }
   }
-  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+      | getTimeAlrEnRetFlags(pRtc) | getCalAlrEnRetFlags(pRtc);
 }
 
 extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
     uint8_t ucMinute, uint8_t ucSecond, uint8_t ucMonth, uint8_t ucDay)
 {
-  RTC_DisableIt(RTC, RTC_IER_ALREN);
+  RTC_DisableIt(pRtc, RTC_IER_ALREN);
 
   {
-    const uint8_t hour   = ucHour   != UINT8_MAX ? ucHour   : 0;
-    const uint8_t minute = ucMinute != UINT8_MAX ? ucMinute : 0;
-    const uint8_t second = ucSecond != UINT8_MAX ? ucSecond : 0;
+    const uint8_t hour   = ucHour   != UINT8_MAX ? ucHour   : 12;
+    const uint8_t minute = ucMinute != UINT8_MAX ? ucMinute :  0;
+    const uint8_t second = ucSecond != UINT8_MAX ? ucSecond :  0;
 
-    const int n12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD) == RTC_MR_HRMOD;
-    uint32_t dwAlarmTime = RTC_TimeToTimeReg(hour, minute, second, n12HourMode);
+    const unsigned rtc12HourMode = (pRtc->RTC_MR & RTC_MR_HRMOD);
+    uint32_t dwAlarmTime = RTC_TimeToTimeReg(hour, minute, second, rtc12HourMode);
 
     if( ucHour != UINT8_MAX )
     {
@@ -353,8 +381,8 @@ extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
   }
 
   {
-    const uint8_t month = ucMonth != UINT8_MAX ? ucMonth : 0;
-    const uint8_t day = ucDay != UINT8_MAX ? ucDay : 0;
+    const uint8_t month = ucMonth != UINT8_MAX ? ucMonth : 1;
+    const uint8_t day = ucDay != UINT8_MAX ? ucDay : 1;
     uint32_t dwAlarmDate = RTC_DateToCalReg(0, month, day, 0);
 
     if( ucMonth  != UINT8_MAX )
@@ -373,7 +401,8 @@ extern unsigned RTC_SetTimeAndDateAlarm( Rtc* const pRtc, uint8_t ucHour,
   RTC_ClearSCCR(pRtc, RTC_SCCR_ALRCLR);
   RTC_EnableIt(pRtc, RTC_IER_ALREN);
 
-  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+      | getTimeAlrEnRetFlags(pRtc) | getCalAlrEnRetFlags(pRtc);
 }
 
 extern unsigned RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8_t* const pucMinute, uint8_t* const pucSecond )
@@ -401,7 +430,8 @@ extern unsigned RTC_GetTimeAlarm( Rtc* const pRtc, uint8_t* const pucHour, uint8
       *pucSecond = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+      | getTimeAlrEnRetFlags(pRtc) | getCalAlrEnRetFlags(pRtc);
 }
 
 extern unsigned RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint8_t* const pucDay )
@@ -423,6 +453,7 @@ extern unsigned RTC_GetDateAlarm( Rtc* const pRtc, uint8_t* const pucMonth, uint
       *pucDay = UINT8_MAX;
   }
 
-  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR));
+  return (pRtc->RTC_VER & (RTC_VER_NVCAL | RTC_VER_NVTIM | RTC_VER_NVCALALR | RTC_VER_NVTIMALR))
+      | getTimeAlrEnRetFlags(pRtc) | getCalAlrEnRetFlags(pRtc);
 }
 
