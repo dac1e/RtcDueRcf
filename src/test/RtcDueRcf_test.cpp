@@ -391,13 +391,13 @@ class AlarmReceiver {
 
   size_t mExpectedAlarmsCount;
   const TM* mExpectedAlarms;
-  size_t mExpectedAlarmIndex;
+  size_t mAppearedAlarms;
 
   static void alarmCallback(void* param) {
     static_cast<AlarmReceiver*>(param)->onAlarm();
   }
 public:
-  AlarmReceiver(Stream& log) : mLog(log), mExpectedAlarmsCount(0), mExpectedAlarms(nullptr), mExpectedAlarmIndex(0) {
+  AlarmReceiver(Stream& log) : mLog(log), mExpectedAlarmsCount(0), mExpectedAlarms(nullptr), mAppearedAlarms(0) {
     RtcDueRcf::clock.setAlarmCallback(alarmCallback, this);
   }
 
@@ -408,9 +408,9 @@ public:
     mLog.print(__FUNCTION__);
     mLog.print(" @ ");
     mLog.println(rtime);
-    if(mExpectedAlarmIndex < mExpectedAlarmsCount) {
-      if( rtime == mExpectedAlarms[mExpectedAlarmIndex] ) {
-        mExpectedAlarmIndex++;
+    if(mAppearedAlarms < mExpectedAlarmsCount) {
+      if( rtime == mExpectedAlarms[mAppearedAlarms] ) {
+        mAppearedAlarms++;
         return;
       }
     }
@@ -420,15 +420,64 @@ public:
   void setExpectedAlarms(size_t n, const TM* const expectedAlarms) {
     mExpectedAlarmsCount = n;
     mExpectedAlarms = expectedAlarms;
-    mExpectedAlarmIndex = 0;
+    mAppearedAlarms = 0;
+  }
+
+  void checkAndResetAppearedAlarms() {
+    assert(mAppearedAlarms == mExpectedAlarmsCount);
+    mAppearedAlarms = 0;
   }
 
   ~AlarmReceiver() {
     // All expected alarms must have appeared;
-    assert(mExpectedAlarmIndex == mExpectedAlarmsCount);
     RtcDueRcf::clock.setAlarmCallback(nullptr, nullptr);
   }
 };
+
+static void testAlarmHourMode(Stream& log) {
+  log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
+  TM stime;
+
+
+  // Set alarm hour to Midnight in 24 hrs-mode
+  RtcDueRcf_Alarm salarm;
+  salarm.setHour(0);
+
+  AlarmReceiver alarmReceiver(log);
+
+  // Set time to non daylight savings period-> 24 hrs mode.
+  int tm_mon = 0;
+  stime.set(58, 59, 23, 1, tm_mon, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+
+  TM expectedAlarms[1];
+  expectedAlarms[0].set(0, 0, 0, 2, tm_mon, TM::make_tm_year(2000), -1);
+  std::mktime(&expectedAlarms[0]);
+  alarmReceiver.setExpectedAlarms(1, expectedAlarms);
+
+  assert(RtcDueRcf::clock.setTime(stime));
+  delay(1000);
+  assert(RtcDueRcf::clock.setAlarm(salarm));
+  delay(2000);
+  // Alarm should have appeared
+  alarmReceiver.checkAndResetAppearedAlarms();
+
+  // Keep alarm
+
+  // Set time to daylight savings period -> 12 hrs mode.
+  tm_mon = 3;
+  stime.set(58, 59, 23, 1, tm_mon, TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
+
+  expectedAlarms[0].set(0, 0, 0, 2, tm_mon, TM::make_tm_year(2000), -1);
+  std::mktime(&expectedAlarms[0]);
+
+  RtcDueRcf::clock.setTime(stime);
+  delay(3000);
+
+  // Alarm should have appeared
+  alarmReceiver.checkAndResetAppearedAlarms();
+}
 
 static void testAlarm(Stream& log, TM& stime) {
   RtcDueRcf_Alarm salarm;
@@ -452,6 +501,7 @@ static void testAlarm(Stream& log, TM& stime) {
     alarmReceiver.setExpectedAlarms(2, expectedAlarms);
 
     testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the 2 alarms to appear. */);
+    alarmReceiver.checkAndResetAppearedAlarms();
   }
 
   // Test alarm starting at 12:00h
@@ -460,6 +510,7 @@ static void testAlarm(Stream& log, TM& stime) {
     AlarmReceiver alarmReceiver(log);
     alarmReceiver.setExpectedAlarms(0, nullptr);
     testAlarm(log, stime, salarm, 75000 /* Give 75 seconds for the 2 alarms not to appear. */);
+    alarmReceiver.checkAndResetAppearedAlarms();
   }
 }
 
@@ -703,6 +754,7 @@ void runOnlineTests(Stream& log) {
   testDstEntry(log);
   testDstExit(log);
 
+  testAlarmHourMode(log);
   testAlarmReadWrite(log);
 
   /* --- Run RTC in 24-hrs mode --- */

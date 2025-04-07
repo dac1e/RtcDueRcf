@@ -200,7 +200,7 @@ extern uint32_t RTC_TimeToTimeReg(uint8_t ucHour, const uint8_t ucMinute, const 
     /* if 12-hrs mode, set AMPM bit */
     if ( timeReg12HrsMode )
     {
-      // RTC is running in 12-hrs mode
+      // RTC running in 12-hrs mode
       if ( ucHour >= 12 )
       {
         // PM Time
@@ -304,13 +304,13 @@ extern unsigned RTC_SetTimeAndDate(Rtc *const pRtc, const uint32_t timeReg, cons
   /* Update calendar and time register together */
   pRtc->RTC_CR |= (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
   while ((pRtc->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD);
-
   pRtc->RTC_SCCR = RTC_SCCR_ACKCLR;
+
+  pRtc->RTC_MR = rtc12hrsMode & RTC_MR_HRMOD;
   pRtc->RTC_TIMR = timeReg;
   pRtc->RTC_CALR = calReg;
   pRtc->RTC_CR &= ~((uint32_t) RTC_CR_UPDTIM | (uint32_t) RTC_CR_UPDCAL);
   pRtc->RTC_SCCR |= RTC_SCCR_SECCLR; /* clear SECENV in SCCR */
-  pRtc->RTC_MR = rtc12hrsMode & RTC_MR_HRMOD;
 
   if(rtc12hrsMode != current12HrsMode) {
     if (pRtc->RTC_TIMALR & RTC_TIMALR_HOUREN) {

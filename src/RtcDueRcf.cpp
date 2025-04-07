@@ -298,7 +298,7 @@ void RtcDueRcf::RtcDueRcf_Handler() {
     mTimestampACKUPD = millis();
 #endif
     RtcDueRcf_AckUpdHandler();
-    RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
+//    RTC_ClearSCCR(RTC, RTC_SCCR_ACKCLR);
   }
 
   /* RTC alarm */
