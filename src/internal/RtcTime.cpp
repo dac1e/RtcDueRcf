@@ -539,7 +539,7 @@ void RtcSetTimeCache::writeToRtc() const {
   // daylight savings time.
 
 #if DEBUG_writeToRtc
-  const RtcDueRcf_RtcState rtcState(rtcValidEntryRegister);
+  const Sam3XA::RtcDueRcf_RtcState rtcState(rtcValidEntryRegister);
   Serial.println(rtcState);
 #endif
 

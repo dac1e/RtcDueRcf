@@ -26,6 +26,8 @@
 #include "internal/core-sam-GapClose.h"
 #include "internal/RtcDueRcf_RtcState.h"
 
+namespace Sam3XA {
+
 size_t RtcDueRcf_RtcState::printTo(Print& p) const {
   size_t result = 0;
 
@@ -119,3 +121,4 @@ bool RtcDueRcf_RtcState::isTimeValid() const {
   return !(mRtcValidEntryRegister & RTC_VER_NVTIM);
 }
 
+} // namespace Sam3XA

@@ -29,12 +29,16 @@
 
 #include <Printable.h>
 
-namespace Sam3XA{
-  class RtcSetTimeCache;
-}
+// Forward declaration
+class RtcDueRcf;
+
+namespace Sam3XA {
+
+// Forward declaration
+class RtcSetTimeCache;
 
 /**
- * A class that provides information about validity of alarm entries.
+ * A class that provides information about validity of RTC register contents.
  */
 class RtcDueRcf_RtcState : public Printable {
   RtcDueRcf_RtcState(int rtcValidEntryRegister);
@@ -70,8 +74,11 @@ public:
   size_t printTo(Print& p) const override;
 
 private:
-  friend class Sam3XA::RtcSetTimeCache;
-  friend class RtcDueRcf;
+  friend class ::Sam3XA::RtcSetTimeCache;
+  friend class ::RtcDueRcf;
   int mRtcValidEntryRegister;
 };
+
+} // namespace Sam3XA
+
 #endif /* SRC_RTCDUERCFVALIDATION_H_ */

@@ -279,8 +279,6 @@ void RtcDueRcf::RtcDueRcf_AckUpdHandler() {
   }
 }
 
-// bool RtcDueRcf_DisableDstChecker = false;
-
 /**
  * RtcDueRcf interrupt handler
  */
@@ -288,9 +286,7 @@ void RtcDueRcf::RtcDueRcf_Handler() {
   const uint32_t status = RTC->RTC_SR;
   /* Second increment interrupt */
   if ((status & RTC_SR_SEC) == RTC_SR_SEC) {
-//    if(not RtcDueRcf_DisableDstChecker) {
-      RtcDueRcf_DstChecker();
-//    }
+    RtcDueRcf_DstChecker();
     if (mSecondCallback) {
       (*mSecondCallback)(mSecondCallbackPararm);
     }
@@ -338,7 +334,7 @@ bool RtcDueRcf::getLocalTime(std::tm &time) const {
 
   {
     Sam3XA::RtcTime dueTimeAndDate;
-    const RtcDueRcf_RtcState state(dueTimeAndDate.readFromRtc());
+    const Sam3XA::RtcDueRcf_RtcState state(dueTimeAndDate.readFromRtc());
 #if DEBUG_GET_TIME
     Serial.print("RtcDueRcf::");
     Serial.print(__FUNCTION__);
@@ -363,7 +359,7 @@ void RtcDueRcf::setAlarmCallback(void (*alarmCallback)(void*),
 }
 
 bool RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
-  const RtcDueRcf_RtcState state (
+  const Sam3XA::RtcDueRcf_RtcState state (
       RTC_SetTimeAndDateAlarm(RTC, alarm.hour, alarm.minute, alarm.second, alarm.month, alarm.day));
 #if DEBUG_RTC_ALARM
   Serial.print("RtcDueRcf::");
@@ -375,8 +371,8 @@ bool RtcDueRcf::setAlarm(const RtcDueRcf_Alarm& alarm) {
 }
 
 bool RtcDueRcf::getAlarm(RtcDueRcf_Alarm &alarm) {
-  const RtcDueRcf_RtcState stateTime( RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second));
-  const RtcDueRcf_RtcState stateCal( RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day));
+  const Sam3XA::RtcDueRcf_RtcState stateTime( RTC_GetTimeAlarm(RTC, &alarm.hour, &alarm.minute, &alarm.second));
+  const Sam3XA::RtcDueRcf_RtcState stateCal( RTC_GetDateAlarm(RTC, &alarm.month, &alarm.day));
 #if DEBUG_RTC_ALARM
   Serial.print("RtcDueRcf::");
   Serial.print(__FUNCTION__);
