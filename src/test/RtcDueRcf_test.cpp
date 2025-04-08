@@ -434,25 +434,31 @@ static void testAlarmReadWrite(Stream& log) {
   assert(salarm == ralarm);
 }
 
-static void testAlarmHourMode(Stream& log, const int (&tm_mon)[2]) {
+static void testAlarmHourMode(Stream& log, const int (&tm_mon)[2], int hour) {
   log.print("--- RtcDueRcf_test::"); log.println(__FUNCTION__);
-  TM stime;
 
+  const int day = 2;
+
+  const int startHour = (hour + 23) % 24;
+  const int startDay = startHour > hour ? day - 1 : day;
+
+  TM stime;
 
   // Set alarm hour to Midnight in 24 hrs-mode
   RtcDueRcf_Alarm salarm;
-  salarm.setHour(0);
+  salarm.setHour(hour);
 
   AlarmReceiver alarmReceiver(log);
 
-  // Set time to non daylight savings period-> 24 hrs mode.
-  stime.set(58, 59, 23, 1, tm_mon[0], TM::make_tm_year(2000), -1);
-  std::mktime(&stime);
-
   TM expectedAlarms[1];
-  expectedAlarms[0].set(0, 0, 0, 2, tm_mon[0], TM::make_tm_year(2000), -1);
+  expectedAlarms[0].set(0, 0, hour, day, tm_mon[0], TM::make_tm_year(2000), -1);
   std::mktime(&expectedAlarms[0]);
   alarmReceiver.setExpectedAlarms(1, expectedAlarms);
+
+
+  // Set time to non daylight savings period-> 24 hrs mode.
+  stime.set(58, 59, startHour, startDay, tm_mon[0], TM::make_tm_year(2000), -1);
+  std::mktime(&stime);
 
   assert(RtcDueRcf::clock.setTime(stime));
   delay(1000);
@@ -461,14 +467,14 @@ static void testAlarmHourMode(Stream& log, const int (&tm_mon)[2]) {
   // Alarm should have appeared
   alarmReceiver.checkAndResetAppearedAlarms();
 
-  // Keep alarm
+  // Keep  alarm
+
+  expectedAlarms[0].set(0, 0, hour, day, tm_mon[1], TM::make_tm_year(2000), -1);
+  std::mktime(&expectedAlarms[0]);
 
   // Set time to daylight savings period -> 12 hrs mode.
-  stime.set(58, 59, 23, 1, tm_mon[1], TM::make_tm_year(2000), -1);
+  stime.set(58, 59, startHour, startDay, tm_mon[1], TM::make_tm_year(2000), -1);
   std::mktime(&stime);
-
-  expectedAlarms[0].set(0, 0, 0, 2, tm_mon[1], TM::make_tm_year(2000), -1);
-  std::mktime(&expectedAlarms[0]);
 
   RtcDueRcf::clock.setTime(stime);
   delay(3000);
@@ -740,13 +746,15 @@ void runOfflineTests(Stream& log) {
 }
 
 void testAlarmHourModes(Stream &log) {
-  {
-    const int tm_mon[2] = { 0, 3 };
-    testAlarmHourMode(log, tm_mon);
-  }
-  {
-    const int tm_mon[2] = { 3, 0 };
-    testAlarmHourMode(log, tm_mon);
+  for(int hour = 0; hour < 24; hour++) {
+    {
+      const int tm_mon[2] = { 1, 3 };
+      testAlarmHourMode(log, tm_mon, hour);
+    }
+    {
+      const int tm_mon[2] = { 3, 1 };
+      testAlarmHourMode(log, tm_mon, hour);
+    }
   }
 }
 

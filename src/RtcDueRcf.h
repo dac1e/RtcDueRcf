@@ -171,21 +171,23 @@ public:
    *
    * @param utcTimestamp UTC time.
    *
-    * @return true if successful. false, if date is lower than 1st of
+   * @return true if successful. false, if date is lower than 1st of
    *    January 2000.
    */
   bool setTime(std::time_t utcTimestamp);
 
   /**
-   * local time is transparently transferred to the RTC.
+   * @param localTime The local time that is transparently transferred to the RTC.
+   *    localTime.tm_yday and may be random. But localTime.tm_wday field must
+   *    be set correctly. localTime.tm_isdst must be seto correctly. Either 0
+   *    (standard time) or 1 (daylight savings). But not -1 (unknown). It is
+   *    assumed, that the localTime.tm_hour fits to localTime.tm_isdst. That
+   *    means that there is no check whether localTime.tm_hour must be
+   *    shifted because the daylight saving settings given by the time zone
+   *    information are in contrast to the localTime.tm_isdst.
    *
-   * localTime.tm_yday and may be random. But localTime.tm_wday field must
-   * be set correctly. localTime.tm_isdst must be seto correctly. Either 0
-   * (standard time) or 1 (daylight savings). But not -1 (unknown). It is
-   * assumed, that the localTime.tm_hour fits to localTime.tm_isdst. That
-   * means that there is no check whether localTime.tm_hour must be
-   * shifted because the daylight saving settings given by the time zone
-   * information are in contrast to the localTime.tm_isdst.
+   * @return true if successful. false, if date is lower than 1st of
+   *    January 2000.
    */
   bool setTime_(const std::tm& localTime);
 

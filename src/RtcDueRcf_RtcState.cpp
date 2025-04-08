@@ -40,29 +40,45 @@ size_t RtcDueRcf_RtcState::printTo(Print& p) const {
 
   // Calendar alarm
   result += p.print(", calalr:");
-  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_MTHEN) ) {
-    result += p.print('m');
-  }
-  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_DATEEN) ) {
-    result += p.print('d');
+  {
+    bool hasEnabledEntry = false;
+    if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_MTHEN) ) {
+      result += p.print('m');
+      hasEnabledEntry = true;
+    }
+    if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_CALALR_DATEEN) ) {
+      result += p.print('d');
+      hasEnabledEntry = true;
+    }
+    if(not hasEnabledEntry) {
+      result += p.print('-');
+    }
   }
   result += p.print(':');
   result += p.print(szValidText[isCalendarAlarmValid()]);
 
   // Time alarm
   result += p.print(", timalr:");
-  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_HOUREN) ) {
-    result += p.print('h');
-  }
+  {
+    bool hasEnabledEntry = false;
+    if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_HOUREN) ) {
+      result += p.print('h');
+      hasEnabledEntry = true;
+    }
 
-  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_MINEN) ) {
-    result += p.print('m');
-  }
+    if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_MINEN) ) {
+      result += p.print('m');
+      hasEnabledEntry = true;
+    }
 
-  if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_SECEN) ) {
-    result += p.print('s');
+    if(mRtcValidEntryRegister & (1 << RTC_RET_BITPOS_TIMALR_SECEN) ) {
+      result += p.print('s');
+      hasEnabledEntry = true;
+    }
+    if(not hasEnabledEntry) {
+      result += p.print('-');
+    }
   }
-
   result += p.print(':');
   result += p.print(szValidText[isTimeAlarmValid()]);
 
