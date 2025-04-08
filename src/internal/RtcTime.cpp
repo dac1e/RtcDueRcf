@@ -57,7 +57,7 @@
 
 #if MEASURE_Sam3XA_RtcTime_isdst || MEASURE_RtcTime_arithmethic_operators || \
              RTC_DEBUG_HOUR_MODE || DEBUG_SET_RtcTime || DEBUG_writeToRtc
-  #include "RtcDueRcf_RtcState.h"
+  #include "internal/RtcDueRcf_RtcState.h"
   #include "Arduino.h"
 #endif
 

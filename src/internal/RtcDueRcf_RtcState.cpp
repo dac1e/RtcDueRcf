@@ -24,8 +24,7 @@
 
 #include "Print.h"
 #include "internal/core-sam-GapClose.h"
-#include "RtcDueRcf_RtcState.h"
-
+#include "internal/RtcDueRcf_RtcState.h"
 
 size_t RtcDueRcf_RtcState::printTo(Print& p) const {
   size_t result = 0;
