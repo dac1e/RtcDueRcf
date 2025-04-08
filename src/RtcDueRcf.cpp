@@ -27,6 +27,7 @@
 #include "TM.h"
 #include "internal/RtcTime.h"
 #include "internal/core-sam-GapClose.h"
+#include "RtcDueRcf_RtcState.h"
 #include "RtcDueRcf.h"
 
 #ifndef MEASURE_DST_RTC_REQUEST

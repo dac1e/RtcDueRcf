@@ -32,7 +32,6 @@
 #include <include/rtc.h>
 
 #include "internal/RtcTime.h"
-#include "RtcDueRcf_RtcState.h"
 #include "RtcDueRcf_Alarm.h"
 
 #ifndef RTC_MEASURE_ACKUPD
