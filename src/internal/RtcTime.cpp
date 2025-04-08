@@ -43,8 +43,11 @@
 #endif
 
 #ifndef DEBUG_SET_RtcTime
-	#include "TM.h"
   #define DEBUG_SET_RtcTime false
+#endif
+
+#if DEBUG_SET_RtcTime
+#include "TM.h"
 #endif
 
 #ifndef  DEBUG_writeToRtc
@@ -521,12 +524,14 @@ void RtcSetTimeCache::writeToRtc() const {
 	Serial.print(' ');
 #endif
 #if DEBUG_SET_RtcTime
-	Serial.print(hour());
+	const RtcTime& rtcTime(toRtcTime());
+
+	Serial.print(rtcTime.hour());
 	Serial.print(':');
-	Serial.print(minute());
+	Serial.print(rtcTime.minute());
 	Serial.print(':');
-	Serial.print(second());
-	if(mRtc12hrsMode) {
+	Serial.print(rtcTime.second());
+	if(rtcTime.mRtc12hrsMode) {
 		Serial.print(" 12hrs");
 	} else {
 		Serial.print(" 24hrs");
