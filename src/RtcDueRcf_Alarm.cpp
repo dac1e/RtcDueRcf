@@ -22,10 +22,10 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 */
 
-#include "RtcDueRcf_Alarm.h"
 
 #include <assert.h>
 #include <print.h>
+#include "RtcDueRcf_Alarm.h"
 
 
 size_t RtcDueRcf_Alarm::printTo(Print &p) const {
