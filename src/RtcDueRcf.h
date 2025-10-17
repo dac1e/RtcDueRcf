@@ -39,8 +39,8 @@
 #endif
 
 /**
- * RtcDueRcf offers functions to operate the built in Real Time Clock
- * (RTC) and it's alarm features.
+ * RtcDueRcf offers functions to operate the Arduino Due built in Real
+ * Time Clock (RTC) and it's alarm features.
  * The RTC is represented as a single object named RtcDueRcf::clock.
  *
  * The standard structure std::tm and the standard type std::time_t
@@ -54,11 +54,11 @@
 class RtcDueRcf {
 public:
   /**
-   * The static object RtcDueRcf::clock is the one and only clock object.
+   * The static object RtcDueRcf::clock is the one and only RtcDueRcf object.
    *
    * Usage examples:
    *
-   * include "TM.H
+   * include "TM.h"
    *
    * // Read the local time and date from RTC.
    * TM time;
@@ -87,7 +87,7 @@ public:
    * to as dst) begin and end.
    *
    * Note: When the time zone changes, the local time and the alarms
-   * still operate local.
+   * still operate local within the new time zone.
    *
    * E.g. The local time is 15:00h and there is an alarm set at 16:00h.
    * After the time zone has changed, the local time within the new time
@@ -144,8 +144,8 @@ public:
    *    Note: time.tm_yday and time.tm_wday fields may be random and
    *    tm_isdst (the daylight savings flag) can be set to -1. Setting
    *    tm_isdst to -1 means, that daylight savings is unknown.
-   *    The fields time.tm_wday will and time.tm_isdst be fixed before
-   *    the  RTC is set by calling std::mktime() up front.
+   *    The fields time.tm_wday and time.tm_isdst will be fixed before
+   *    the  RTC is set by calling std::mktime() upfront.
    *    This function uses the time zone information for
    *    the tm_isdst calculation. However, there is one situation
    *    when mktime() has to solve an ambiguity. This is when
@@ -177,13 +177,13 @@ public:
 
   /**
    * @param localTime The local time that is transparently transferred to the RTC.
-   *    localTime.tm_yday and may be random. But localTime.tm_wday field must
-   *    be set correctly. localTime.tm_isdst must be seto correctly. Either 0
+   *    localTime.tm_yday may be random. But localTime.tm_wday field must
+   *    be set correctly. localTime.tm_isdst must be set correctly. Either 0
    *    (standard time) or 1 (daylight savings). But not -1 (unknown). It is
    *    assumed, that the localTime.tm_hour fits to localTime.tm_isdst. That
    *    means that there is no check whether localTime.tm_hour must be
    *    shifted because the daylight saving settings given by the time zone
-   *    information are in contrast to the localTime.tm_isdst.
+   *    information are in conflict with the localTime.tm_isdst.
    *
    * @return true if successful. false, if date is lower than 1st of
    *    January 2000.
